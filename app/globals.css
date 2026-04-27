@@ -1,0 +1,71 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+:root {
+  --green: #22c55e;
+  --green-dark: #16a34a;
+  --green-light: #bbf7d0;
+  --green-glow: rgba(34,197,94,0.18);
+  --dark: #181f1c;
+  --dark2: #1e2923;
+  --dark3: #232e28;
+  --text: #e8f0eb;
+  --text-muted: #8aa898;
+  --white: #ffffff;
+  --border: #e4ede7;
+}
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900;
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 rounded-full bg-green-500 text-white font-semibold cursor-pointer transition-all duration-300 hover:bg-green-600 hover:-translate-y-0.5;
+    box-shadow: 0 4px 24px rgba(34, 197, 94, 0.3);
+  }
+  
+  .btn-primary:hover {
+    box-shadow: 0 8px 32px rgba(34, 197, 94, 0.4);
+  }
+  
+  .btn-outline {
+    @apply px-5 py-2 rounded-full border-2 border-gray-800 bg-transparent text-gray-800 font-medium cursor-pointer transition-all duration-300 hover:bg-gray-800 hover:text-white;
+  }
+  
+  .btn-secondary {
+    @apply px-7 py-3.5 rounded-full border-2 border-white bg-transparent text-white font-medium cursor-pointer transition-all duration-300 hover:bg-white/10;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
