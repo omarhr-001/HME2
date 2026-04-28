@@ -60,7 +60,7 @@ export default function SignupPage() {
         router.push('/auth/login')
       }, 3000)
     } else {
-      setError(result.error || 'Une erreur est survenue lors de la signup')
+      setError(result.error || 'Une erreur est survenue lors de la signupn')
     }
 
     setLoading(false)
