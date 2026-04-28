@@ -1,23 +1,50 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Image from 'next/image'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ProductCard } from '@/components/product-card'
-import { products, getAllCategories } from '@/lib/products'
 import { Search, Filter } from 'lucide-react'
-import type { Product } from '@/lib/products'
+import { getProductsFromSupabase } from '@/lib/products'
+import type { Product } from '@/lib/types'
 
 export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('newest')
   const [priceRange, setPriceRange] = useState([0, 2000])
-  const categories = getAllCategories()
+
+  // Fetch products from Supabase on mount
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const data = await getProductsFromSupabase()
+        setProducts(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+        console.error('Error fetching products:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [])
+
+  // Get unique categories from products
+  const categories = useMemo(() => {
+    const cats = new Set(products
+      .filter(p => p.category)
+      .map(p => p.category as string))
+    return Array.from(cats).sort()
+  }, [products])
 
   const filteredProducts = useMemo(() => {
-    let filtered = products
+    let filtered = [...products]
 
     // Filter by category
     if (selectedCategory !== 'all') {
@@ -28,7 +55,7 @@ export default function ProductsPage() {
     if (searchTerm) {
       filtered = filtered.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.description.toLowerCase().includes(searchTerm.toLowerCase())
+        (p.description && p.description.toLowerCase().includes(searchTerm.toLowerCase()))
       )
     }
 
@@ -43,16 +70,13 @@ export default function ProductsPage() {
       case 'price-high':
         filtered.sort((a, b) => b.price - a.price)
         break
-      case 'rating':
-        filtered.sort((a, b) => b.rating - a.rating)
-        break
       case 'newest':
       default:
         break
     }
 
     return filtered
-  }, [selectedCategory, searchTerm, sortBy, priceRange])
+  }, [products, selectedCategory, searchTerm, sortBy, priceRange])
 
   const handleAddToCart = (product: Product, quantity: number = 1) => {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]')
@@ -78,10 +102,23 @@ export default function ProductsPage() {
           <p className="text-green-50">Trouvez le produit parfait pour vos besoins</p>
         </div>
 
-        <div className="px-[5%] py-8">
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* Sidebar Filters */}
-            <aside className="lg:w-64 flex-shrink-0">
+        {loading && (
+          <div className="px-[5%] py-16 text-center">
+            <p className="text-gray-600">Chargement des produits...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="px-[5%] py-16 text-center">
+            <p className="text-red-600">Erreur: {error}</p>
+          </div>
+        )}
+
+        {!loading && !error && (
+          <div className="px-[5%] py-8">
+            <div className="flex flex-col lg:flex-row gap-8">
+              {/* Sidebar Filters */}
+              <aside className="lg:w-64 flex-shrink-0">
               {/* Search */}
               <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-200">
                 <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-4 py-2">
@@ -154,10 +191,10 @@ export default function ProductsPage() {
                   </div>
                 </div>
               </div>
-            </aside>
+              </aside>
 
-            {/* Main Content */}
-            <div className="flex-1">
+              {/* Main Content */}
+              <div className="flex-1">
               {/* Sort */}
               <div className="flex items-center justify-between mb-8">
                 <p className="text-gray-600 text-sm">
@@ -171,7 +208,6 @@ export default function ProductsPage() {
                   <option value="newest">Plus récents</option>
                   <option value="price-low">Prix: Bas à Haut</option>
                   <option value="price-high">Prix: Haut à Bas</option>
-                  <option value="rating">Mieux notés</option>
                 </select>
               </div>
 
@@ -182,7 +218,7 @@ export default function ProductsPage() {
                     <ProductCard
                       key={product.id}
                       {...product}
-                      onAddToCart={handleAddToCart}
+                      onAddToCart={handleAddToCart}  
                     />
                   ))}
                 </div>
@@ -200,10 +236,11 @@ export default function ProductsPage() {
                     Réinitialiser les filtres
                   </button>
                 </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </main>
       <Footer />
     </>

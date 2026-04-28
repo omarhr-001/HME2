@@ -1,15 +1,35 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ProductCard } from './product-card'
-import { products, getAllCategories } from '@/lib/products'
+import { getProductsFromSupabase } from '@/lib/products'
 import { ArrowRight } from 'lucide-react'
-import type { Product } from '@/lib/products'
+import type { Product } from '@/lib/types'
 
 export function ProductsSection() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState('all')
-  const categories = getAllCategories()
+
+  // Fetch products from Supabase on mount
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const data = await getProductsFromSupabase()
+        setProducts(data)
+      } catch (error) {
+        console.error('Error fetching products:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [])
+
+  // Get unique categories from fetched products
+  const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean))).sort()
   
   const displayedProducts = category === 'all' 
     ? products.slice(0, 8)
@@ -71,15 +91,25 @@ export function ProductsSection() {
       </div>
 
       {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        {displayedProducts.map((product) => (
-          <ProductCard
-            key={product.id}
-            {...product}
-            onAddToCart={handleAddToCart}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Chargement des produits...</p>
+        </div>
+      ) : displayedProducts.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Aucun produit trouvé</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          {displayedProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              {...product}
+              onAddToCart={handleAddToCart}
+            />
+          ))}
+        </div>
+      )}
     </section>
   )
 }

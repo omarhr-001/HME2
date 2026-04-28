@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react'
-import type { Product } from '@/lib/products'
+import type { Product } from '@/lib/types'
 
 interface CartItem extends Product {
   quantity: number
@@ -86,13 +86,23 @@ export default function CartPage() {
               {cart.map((item) => (
                 <div key={item.id} className="bg-white rounded-xl p-6 flex gap-6 border border-gray-200">
                   {/* Product Image */}
-                  <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 text-4xl">
-                    {item.icon}
+                  <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {item.image_url ? (
+                      <Image
+                        src={item.image_url}
+                        alt={item.name}
+                        width={96}
+                        height={96}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <ShoppingCart size={32} className="text-gray-400" />
+                    )}
                   </div>
 
                   {/* Product Details */}
                   <div className="flex-1">
-                    <p className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1">{item.brand}</p>
+                    <p className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1">{item.category || 'Produit'}</p>
                     <h3 className="font-semibold text-gray-800 mb-3 line-clamp-2">{item.name}</h3>
                     <p className="text-2xl font-bold text-gray-800">{item.price.toLocaleString('fr-TN')} DT</p>
                   </div>

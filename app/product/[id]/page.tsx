@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Heart, ShoppingCart, Truck, Shield, RefreshCw, Check } from 'lucide-react'
 import Link from 'next/link'
 import { getProductById } from '@/lib/products'
-import type { Product } from '@/lib/products'
+import type { Product } from '@/lib/types'
 
 interface ProductPageProps {
   params: {
@@ -16,10 +16,43 @@ interface ProductPageProps {
 }
 
 export default function ProductPage({ params }: ProductPageProps) {
-  const product = getProductById(params.id)
+  const [product, setProduct] = useState<Product | null>(null)
+  const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
+
+  useEffect(() => {
+    const loadProduct = async () => {
+      try {
+        const { getProductByIdFromSupabase } = await import('@/lib/products')
+        const data = await getProductByIdFromSupabase(params.id)
+        if (data) {
+          setProduct(data)
+        }
+      } catch (error) {
+        console.error('Error loading product:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadProduct()
+  }, [params.id])
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <main className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-500">Chargement du produit...</p>
+          </div>
+        </main>
+        <Footer />
+      </>
+    )
+  }
 
   if (!product) {
     return (
@@ -38,8 +71,6 @@ export default function ProductPage({ params }: ProductPageProps) {
       </>
     )
   }
-
-  const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
 
   const handleAddToCart = () => {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]')
@@ -82,53 +113,46 @@ export default function ProductPage({ params }: ProductPageProps) {
             <div className="flex items-center justify-center">
               <div className="relative w-full aspect-square bg-white rounded-3xl overflow-hidden border border-gray-200 shadow-sm">
                 <Image
-                  src={product.image}
+                  src={product.image_url || '/images/placeholder.jpg'}
                   alt={product.name}
                   fill
                   className="w-full h-full object-cover"
                   priority
                 />
-                {discount > 0 && (
-                  <div className="absolute top-4 left-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold">
-                    -{discount}%
-                  </div>
-                )}
               </div>
             </div>
 
             {/* Product Info */}
             <div>
               <div className="mb-6">
-                <p className="text-sm font-bold text-green-600 uppercase mb-2">{product.category}</p>
+                <p className="text-sm font-bold text-green-600 uppercase mb-2">{product.category || 'Produit'}</p>
                 <h1 className="text-3xl font-bold text-gray-800 mb-3">{product.name}</h1>
-                <p className="text-gray-600">{product.description}</p>
+                <p className="text-gray-600">{product.description || 'Pas de description disponible'}</p>
               </div>
 
-              {/* Rating */}
+              {/* Stock Status */}
               <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-200">
-                <div className="flex items-center gap-2">
-                  {[...Array(5)].map((_, i) => (
-                    <span key={i} className="text-lg text-amber-400">
-                      {i < Math.floor(product.rating) ? '★' : '☆'}
-                    </span>
-                  ))}
-                </div>
-                <span className="text-sm font-semibold text-gray-700">{product.rating}</span>
-                <span className="text-sm text-gray-500">({product.reviews} avis)</span>
+                {(product.stock_quantity ?? 0) > 0 ? (
+                  <div className="flex items-center gap-2 text-green-600">
+                    <Check size={20} />
+                    <span className="font-semibold">{product.stock_quantity} en stock</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-red-600">
+                    <span className="font-semibold">Rupture de stock</span>
+                  </div>
+                )}
               </div>
 
               {/* Price */}
               <div className="mb-6">
                 <div className="flex items-baseline gap-3 mb-2">
                   <span className="text-3xl font-bold text-green-600">{product.price.toFixed(2)} DT</span>
-                  {product.originalPrice > product.price && (
-                    <span className="text-lg text-gray-400 line-through">{product.originalPrice.toFixed(2)} DT</span>
-                  )}
                 </div>
-                {product.inStock && (
+                {(product.stock_quantity ?? 0) > 0 && (
                   <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
                     <Check size={16} />
-                    En stock
+                    Disponible
                   </div>
                 )}
               </div>
@@ -157,9 +181,9 @@ export default function ProductPage({ params }: ProductPageProps) {
               <div className="flex gap-4 mb-8">
                 <button
                   onClick={handleAddToCart}
-                  disabled={!product.inStock}
+                  disabled={(product.stock_quantity ?? 0) === 0}
                   className={`flex-1 py-4 px-6 rounded-full font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${
-                    product.inStock
+                    (product.stock_quantity ?? 0) > 0
                       ? 'bg-green-500 text-white hover:bg-green-600 hover:shadow-lg'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   } ${addedToCart ? 'bg-green-600' : ''}`}
@@ -192,7 +216,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                   <Shield size={24} className="text-green-600 flex-shrink-0" />
                   <div>
                     <p className="font-semibold text-gray-800">Garantie couverte</p>
-                    <p className="text-sm text-gray-500">{product.specs['Garantie'] || '2 ans'} de couverture complète</p>
+                    <p className="text-sm text-gray-500">2 ans de couverture complète</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-200">
@@ -203,19 +227,6 @@ export default function ProductPage({ params }: ProductPageProps) {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Specifications */}
-          <div className="mt-16 bg-white rounded-3xl p-8 border border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Spécifications</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Object.entries(product.specs).map(([key, value]) => (
-                <div key={key} className="pb-4 border-b border-gray-200">
-                  <p className="text-sm text-gray-500 font-semibold mb-1">{key}</p>
-                  <p className="text-gray-800 font-semibold">{value}</p>
-                </div>
-              ))}
             </div>
           </div>
 

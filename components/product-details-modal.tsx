@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { Heart, ShoppingCart, X, Check } from 'lucide-react'
-import type { Product } from '@/lib/products'
+import type { Product } from '@/lib/types'
 
 interface ProductDetailsModalProps {
   product: Product | null

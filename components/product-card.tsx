@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Heart, ShoppingCart } from 'lucide-react'
 import { ProductDetailsModal } from './product-details-modal'
-import type { Product } from '@/lib/products'
+import type { Product } from '@/lib/types'
 
 interface ProductCardProps extends Product {
   onAddToCart: (product: Product, quantity: number) => void
