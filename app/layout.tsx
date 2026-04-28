@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Syne, DM_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { AuthProvider } from '@/lib/auth-context'
 import './globals.css'
 
 const syne = Syne({ subsets: ["latin"], variable: '--font-syne' });
@@ -25,8 +26,10 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${syne.variable} ${dmSans.variable}`}>
       <body className="font-sans antialiased bg-gray-50">
-        {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        <AuthProvider>
+          {children}
+          {process.env.NODE_ENV === 'production' && <Analytics />}
+        </AuthProvider>
       </body>
     </html>
   )

@@ -2,6 +2,7 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import Link from 'next/link'
 import { Calendar, User } from 'lucide-react'
+import Image from 'next/image'
 
 const BLOG_POSTS = [
   {
@@ -62,8 +63,14 @@ export default function BlogPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
               {BLOG_POSTS.map(post => (
                 <article key={post.id} className="bg-white rounded-lg overflow-hidden hover:shadow-lg transition">
-                  <div className="overflow-hidden h-48">
-                    <img src={post.image} alt={post.title} className="w-full h-full object-cover hover:scale-105 transition duration-300" />
+                  <div className="overflow-hidden h-48 relative">
+                    <Image 
+                      src={post.image} 
+                      alt={post.title} 
+                      fill
+                      className="object-cover hover:scale-105 transition duration-300"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                    />
                   </div>
                   <div className="p-6">
                     <div className="text-green-600 text-sm font-bold mb-2">{post.category}</div>
@@ -79,9 +86,9 @@ export default function BlogPage() {
                         {post.author}
                       </div>
                     </div>
-                    <a href="#" className="text-green-600 font-bold hover:text-green-700">
+                    <Link href={`/blog/${post.id}`} className="text-green-600 font-bold hover:text-green-700">
                       Lire l'article →
-                    </a>
+                    </Link>
                   </div>
                 </article>
               ))}

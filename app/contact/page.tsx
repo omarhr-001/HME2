@@ -14,16 +14,21 @@ export default function ContactPage() {
     message: ''
   })
   const [submitted, setSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsSubmitting(true)
     console.log('Form submitted:', formData)
+    // Simulation d'appel API
+    await new Promise(resolve => setTimeout(resolve, 1000))
     setSubmitted(true)
+    setIsSubmitting(false)
     setFormData({ name: '', email: '', phone: '', subject: '', message: '' })
     setTimeout(() => setSubmitted(false), 3000)
   }
@@ -158,10 +163,10 @@ export default function ContactPage() {
 
                 <button
                   type="submit"
-                  className="w-full btn-primary flex items-center justify-center gap-2"
+                  disabled={isSubmitting}
+                  className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Send size={18} />
-                  Envoyer le message
+                  {isSubmitting ? 'Envoi en cours...' : <><Send size={18} /> Envoyer le message</>}
                 </button>
               </form>
             </div>
