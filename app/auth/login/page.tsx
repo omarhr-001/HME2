@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { signIn } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
@@ -31,14 +32,42 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    // 1. validation simple
+    if (!formData.email || !formData.password) {
+      setError('Veuillez remplir tous les champs')
+      return
+    }
+
     setLoading(true)
 
-    const result = await signIn(formData.email, formData.password)
+    try {
+      // 2. login supabase
+      const result = await signIn(formData.email, formData.password)
 
-    if (result.success) {
-      router.push('/') // ou /dashboard selon ton app
-    } else {
-      setError(result.error || 'Une erreur est survenue lors de la signin')
+      if (!result.success) {
+        setError(result.error || 'Erreur de connexion')
+        setLoading(false)
+        return
+      }
+
+      // 3. vérifier session réelle
+      const { data: userData } = await supabase.auth.getUser()
+
+      if (!userData.user) {
+        setError('Session non créée')
+        setLoading(false)
+        return
+      }
+
+      console.log('User connecté:', userData.user)
+
+      // 4. redirection
+      router.push('/')
+
+    } catch (err) {
+      console.error(err)
+      setError('Erreur serveur inattendue')
     }
 
     setLoading(false)
@@ -51,6 +80,7 @@ export default function LoginPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
         <Card className="w-full max-w-md">
           <div className="p-8">
+
             <h2 className="text-2xl font-bold text-center mb-8">
               Connexion
             </h2>
@@ -123,13 +153,14 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            {/* LINK SIGNUP */}
+            {/* SIGNUP LINK */}
             <div className="mt-6 text-center text-sm text-gray-600">
               Pas de compte ?{' '}
               <Link href="/auth/signup" className="text-blue-600 hover:underline font-medium">
                 Créer un compte
               </Link>
             </div>
+
           </div>
         </Card>
       </div>

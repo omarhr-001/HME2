@@ -6,7 +6,6 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Heart, ShoppingCart, Truck, Shield, RefreshCw, Check } from 'lucide-react'
 import Link from 'next/link'
-import { getProductById } from '@/lib/products'
 import type { Product } from '@/lib/types'
 
 interface ProductPageProps {
