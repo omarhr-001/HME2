@@ -1,3 +1,5 @@
+import { DEMO_PRODUCTS } from './demo-products'
+
 export interface Product {
   id: string
   name: string
@@ -16,16 +18,27 @@ export interface Product {
 export async function getProductsFromSupabase(): Promise<Product[]> {
   try {
     const { supabase } = await import('./supabase')
+    
+    // If Supabase is not configured, use demo products
+    if (!supabase) {
+      console.log('[v0] Supabase not configured, using demo products')
+      return DEMO_PRODUCTS as Product[]
+    }
+    
     const { data, error } = await supabase
       .from('products')
       .select('*')
 
     if (error) {
       console.error('Error fetching products from Supabase:', error)
-      return []
+      console.log('[v0] Falling back to demo products')
+      return DEMO_PRODUCTS as Product[]
     }
 
-    if (!data) return []
+    if (!data || data.length === 0) {
+      console.log('[v0] No products in Supabase, using demo products')
+      return DEMO_PRODUCTS as Product[]
+    }
 
     // Transform Supabase data to match Product interface
     return data.map((item: any) => ({
@@ -42,14 +55,20 @@ export async function getProductsFromSupabase(): Promise<Product[]> {
       inStock: item.in_stock !== false
     }))
   } catch (error) {
-    console.error('Error loading Supabase client:', error)
-    return []
+    console.error('Error loading products:', error)
+    console.log('[v0] Using demo products due to error')
+    return DEMO_PRODUCTS as Product[]
   }
 }
 
 export async function getProductByIdFromSupabase(id: string): Promise<Product | undefined> {
   try {
     const { supabase } = await import('./supabase')
+    
+    if (!supabase) {
+      return DEMO_PRODUCTS.find(p => p.id === id) as Product | undefined
+    }
+    
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -57,8 +76,8 @@ export async function getProductByIdFromSupabase(id: string): Promise<Product | 
       .single()
 
     if (error || !data) {
-      console.error('Error fetching product from Supabase:', error)
-      return undefined
+      // Fall back to demo product
+      return DEMO_PRODUCTS.find(p => p.id === id) as Product | undefined
     }
 
     // Transform Supabase data to match Product interface
@@ -76,7 +95,7 @@ export async function getProductByIdFromSupabase(id: string): Promise<Product | 
       inStock: data.in_stock !== false
     }
   } catch (error) {
-    console.error('Error loading from Supabase:', error)
-    return undefined
+    console.error('Error loading product from Supabase:', error)
+    return DEMO_PRODUCTS.find(p => p.id === id) as Product | undefined
   }
 }
