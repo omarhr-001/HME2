@@ -17,11 +17,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // If Supabase is not configured, just skip authentication
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     // Check current session
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user || null)
-      setLoading(false)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        setUser(session?.user || null)
+      } catch (error) {
+        console.warn('[v0] Auth session error:', error)
+      } finally {
+        setLoading(false)
+      }
     }
 
     getSession()
@@ -29,13 +40,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null)
-      setLoading(false)
     })
 
     return () => subscription?.unsubscribe()
   }, [])
 
   const signOut = async () => {
+    if (!supabase) return
     await supabase.auth.signOut()
     setUser(null)
   }
