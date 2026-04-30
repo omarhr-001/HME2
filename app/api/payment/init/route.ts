@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import axios from 'axios'
 
-const KONNECT_API_KEY = process.env.KONNECT_API_KEY
-const KONNECT_BASE_URL = 'https://api.konnect.network'
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
+    const KONNECT_API_KEY = process.env.KONNECT_API_KEY
+    const KONNECT_BASE_URL = 'https://api.konnect.network'
+    
     const body = await request.json()
     const { amount, description, orderId, userId, items, email } = body
 

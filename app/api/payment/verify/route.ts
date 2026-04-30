@@ -2,16 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import axios from 'axios'
 import { createClient } from '@supabase/supabase-js'
 
-const KONNECT_API_KEY = process.env.KONNECT_API_KEY
-const KONNECT_BASE_URL = 'https://api.konnect.network'
+export const dynamic = 'force-dynamic'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url || !key) {
+    throw new Error('Missing Supabase credentials')
+  }
+
+  return createClient(url, key)
+}
 
 export async function GET(request: NextRequest) {
   try {
+    const KONNECT_API_KEY = process.env.KONNECT_API_KEY
+    const KONNECT_BASE_URL = 'https://api.konnect.network'
+    const supabase = getSupabaseClient()
+
     const searchParams = request.nextUrl.searchParams
     const paymentRef = searchParams.get('paymentRef')
     const orderId = searchParams.get('orderId')
