@@ -124,7 +124,7 @@ export function ProductCard({
           <div className="flex items-center gap-1.5 mb-3">
             <div className="flex items-center gap-0.5">
               {[...Array(5)].map((_, i) => (
-                <span key={`star-${id}-${i}`} className="text-amber-400 text-xs">
+                <span key={i} className="text-amber-400 text-xs">
                   {i < Math.floor(rating) ? '★' : '☆'}
                 </span>
               ))}
