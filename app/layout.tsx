@@ -29,6 +29,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           {process.env.NODE_ENV === 'production' && <Analytics />}
+          
         </AuthProvider>
       </body>
     </html>
