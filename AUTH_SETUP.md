@@ -54,8 +54,8 @@ Ce projet inclut maintenant une authentification complète avec Supabase, permet
 1. Renommez `.env.local.example` en `.env.local`
 2. Remplissez les variables :
 ```env
-NEXT_PUBLIC_iatvymxnfnkctcehqgho_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_iatvymxnfnkctcehqgho_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 ### Étape 4 : Redémarrer le serveur
