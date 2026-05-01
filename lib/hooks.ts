@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from './auth-context'
-import useSWR from 'swr'
+import useSWR, { useSWRMutation } from 'swr'
 import { CartItem, Order } from './types'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
@@ -145,4 +145,80 @@ export function useOrders() {
     error,
     mutate,
   }
+}
+
+// SWR mutation hooks for easier integration with forms/buttons
+export function useAddToCart() {
+  const { user } = useAuth()
+  const { trigger, isMutating } = useSWRMutation(
+    user ? '/api/cart' : null,
+    async (url, { arg }: { arg: { productId: string; quantity: number } }) => {
+      const res = await fetch(url!, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id,
+          ...arg,
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to add to cart')
+      return res.json()
+    }
+  )
+
+  return { trigger, isMutating }
+}
+
+export function useRemoveFromCart() {
+  const { trigger, isMutating } = useSWRMutation(
+    '/api/cart',
+    async (_, { arg }: { arg: { cartItemId: string } }) => {
+      const res = await fetch(`/api/cart/${arg.cartItemId}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error('Failed to remove from cart')
+      return res.json()
+    }
+  )
+
+  return { trigger, isMutating }
+}
+
+export function useUpdateQuantity() {
+  const { trigger, isMutating } = useSWRMutation(
+    '/api/cart',
+    async (_, { arg }: { arg: { cartItemId: string; quantity: number } }) => {
+      const res = await fetch(`/api/cart/${arg.cartItemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity: arg.quantity }),
+      })
+      if (!res.ok) throw new Error('Failed to update quantity')
+      return res.json()
+    }
+  )
+
+  return { trigger, isMutating }
+}
+
+export function useCreateOrder() {
+  const { user } = useAuth()
+  const { trigger, isMutating } = useSWRMutation(
+    user ? '/api/orders' : null,
+    async (url, { arg }: { arg: { items: any[] } }) => {
+      const res = await fetch(url!, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id,
+          items: arg.items,
+          status: 'pending',
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to create order')
+      return res.json()
+    }
+  )
+
+  return { trigger, isMutating }
 }

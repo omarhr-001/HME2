@@ -3,10 +3,16 @@
 import { useAuth } from '@/lib/auth-context'
 import { useCart, useAddToCart, useRemoveFromCart, useUpdateQuantity, useCreateOrder } from '@/lib/hooks'
 import { useState } from 'react'
+import useSWR from 'swr'
+
+const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function SessionDemoPage() {
   const { user, sessionId, loading } = useAuth()
-  const { data: cartItems = [], isLoading: cartLoading } = useCart()
+  const { data: cartItems = [], isLoading: cartLoading, mutate: mutateCart } = useSWR(
+    user ? `/api/cart?userId=${user.id}` : null,
+    fetcher
+  )
   const { trigger: addToCart, isMutating: isAdding } = useAddToCart()
   const { trigger: removeItem, isMutating: isRemoving } = useRemoveFromCart()
   const { trigger: updateQuantity } = useUpdateQuantity()
@@ -17,10 +23,15 @@ export default function SessionDemoPage() {
   if (!user) return <div className="p-4">Please login first</div>
 
   const handleAddDemo = async () => {
-    await addToCart({
-      productId: demoProductId,
-      quantity: 1
-    })
+    try {
+      await addToCart({
+        productId: demoProductId,
+        quantity: 1
+      })
+      mutateCart()
+    } catch (err) {
+      console.error('Failed to add to cart:', err)
+    }
   }
 
   const handleCheckout = async () => {
@@ -29,11 +40,21 @@ export default function SessionDemoPage() {
       return
     }
     
-    const order = await createOrder({
-      items: cartItems
-    })
-    alert(`Order created: ${order.id}`)
+    try {
+      const order = await createOrder({
+        items: cartItems
+      })
+      alert(`Order created: ${order?.id}`)
+      mutateCart()
+    } catch (err) {
+      console.error('Failed to create order:', err)
+      alert('Failed to create order')
+    }
   }
+
+  const cartTotal = (cartItems || []).reduce((total, item) => {
+    return total + (item.products?.price || 0) * item.quantity
+  }, 0)
 
   return (
     <div className="max-w-2xl mx-auto p-6">
@@ -71,7 +92,10 @@ export default function SessionDemoPage() {
                     +
                   </button>
                   <button
-                    onClick={() => removeItem({ cartItemId: item.id })}
+                    onClick={() => {
+                      removeItem({ cartItemId: item.id })
+                      mutateCart()
+                    }}
                     disabled={isRemoving}
                     className="px-3 py-1 bg-red-500 text-white rounded"
                   >
@@ -86,10 +110,16 @@ export default function SessionDemoPage() {
         <button
           onClick={handleAddDemo}
           disabled={isAdding}
-          className="w-full px-4 py-2 bg-green-500 text-white rounded font-semibold"
+          className="w-full px-4 py-2 bg-green-500 text-white rounded font-semibold disabled:opacity-50"
         >
           {isAdding ? 'Adding...' : 'Add Demo Product to Cart'}
         </button>
+      </div>
+
+      {/* Cart Total */}
+      <div className="bg-yellow-50 p-4 rounded-lg mb-6">
+        <h2 className="text-xl font-semibold">Cart Total</h2>
+        <p className="text-2xl font-bold text-green-600">${cartTotal.toFixed(2)}</p>
       </div>
 
       {/* Checkout */}
