@@ -20,8 +20,8 @@
 Update your `.env.local` file with your Supabase credentials:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+NEXT_PUBLIC_iatvymxnfnkctcehqgho_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_iatvymxnfnkctcehqgho_SUPABASE_ANON_KEY=your_anon_key_here
 ```
 
 ## Step 4: Create the Products Table
@@ -191,7 +191,7 @@ export default function ProductPage({ params }: ProductPageProps) {
 
 ## Security Notes
 
-- The `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are public-facing (safe to expose)
+- The `NEXT_PUBLIC_iatvymxnfnkctcehqgho_SUPABASE_URL` and `NEXT_PUBLIC_iatvymxnfnkctcehqgho_SUPABASE_ANON_KEY` are public-facing (safe to expose)
 - Use RLS policies to control data access
 - Never commit actual credentials to version control
 - Use `.env.local` (which is in .gitignore) for sensitive data

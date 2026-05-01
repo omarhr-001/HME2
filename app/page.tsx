@@ -5,6 +5,7 @@ import { SearchSection } from '@/components/search-section'
 import { ProductsSection } from '@/components/products-section'
 import { PromoBanner } from '@/components/promo-banner'
 import { Footer } from '@/components/footer'
+import './globals.css'
 
 export default function Home() {
   return (

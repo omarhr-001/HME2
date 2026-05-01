@@ -7,21 +7,21 @@ const path = require('path');
 const envPath = path.join(__dirname, '.env.local');
 const envContent = fs.readFileSync(envPath, 'utf-8');
 
-const supabaseUrl = envContent.match(/NEXT_PUBLIC_SUPABASE_URL=(.+)/)?.[1]?.trim();
-const supabaseAnonKey = envContent.match(/NEXT_PUBLIC_SUPABASE_ANON_KEY=(.+)/)?.[1]?.trim();
+const supabaseUrl = envContent.match(/NEXT_PUBLIC_iatvymxnfnkctcehqgho_SUPABASE_URL=(.+)/)?.[1]?.trim();
+const supabaseAnonKey = envContent.match(/NEXT_PUBLIC_iatvymxnfnkctcehqgho_SUPABASE_ANON_KEY=(.+)/)?.[1]?.trim();
 
 console.log('🔍 Vérification des variables d\'environnement...\n');
 
 if (!supabaseUrl) {
-  console.error('❌ NEXT_PUBLIC_SUPABASE_URL manquante');
+  console.error('❌ NEXT_PUBLIC_iatvymxnfnkctcehqgho_SUPABASE_URL manquante');
 } else {
-  console.log('✅ NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl.substring(0, 30) + '...');
+  console.log('✅ NEXT_PUBLIC_iatvymxnfnkctcehqgho_SUPABASE_URL:', supabaseUrl.substring(0, 30) + '...');
 }
 
 if (!supabaseAnonKey) {
-  console.error('❌ NEXT_PUBLIC_SUPABASE_ANON_KEY manquante');
+  console.error('❌ NEXT_PUBLIC_iatvymxnfnkctcehqgho_SUPABASE_ANON_KEY manquante');
 } else {
-  console.log('✅ NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey.substring(0, 30) + '...');
+  console.log('✅ NEXT_PUBLIC_iatvymxnfnkctcehqgho_SUPABASE_ANON_KEY:', supabaseAnonKey.substring(0, 30) + '...');
 }
 
 if (!supabaseUrl || !supabaseAnonKey) {

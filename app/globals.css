@@ -2,17 +2,32 @@
 @import 'tw-animate-css';
 
 :root {
-  --green: #22c55e;
-  --green-dark: #16a34a;
-  --green-light: #bbf7d0;
-  --green-glow: rgba(34,197,94,0.18);
-  --dark: #181f1c;
-  --dark2: #1e2923;
-  --dark3: #232e28;
-  --text: #e8f0eb;
-  --text-muted: #8aa898;
-  --white: #ffffff;
-  --border: #e4ede7;
+  /* Brand Colors */
+  --primary: #16a34a;
+  --primary-dark: #15803d;
+  --primary-light: #22c55e;
+  
+  /* Neutrals */
+  --background: #ffffff;
+  --foreground: #1f2937;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  
+  /* Accents */
+  --accent: #059669;
+  --destructive: #dc2626;
+  --border: #e5e7eb;
+  
+  /* Semantic */
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #3b82f6;
+}
+
+@theme inline {
+  --font-sans: 'DM Sans', sans-serif;
+  --font-serif: 'Syne', serif;
 }
 
 @layer base {
@@ -22,36 +37,38 @@
   
   html {
     scroll-behavior: smooth;
+    @apply bg-background text-foreground;
   }
   
   body {
-    @apply bg-gray-50 text-gray-900;
-    font-family: 'DM Sans', sans-serif;
+    @apply bg-background text-foreground;
     overflow-x: hidden;
   }
   
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Syne', sans-serif;
-    font-weight: 800;
+    @apply font-bold text-foreground;
   }
+  
+  h1 { @apply text-4xl; }
+  h2 { @apply text-3xl; }
+  h3 { @apply text-2xl; }
+  h4 { @apply text-xl; }
+  h5 { @apply text-lg; }
+  h6 { @apply text-base; }
 }
 
 @layer components {
   .btn-primary {
-    @apply px-6 py-3 rounded-full bg-green-500 text-white font-semibold cursor-pointer transition-all duration-300 hover:bg-green-600 hover:-translate-y-0.5;
-    box-shadow: 0 4px 24px rgba(34, 197, 94, 0.3);
-  }
-  
-  .btn-primary:hover {
-    box-shadow: 0 8px 32px rgba(34, 197, 94, 0.4);
-  }
-  
-  .btn-outline {
-    @apply px-5 py-2 rounded-full border-2 border-gray-800 bg-transparent text-gray-800 font-medium cursor-pointer transition-all duration-300 hover:bg-gray-800 hover:text-white;
+    @apply px-6 py-3 rounded-lg bg-primary text-white font-semibold cursor-pointer transition-all duration-300 hover:bg-primary-dark;
   }
   
   .btn-secondary {
-    @apply px-7 py-3.5 rounded-full border-2 border-white bg-transparent text-white font-medium cursor-pointer transition-all duration-300 hover:bg-white/10;
+    @apply px-6 py-3 rounded-lg bg-muted text-foreground font-semibold cursor-pointer transition-all duration-300 hover:bg-border;
+  }
+  
+  .btn-outline {
+    @apply px-6 py-3 rounded-lg border-2 border-border bg-transparent text-foreground font-semibold cursor-pointer transition-all duration-300 hover:bg-muted;
   }
 }
 
