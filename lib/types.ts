@@ -1,5 +1,14 @@
 // Type definitions for HME E-Commerce Database
 
+export interface UserSession {
+  id: string
+  user_id: string
+  session_token: string
+  created_at: Date
+  last_activity: Date
+  expires_at: Date
+}
+
 export interface User {
   id: number;
   email: string;
