@@ -69,7 +69,7 @@ export default function SignupPage() {
     return (
       <>
         <Navbar />
-        <div className="min-h-[calc(100vh-68px)] flex items-center justify-center px-6">
+        <div className="pt-17 min-h-screen flex items-center justify-center px-6">
           <div className="w-full max-w-md">
             <div className="text-center bg-white rounded-2xl p-12 shadow-sm border border-gray-200">
               <div className="flex justify-center mb-6">
@@ -100,7 +100,7 @@ export default function SignupPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-[calc(100vh-68px)] flex">
+      <div className="pt-17 min-h-screen flex">
         {/* Left Side - Brand Section */}
         <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-green-500 via-green-600 to-green-700 flex-col justify-center items-center p-12 relative overflow-hidden">
           {/* Decorative elements */}
