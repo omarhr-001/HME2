@@ -1,8 +1,8 @@
 'use client'
 
 import { useAuth } from './auth-context'
-import useSWR, { useSWRMutation } from 'swr'
-import { CartItem, Order } from './types'
+import useSWR from 'swr'
+import { useState } from 'react'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
@@ -147,78 +147,97 @@ export function useOrders() {
   }
 }
 
-// SWR mutation hooks for easier integration with forms/buttons
+// Simple mutation hooks that track loading state
 export function useAddToCart() {
   const { user } = useAuth()
-  const { trigger, isMutating } = useSWRMutation(
-    user ? '/api/cart' : null,
-    async (url, { arg }: { arg: { productId: string; quantity: number } }) => {
-      const res = await fetch(url!, {
+  const [isMutating, setIsMutating] = useState(false)
+
+  const trigger = async ({ productId, quantity }: { productId: string; quantity: number }) => {
+    if (!user) return
+    setIsMutating(true)
+    try {
+      const res = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user?.id,
-          ...arg,
+          userId: user.id,
+          productId,
+          quantity,
         }),
       })
       if (!res.ok) throw new Error('Failed to add to cart')
-      return res.json()
+      return await res.json()
+    } finally {
+      setIsMutating(false)
     }
-  )
+  }
 
   return { trigger, isMutating }
 }
 
 export function useRemoveFromCart() {
-  const { trigger, isMutating } = useSWRMutation(
-    '/api/cart',
-    async (_, { arg }: { arg: { cartItemId: string } }) => {
-      const res = await fetch(`/api/cart/${arg.cartItemId}`, {
+  const [isMutating, setIsMutating] = useState(false)
+
+  const trigger = async ({ cartItemId }: { cartItemId: string }) => {
+    setIsMutating(true)
+    try {
+      const res = await fetch(`/api/cart/${cartItemId}`, {
         method: 'DELETE',
       })
       if (!res.ok) throw new Error('Failed to remove from cart')
-      return res.json()
+      return await res.json()
+    } finally {
+      setIsMutating(false)
     }
-  )
+  }
 
   return { trigger, isMutating }
 }
 
 export function useUpdateQuantity() {
-  const { trigger, isMutating } = useSWRMutation(
-    '/api/cart',
-    async (_, { arg }: { arg: { cartItemId: string; quantity: number } }) => {
-      const res = await fetch(`/api/cart/${arg.cartItemId}`, {
+  const [isMutating, setIsMutating] = useState(false)
+
+  const trigger = async ({ cartItemId, quantity }: { cartItemId: string; quantity: number }) => {
+    setIsMutating(true)
+    try {
+      const res = await fetch(`/api/cart/${cartItemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity: arg.quantity }),
+        body: JSON.stringify({ quantity }),
       })
       if (!res.ok) throw new Error('Failed to update quantity')
-      return res.json()
+      return await res.json()
+    } finally {
+      setIsMutating(false)
     }
-  )
+  }
 
   return { trigger, isMutating }
 }
 
 export function useCreateOrder() {
   const { user } = useAuth()
-  const { trigger, isMutating } = useSWRMutation(
-    user ? '/api/orders' : null,
-    async (url, { arg }: { arg: { items: any[] } }) => {
-      const res = await fetch(url!, {
+  const [isMutating, setIsMutating] = useState(false)
+
+  const trigger = async ({ items }: { items: any[] }) => {
+    if (!user) return
+    setIsMutating(true)
+    try {
+      const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user?.id,
-          items: arg.items,
+          userId: user.id,
+          items,
           status: 'pending',
         }),
       })
       if (!res.ok) throw new Error('Failed to create order')
-      return res.json()
+      return await res.json()
+    } finally {
+      setIsMutating(false)
     }
-  )
+  }
 
   return { trigger, isMutating }
 }
