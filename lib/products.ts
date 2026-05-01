@@ -80,3 +80,27 @@ export async function getProductByIdFromSupabase(id: string): Promise<Product | 
     return undefined
   }
 }
+
+export async function getCategoriesFromSupabase(): Promise<string[]> {
+  try {
+    const { supabase } = await import('./supabase')
+    const { data, error } = await supabase
+      .from('products')
+      .select('category')
+      .not('category', 'is', null)
+
+    if (error) {
+      console.error('Error fetching categories from Supabase:', error)
+      return []
+    }
+
+    if (!data) return []
+
+    // Get unique categories
+    const categories = new Set(data.map((item: any) => item.category as string))
+    return Array.from(categories).sort()
+  } catch (error) {
+    console.error('Error loading categories from Supabase:', error)
+    return []
+  }
+}

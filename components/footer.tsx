@@ -1,9 +1,30 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Phone, Mail, MapPin } from 'lucide-react'
+import { getCategoriesFromSupabase } from '@/lib/products'
 
 export function Footer() {
+  const [categories, setCategories] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const cats = await getCategoriesFromSupabase()
+        // Limit to first 4 categories in footer
+        setCategories(cats.slice(0, 4))
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCategories()
+  }, [])
+
   return (
     <footer className="bg-gray-900 text-white">
       {/* Main Footer */}
@@ -19,11 +40,22 @@ export function Footer() {
           <div>
             <h4 className="font-bold text-white mb-4 text-base">Produits</h4>
             <ul className="text-sm text-gray-400 space-y-3">
-              <li><Link href="/products?category=refrigerateurs" className="hover:text-green-500 transition">Réfrigérateurs</Link></li>
-              <li><Link href="/products?category=lave-linge" className="hover:text-green-500 transition">Lave-linge</Link></li>
-              <li><Link href="/products?category=cuisinieres" className="hover:text-green-500 transition">Cuisinières</Link></li>
-              <li><Link href="/products?category=climatisation" className="hover:text-green-500 transition">Climatisation</Link></li>
-              <li><Link href="/products" className="hover:text-green-500 transition">Tous les produits</Link></li>
+              {!loading && categories.length > 0 ? (
+                <>
+                  {categories.map(category => (
+                    <li key={category}>
+                      <Link href={`/products?category=${encodeURIComponent(category)}`} className="hover:text-green-500 transition">
+                        {category}
+                      </Link>
+                    </li>
+                  ))}
+                  <li><Link href="/products" className="hover:text-green-500 transition font-semibold mt-2">Tous les produits</Link></li>
+                </>
+              ) : (
+                <>
+                  <li><a href="#" className="text-gray-500">Chargement...</a></li>
+                </>
+              )}
             </ul>
           </div>
 
