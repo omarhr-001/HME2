@@ -1,20 +1,38 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search } from 'lucide-react'
+import { getCategoriesFromSupabase } from '@/lib/products'
 
 export function SearchSection() {
   const [searchQuery, setSearchQuery] = useState('')
   const [category, setCategory] = useState('all')
+  const [categories, setCategories] = useState<Array<{ id: string; label: string }>>([
+    { id: 'all', label: 'Toutes les catégories' }
+  ])
+  const [loading, setLoading] = useState(true)
 
-  const categories = [
-    { id: 'all', label: 'Toutes les catégories' },
-    { id: 'refrigerators', label: 'Réfrigérateurs' },
-    { id: 'washing', label: 'Lave-linge' },
-    { id: 'cooking', label: 'Cuisinières' },
-    { id: 'ovens', label: 'Fours' },
-    { id: 'dishwashers', label: 'Lave-vaisselle' },
-  ]
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const dbCategories = await getCategoriesFromSupabase()
+        const formattedCategories = [
+          { id: 'all', label: 'Toutes les catégories' },
+          ...dbCategories.map(cat => ({
+            id: cat.toLowerCase().replace(/\s+/g, '-'),
+            label: cat
+          }))
+        ]
+        setCategories(formattedCategories)
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCategories()
+  }, [])
 
   return (
     <section className="sticky top-17 z-40 bg-white px-[5%] py-5 border-b border-gray-200">
@@ -36,7 +54,8 @@ export function SearchSection() {
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="px-4 py-3 border-2 border-gray-200 rounded-3xl text-sm bg-gray-50 text-gray-800 outline-none cursor-pointer min-w-max transition-all duration-300 focus:border-green-500 focus:bg-white appearance-none"
+          disabled={loading}
+          className="px-4 py-3 border-2 border-gray-200 rounded-3xl text-sm bg-gray-50 text-gray-800 outline-none cursor-pointer min-w-max transition-all duration-300 focus:border-green-500 focus:bg-white appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238aa898' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
             backgroundRepeat: 'no-repeat',
