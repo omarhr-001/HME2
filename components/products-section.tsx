@@ -3,37 +3,44 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ProductCard } from './product-card'
-import { getProductsFromSupabase } from '@/lib/products'
+import { getProductsFromSupabase, getCategoriesFromSupabase, type Category } from '@/lib/products'
 import { ArrowRight } from 'lucide-react'
 import type { Product } from '@/lib/types'
 
 export function ProductsSection() {
   const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
-  const [category, setCategory] = useState('all')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
-  // Fetch products from Supabase on mount
+  // Fetch products and categories on mount
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        const data = await getProductsFromSupabase()
-        setProducts(data)
+        const [productsData, categoriesData] = await Promise.all([
+          getProductsFromSupabase(),
+          getCategoriesFromSupabase()
+        ])
+        setProducts(productsData)
+        setCategories(categoriesData)
       } catch (error) {
-        console.error('Error fetching products:', error)
+        console.error('Error fetching data:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchProducts()
+    fetchData()
   }, [])
 
-  // Get unique categories from fetched products
-  const categories = Array.from(new Set(products.map(p => p.category).filter((cat): cat is string => Boolean(cat)))).sort()
-  
-  const displayedProducts = category === 'all' 
-    ? products.slice(0, 8)
-    : products.filter(p => p.category === category).slice(0, 8)
+  const displayedProducts = selectedCategory
+    ? products
+        .filter(p => {
+          const selectedCat = categories.find(c => c.id === selectedCategory)
+          return p.category === selectedCat?.name
+        })
+        .slice(0, 8)
+    : products.slice(0, 8)
 
   const handleAddToCart = (product: Product, quantity: number = 1) => {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]')
@@ -63,12 +70,12 @@ export function ProductsSection() {
         </Link>
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex gap-0 overflow-x-auto mb-8 pb-4 border-b border-gray-200">
+      {/* Category Tabs - Dynamic from Database */}
+      <div className="flex gap-0 overflow-x-auto mb-8 pb-4 border-b border-gray-200 -mx-[5%] px-[5%]">
         <button
-          onClick={() => setCategory('all')}
+          onClick={() => setSelectedCategory(null)}
           className={`px-5 py-3.5 text-xs font-medium whitespace-nowrap transition-all duration-300 border-b-[2.5px] ${
-            category === 'all'
+            selectedCategory === null
               ? 'text-green-700 border-green-500 font-semibold'
               : 'text-gray-500 border-transparent hover:text-green-600'
           }`}
@@ -77,15 +84,16 @@ export function ProductsSection() {
         </button>
         {categories.map((cat) => (
           <button
-            key={cat}
-            onClick={() => setCategory(cat)}
-            className={`px-5 py-3.5 text-xs font-medium whitespace-nowrap transition-all duration-300 border-b-[2.5px] ${
-              category === cat
+            key={cat.id}
+            onClick={() => setSelectedCategory(cat.id)}
+            className={`px-5 py-3.5 text-xs font-medium whitespace-nowrap transition-all duration-300 border-b-[2.5px] flex items-center gap-2 ${
+              selectedCategory === cat.id
                 ? 'text-green-700 border-green-500 font-semibold'
                 : 'text-gray-500 border-transparent hover:text-green-600'
             }`}
           >
-            {cat}
+            <span className="text-base">{cat.emoji || '📦'}</span>
+            {cat.name}
           </button>
         ))}
       </div>
