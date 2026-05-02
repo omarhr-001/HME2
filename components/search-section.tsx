@@ -1,29 +1,22 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search } from 'lucide-react'
-import { getCategoriesFromSupabase } from '@/lib/products'
+import { Search, ChevronDown } from 'lucide-react'
+import { getCategoriesFromSupabase, type Category } from '@/lib/products'
+import Link from 'next/link'
 
 export function SearchSection() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [category, setCategory] = useState('all')
-  const [categories, setCategories] = useState<Array<{ id: string; label: string }>>([
-    { id: 'all', label: 'Toutes les catégories' }
-  ])
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
+  const [showDropdown, setShowDropdown] = useState(false)
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const dbCategories = await getCategoriesFromSupabase()
-        const formattedCategories = [
-          { id: 'all', label: 'Toutes les catégories' },
-          ...dbCategories.map(cat => ({
-            id: cat.toLowerCase().replace(/\s+/g, '-'),
-            label: cat
-          }))
-        ]
-        setCategories(formattedCategories)
+        setCategories(dbCategories)
       } catch (error) {
         console.error('Error fetching categories:', error)
       } finally {
@@ -34,9 +27,26 @@ export function SearchSection() {
     fetchCategories()
   }, [])
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Implement search functionality
+    const params = new URLSearchParams()
+    if (searchQuery) params.append('search', searchQuery)
+    if (selectedCategory !== 'all') params.append('category', selectedCategory)
+    window.location.href = `/products?${params.toString()}`
+  }
+
+  const selectedCategoryLabel = selectedCategory === 'all'
+    ? 'Toutes les catégories'
+    : categories.find(cat => cat.id === selectedCategory)?.name || 'Catégories'
+
+  const selectedCategoryEmoji = selectedCategory !== 'all'
+    ? categories.find(cat => cat.id === selectedCategory)?.emoji
+    : undefined
+
   return (
     <section className="sticky top-17 z-40 bg-white px-[5%] py-5 border-b border-gray-200">
-      <div className="flex gap-3 max-w-4xl">
+      <form onSubmit={handleSearch} className="flex gap-3 max-w-4xl">
         {/* Search Input */}
         <div className="flex-1 relative">
           <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -50,24 +60,70 @@ export function SearchSection() {
           />
         </div>
 
-        {/* Category Select */}
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          disabled={loading}
-          className="px-4 py-3 border-2 border-gray-200 rounded-3xl text-sm bg-gray-50 text-gray-800 outline-none cursor-pointer min-w-max transition-all duration-300 focus:border-green-500 focus:bg-white appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238aa898' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'right 14px center',
-            paddingRight: '36px'
-          }}
+        {/* Category Dropdown */}
+        <div className="relative min-w-max">
+          <button
+            type="button"
+            onClick={() => setShowDropdown(!showDropdown)}
+            disabled={loading}
+            className="px-4 py-3 border-2 border-gray-200 rounded-3xl text-sm bg-gray-50 text-gray-800 outline-none cursor-pointer transition-all duration-300 focus:border-green-500 focus:bg-white flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:border-green-300"
+          >
+            {selectedCategoryEmoji && <span className="text-lg">{selectedCategoryEmoji}</span>}
+            <span className="hidden sm:inline">{selectedCategoryLabel}</span>
+            <span className="sm:hidden">{selectedCategoryLabel === 'Toutes les catégories' ? 'Tous' : selectedCategoryLabel}</span>
+            <ChevronDown size={16} className={`transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Dropdown Menu */}
+          {showDropdown && (
+            <div className="absolute top-full right-0 mt-1 bg-white border-2 border-gray-200 rounded-2xl shadow-lg z-50 min-w-max max-h-96 overflow-y-auto">
+              {/* All Categories Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategory('all')
+                  setShowDropdown(false)
+                }}
+                className={`block w-full text-left px-4 py-3 text-sm transition-all ${
+                  selectedCategory === 'all'
+                    ? 'bg-green-100 text-green-800 font-semibold border-l-4 border-green-500'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Toutes les catégories
+              </button>
+
+              {/* Category Options */}
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory(cat.id)
+                    setShowDropdown(false)
+                  }}
+                  className={`block w-full text-left px-4 py-3 text-sm transition-all flex items-center gap-3 ${
+                    selectedCategory === cat.id
+                      ? 'bg-green-100 text-green-800 font-semibold border-l-4 border-green-500'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <span className="text-lg">{cat.emoji || '📦'}</span>
+                  <span>{cat.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Search Button */}
+        <button
+          type="submit"
+          className="px-6 py-3 bg-green-600 text-white rounded-3xl font-semibold text-sm hover:bg-green-700 transition-all duration-300 whitespace-nowrap"
         >
-          {categories.map(cat => (
-            <option key={cat.id} value={cat.id}>{cat.label}</option>
-          ))}
-        </select>
-      </div>
+          Rechercher
+        </button>
+      </form>
     </section>
   )
 }
