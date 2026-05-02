@@ -1,7 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useAuth } from '@/lib/auth-context'
@@ -11,17 +9,10 @@ import { Footer } from '@/components/footer'
 import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react'
 
 export default function CartPage() {
-  const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   const { cartItems, cartTotal, isLoading } = useCart()
   const { trigger: removeItem } = useRemoveFromCart()
   const { trigger: updateQuantity } = useUpdateQuantity()
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/auth/login')
-    }
-  }, [user, authLoading, router])
 
   const handleRemove = async (itemId: string) => {
     await removeItem({ cartItemId: itemId })
@@ -38,12 +29,40 @@ export default function CartPage() {
   const shipping = cartTotal > 500 ? 0 : 15
   const total = cartTotal + shipping
 
-  if (authLoading || isLoading) {
+  if (authLoading) {
     return (
       <main className="min-h-screen bg-gray-50">
         <Navbar />
         <div className="max-w-4xl mx-auto px-[5%] pt-28 pb-20 text-center">
-          <p className="text-gray-600">Chargement...</p>
+          <p className="text-gray-600">Vérification de votre session...</p>
+        </div>
+        <Footer />
+      </main>
+    )
+  }
+
+  if (!user) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-4xl mx-auto px-[5%] pt-28 pb-20 text-center">
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">Veuillez vous connecter</h1>
+          <p className="text-gray-600 mb-6">Vous devez être connecté pour voir votre panier.</p>
+          <Link href="/auth/login" className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
+            Aller à la connexion
+          </Link>
+        </div>
+        <Footer />
+      </main>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-4xl mx-auto px-[5%] pt-28 pb-20 text-center">
+          <p className="text-gray-600">Chargement de votre panier...</p>
         </div>
         <Footer />
       </main>

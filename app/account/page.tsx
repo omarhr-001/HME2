@@ -1,7 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
@@ -11,18 +9,10 @@ import { Mail, LogOut, User, Package, Lock, Settings, CreditCard, MapPin, Edit2,
 import Link from 'next/link'
 
 export default function AccountPage() {
-  const router = useRouter()
   const { user, loading, signOut } = useAuth()
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth/login')
-    }
-  }, [user, loading, router])
 
   const handleSignOut = async () => {
     await signOut()
-    router.push('/auth/login')
   }
 
   if (loading) {
@@ -45,7 +35,21 @@ export default function AccountPage() {
   }
 
   if (!user) {
-    return null
+    return (
+      <>
+        <Navbar />
+        <div className="pt-17 min-h-screen bg-gray-50">
+          <div className="max-w-2xl mx-auto px-[5%] py-12 text-center">
+            <h1 className="text-2xl font-bold text-gray-800 mb-4">Veuillez vous connecter</h1>
+            <p className="text-gray-600 mb-6">Vous devez être connecté pour accéder à votre compte.</p>
+            <Link href="/auth/login" className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
+              Aller à la connexion
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </>
+    )
   }
 
   const firstName = user.user_metadata?.first_name || ''
