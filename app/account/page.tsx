@@ -1,19 +1,24 @@
 'use client'
 
-import { useProtectedRoute } from '@/hooks/use-protected-route'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
-import { useRouter } from 'next/navigation'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Mail, LogOut, User, Package, Lock, Settings, CreditCard, MapPin, Edit2, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
 export default function AccountPage() {
-  const { user, loading } = useProtectedRoute()
-  const { signOut } = useAuth()
   const router = useRouter()
+  const { user, loading, signOut } = useAuth()
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth/login')
+    }
+  }, [user, loading, router])
 
   const handleSignOut = async () => {
     await signOut()
