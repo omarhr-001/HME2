@@ -1,28 +1,48 @@
 'use client'
 
 import { useAuth } from './auth-context'
+import { supabase } from './supabase'
 import useSWR from 'swr'
 import { useState } from 'react'
 
-const fetcher = (url: string) => fetch(url).then(res => res.json())
+// Helper to get JWT token and create authenticated fetcher
+async function getAuthToken() {
+  const { data } = await supabase.auth.getSession()
+  return data.session?.access_token
+}
+
+const authenticatedFetcher = async (url: string) => {
+  const token = await getAuthToken()
+  const res = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  })
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
 
 export function useCart() {
   const { user } = useAuth()
   
   const { data: cartItems, mutate, error, isLoading } = useSWR(
-    user ? `/api/cart?userId=${user.id}` : null,
-    fetcher,
+    user ? `/api/cart` : null,
+    authenticatedFetcher,
     { revalidateOnFocus: false, dedupingInterval: 5000 }
   )
 
   const addToCart = async (productId: string, quantity: number) => {
     if (!user) return
     try {
+      const token = await getAuthToken()
       const res = await fetch('/api/cart', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          userId: user.id,
           productId,
           quantity,
         }),
@@ -31,35 +51,43 @@ export function useCart() {
         mutate()
       }
     } catch (err) {
-      console.error('Error adding to cart:', err)
+      console.error('[v0] Error adding to cart:', err)
     }
   }
 
   const updateCartItem = async (itemId: string, quantity: number) => {
     try {
+      const token = await getAuthToken()
       const res = await fetch(`/api/cart/${itemId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ quantity }),
       })
       if (res.ok) {
         mutate()
       }
     } catch (err) {
-      console.error('Error updating cart item:', err)
+      console.error('[v0] Error updating cart item:', err)
     }
   }
 
   const removeFromCart = async (itemId: string) => {
     try {
+      const token = await getAuthToken()
       const res = await fetch(`/api/cart/${itemId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       })
       if (res.ok) {
         mutate()
       }
     } catch (err) {
-      console.error('Error removing from cart:', err)
+      console.error('[v0] Error removing from cart:', err)
     }
   }
 
@@ -83,19 +111,22 @@ export function useOrders() {
   const { user } = useAuth()
   
   const { data: orders, mutate, error, isLoading } = useSWR(
-    user ? `/api/orders?userId=${user.id}` : null,
-    fetcher,
+    user ? `/api/orders` : null,
+    authenticatedFetcher,
     { revalidateOnFocus: false, dedupingInterval: 5000 }
   )
 
   const createOrder = async (items: any[], totalAmount: number) => {
     if (!user) return
     try {
+      const token = await getAuthToken()
       const res = await fetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          userId: user.id,
           items,
           totalAmount,
           status: 'pending',
@@ -106,33 +137,42 @@ export function useOrders() {
         return await res.json()
       }
     } catch (err) {
-      console.error('Error creating order:', err)
+      console.error('[v0] Error creating order:', err)
     }
   }
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     try {
+      const token = await getAuthToken()
       const res = await fetch(`/api/orders/${orderId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ status }),
       })
       if (res.ok) {
         mutate()
       }
     } catch (err) {
-      console.error('Error updating order:', err)
+      console.error('[v0] Error updating order:', err)
     }
   }
 
   const getOrderById = async (orderId: string) => {
     try {
-      const res = await fetch(`/api/orders/${orderId}`)
+      const token = await getAuthToken()
+      const res = await fetch(`/api/orders/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
       if (res.ok) {
         return await res.json()
       }
     } catch (err) {
-      console.error('Error fetching order:', err)
+      console.error('[v0] Error fetching order:', err)
     }
   }
 
@@ -156,11 +196,14 @@ export function useAddToCart() {
     if (!user) return
     setIsMutating(true)
     try {
+      const token = await getAuthToken()
       const res = await fetch('/api/cart', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          userId: user.id,
           productId,
           quantity,
         }),
@@ -181,8 +224,12 @@ export function useRemoveFromCart() {
   const trigger = async ({ cartItemId }: { cartItemId: string }) => {
     setIsMutating(true)
     try {
+      const token = await getAuthToken()
       const res = await fetch(`/api/cart/${cartItemId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       })
       if (!res.ok) throw new Error('Failed to remove from cart')
       return await res.json()
@@ -200,9 +247,13 @@ export function useUpdateQuantity() {
   const trigger = async ({ cartItemId, quantity }: { cartItemId: string; quantity: number }) => {
     setIsMutating(true)
     try {
+      const token = await getAuthToken()
       const res = await fetch(`/api/cart/${cartItemId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ quantity }),
       })
       if (!res.ok) throw new Error('Failed to update quantity')
@@ -223,11 +274,14 @@ export function useCreateOrder() {
     if (!user) return
     setIsMutating(true)
     try {
+      const token = await getAuthToken()
       const res = await fetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          userId: user.id,
           items,
           status: 'pending',
         }),
