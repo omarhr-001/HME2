@@ -35,10 +35,7 @@ export function ProductsSection() {
 
   const displayedProducts = selectedCategory
     ? products
-        .filter(p => {
-          const selectedCat = categories.find(c => c.id === selectedCategory)
-          return p.category === selectedCat?.name
-        })
+        .filter(p => p.category_id === selectedCategory)
         .slice(0, 8)
     : products.slice(0, 8)
 

@@ -2,6 +2,7 @@ export interface Product {
   id: string
   name: string
   category: string
+  category_id?: string
   price: number
   originalPrice: number
   image: string
@@ -40,6 +41,7 @@ export async function getProductsFromSupabase(): Promise<Product[]> {
       id: item.id.toString(),
       name: item.name,
       category: item.category,
+      category_id: item.category_id,
       price: item.price,
       originalPrice: item.original_price || item.price,
       image: item.image_url || '',
@@ -74,6 +76,7 @@ export async function getProductByIdFromSupabase(id: string): Promise<Product | 
       id: data.id.toString(),
       name: data.name,
       category: data.category,
+      category_id: data.category_id,
       price: data.price,
       originalPrice: data.original_price || data.price,
       image: data.image_url || '',

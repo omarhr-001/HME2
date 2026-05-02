@@ -59,12 +59,9 @@ export default function ProductsPage() {
   const filteredProducts = useMemo(() => {
     let filtered = [...products]
 
-    // Filter by category
+    // Filter by category using category_id
     if (selectedCategory) {
-      filtered = filtered.filter(p => {
-        const selectedCat = categories.find(c => c.id === selectedCategory)
-        return p.category === selectedCat?.name
-      })
+      filtered = filtered.filter(p => p.category_id === selectedCategory)
     }
 
     // Filter by search term
