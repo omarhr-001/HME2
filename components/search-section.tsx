@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Search, ChevronDown, Grid3x3, Zap } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { getCategoriesFromSupabase, type Category } from '@/lib/products'
 import Link from 'next/link'
 
 export function SearchSection() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [showDropdown, setShowDropdown] = useState(false)
@@ -44,97 +44,92 @@ export function SearchSection() {
     e.preventDefault()
     const params = new URLSearchParams()
     if (searchQuery) params.append('search', searchQuery)
-    if (selectedCategory !== 'all') {
+    if (selectedCategory) {
       const selectedCat = categories.find(cat => cat.id === selectedCategory)
       if (selectedCat) params.append('category', encodeURIComponent(selectedCat.slug || selectedCat.name))
     }
     window.location.href = `/products?${params.toString()}`
   }
 
-  const selectedCategoryLabel = selectedCategory === 'all'
-    ? 'Toutes les catégories'
-    : categories.find(cat => cat.id === selectedCategory)?.name || 'Catégories'
-
-  const selectedCategoryEmoji = selectedCategory !== 'all'
-    ? categories.find(cat => cat.id === selectedCategory)?.emoji
-    : undefined
-
-  const categoryCount = categories.length
+  const selectedCategoryData = selectedCategory ? categories.find(cat => cat.id === selectedCategory) : null
 
   return (
-    <section className="sticky top-17 z-40 bg-white px-[5%] py-5 border-b border-gray-200 shadow-sm">
-      <form onSubmit={handleSearch} className="flex gap-3 max-w-5xl">
+    <section className="sticky top-17 z-40 bg-white px-[5%] py-4 border-b border-gray-200">
+      <form onSubmit={handleSearch} className="flex items-center gap-3">
         {/* Search Input */}
         <div className="flex-1 relative">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <input
             type="text"
             placeholder="Rechercher des produits..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-3 pl-12 border-2 border-gray-200 rounded-3xl text-sm bg-gray-50 outline-none transition-all duration-300 focus:border-green-500 focus:bg-white"
+            className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg text-sm bg-white outline-none transition-all duration-200 focus:border-green-500 focus:ring-1 focus:ring-green-500"
           />
         </div>
 
-        {/* Category Dropdown - Enhanced */}
-        <div className="relative min-w-max" ref={dropdownRef}>
+        {/* Categories Button & Mega Menu */}
+        <div className="relative" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setShowDropdown(!showDropdown)}
             disabled={loading}
-            className="px-4 py-3 border-2 border-gray-200 rounded-3xl text-sm bg-gray-50 text-gray-800 outline-none cursor-pointer transition-all duration-300 focus:border-green-500 focus:bg-white flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:border-green-400 hover:bg-white group"
+            className="px-5 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
           >
-            {selectedCategoryEmoji ? (
-              <span className="text-lg group-hover:scale-110 transition-transform">{selectedCategoryEmoji}</span>
+            {selectedCategoryData ? (
+              <>
+                <span className="text-base">{selectedCategoryData.emoji || '📦'}</span>
+                <span className="hidden sm:inline">{selectedCategoryData.name}</span>
+              </>
             ) : (
-              <Grid3x3 size={16} className="text-green-600" />
+              <>
+                <span className="hidden sm:inline">Toutes les catégories</span>
+                <span className="sm:hidden">Catégories</span>
+              </>
             )}
-            <span className="hidden sm:inline font-medium">{selectedCategoryLabel}</span>
-            <span className="sm:hidden font-medium">{selectedCategoryLabel === 'Toutes les catégories' ? 'Tous' : selectedCategoryLabel}</span>
-            <ChevronDown size={16} className={`transition-transform duration-300 ${showDropdown ? 'rotate-180' : ''}`} />
           </button>
 
-          {/* Enhanced Dropdown Menu */}
+          {/* Mega Menu */}
           {showDropdown && (
-            <div className="absolute top-full right-0 mt-2 bg-white border-2 border-gray-200 rounded-2xl shadow-xl z-50 min-w-sm max-h-96 overflow-y-auto divide-y divide-gray-100">
+            <div className="absolute top-full right-0 mt-2 w-screen max-w-4xl bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
               {/* Header */}
-              <div className="sticky top-0 bg-gradient-to-r from-green-50 to-green-100 px-4 py-3 flex items-center gap-2">
-                <Grid3x3 size={16} className="text-green-600" />
-                <span className="font-semibold text-gray-800">{categoryCount} catégories</span>
-                {categoryCount > 0 && (
-                  <span className="ml-auto text-xs bg-green-600 text-white px-2 py-1 rounded-full font-medium">
-                    Nouvelle
-                  </span>
-                )}
+              <div className="sticky top-0 bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900">Catégories</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowDropdown(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={20} />
+                </button>
               </div>
 
-              {/* All Categories Option */}
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedCategory('all')
-                  setShowDropdown(false)
-                }}
-                className={`w-full text-left px-4 py-3 text-sm transition-all flex items-center gap-3 ${
-                  selectedCategory === 'all'
-                    ? 'bg-green-100 text-green-800 font-semibold border-l-4 border-l-green-600'
-                    : 'text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <span className="text-lg">🎯</span>
-                <div className="flex-1">
-                  <div className="font-medium">Toutes les catégories</div>
-                  <div className="text-xs text-gray-500">Voir tous les produits</div>
-                </div>
-              </button>
+              {/* Categories Grid */}
+              {!loading && categories.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-0 divide-x divide-y divide-gray-200">
+                  {/* All Categories */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(null)
+                      setShowDropdown(false)
+                    }}
+                    className={`px-4 py-4 text-center transition-all duration-200 ${
+                      selectedCategory === null
+                        ? 'bg-green-50'
+                        : 'bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="text-3xl mb-2">🎯</div>
+                    <div className={`text-sm font-medium ${
+                      selectedCategory === null ? 'text-green-700' : 'text-gray-700'
+                    }`}>
+                      Tous
+                    </div>
+                  </button>
 
-              {/* Divider */}
-              {categories.length > 0 && <div />}
-
-              {/* Category Options */}
-              <div className="max-h-80 overflow-y-auto">
-                {categories.length > 0 ? (
-                  categories.map((cat, index) => (
+                  {/* Individual Categories */}
+                  {categories.map((cat) => (
                     <button
                       key={cat.id}
                       type="button"
@@ -142,40 +137,33 @@ export function SearchSection() {
                         setSelectedCategory(cat.id)
                         setShowDropdown(false)
                       }}
-                      className={`w-full text-left px-4 py-3 text-sm transition-all flex items-center gap-3 ${
+                      className={`px-4 py-4 text-center transition-all duration-200 ${
                         selectedCategory === cat.id
-                          ? 'bg-green-100 text-green-800 font-semibold border-l-4 border-l-green-600'
-                          : 'text-gray-700 hover:bg-gray-50'
+                          ? 'bg-green-50'
+                          : 'bg-white hover:bg-gray-50'
                       }`}
                     >
-                      <span className="text-lg">{cat.emoji || '📦'}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{cat.name}</div>
-                        {index === 0 && (
-                          <div className="text-xs text-green-600 flex items-center gap-1">
-                            <Zap size={12} />
-                            Populaire
-                          </div>
-                        )}
+                      <div className="text-3xl mb-2">{cat.emoji || '📦'}</div>
+                      <div className={`text-sm font-medium line-clamp-2 ${
+                        selectedCategory === cat.id ? 'text-green-700' : 'text-gray-700'
+                      }`}>
+                        {cat.name}
                       </div>
-                      {selectedCategory === cat.id && (
-                        <div className="w-2 h-2 bg-green-600 rounded-full"></div>
-                      )}
                     </button>
-                  ))
-                ) : (
-                  <div className="px-4 py-6 text-center text-gray-500 text-sm">
-                    Aucune catégorie disponible
-                  </div>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="px-6 py-8 text-center text-gray-500 text-sm">
+                  {loading ? 'Chargement des catégories...' : 'Aucune catégorie disponible'}
+                </div>
+              )}
 
               {/* Footer */}
-              {categories.length > 0 && (
-                <Link 
+              {!loading && categories.length > 0 && (
+                <Link
                   href="/products"
                   onClick={() => setShowDropdown(false)}
-                  className="block px-4 py-3 text-sm bg-gradient-to-r from-green-50 to-green-100 text-green-700 font-semibold hover:from-green-100 hover:to-green-200 transition-all text-center"
+                  className="block px-6 py-3 border-t border-gray-200 text-center text-sm font-medium text-green-700 hover:bg-gray-50 transition-colors"
                 >
                   Voir tous les produits
                 </Link>
@@ -187,7 +175,7 @@ export function SearchSection() {
         {/* Search Button */}
         <button
           type="submit"
-          className="px-6 py-3 bg-green-600 text-white rounded-3xl font-semibold text-sm hover:bg-green-700 transition-all duration-300 whitespace-nowrap shadow-md hover:shadow-lg"
+          className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium text-sm hover:bg-green-700 transition-all duration-200 whitespace-nowrap"
         >
           <span className="hidden sm:inline">Rechercher</span>
           <span className="sm:hidden">
