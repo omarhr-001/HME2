@@ -59,11 +59,11 @@ export default function LoginPage() {
       router.push('/')
 
     } catch (err) {
-      console.error(err)
-      setError('Erreur serveur inattendue')
+      console.error('[v0] Login error:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Erreur serveur inattendue'
+      setError(errorMessage)
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   return (
