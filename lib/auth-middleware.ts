@@ -1,39 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { jwtVerify } from 'jose'
+
+const secret = new TextEncoder().encode(
+  process.env.SUPABASE_JWT_SECRET || 'your-secret-key'
+)
+
+export interface AuthenticatedUser {
+  id: string
+  email?: string
+  aud?: string
+  role?: string
+}
 
 /**
- * Middleware to authenticate API requests
- * Validates that the user making the request matches the user_id in the request
+ * Middleware to authenticate API requests using JWT tokens
+ * Verifies JWT signature and extracts user information
  */
-
 export async function withAuth(
   req: NextRequest,
-  handler: (req: NextRequest, user: any) => Promise<NextResponse>
+  handler: (req: NextRequest, user: AuthenticatedUser) => Promise<NextResponse>
 ) {
   try {
-    // Get token from Authorization header or cookies
+    // Get token from Authorization header
     const authHeader = req.headers.get('authorization')
     const token = authHeader?.replace('Bearer ', '')
 
     if (!token) {
+      console.log('[v0] No token provided')
       return NextResponse.json(
         { error: 'Unauthorized: No token provided' },
         { status: 401 }
       )
     }
 
-    // Verify token with Supabase
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    // Verify JWT token
+    const verified = await jwtVerify(token, secret)
+    const user = verified.payload as AuthenticatedUser
 
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser(token)
-
-    if (error || !user) {
+    if (!user || !user.id) {
+      console.log('[v0] Invalid token payload')
       return NextResponse.json(
         { error: 'Unauthorized: Invalid token' },
         { status: 401 }
@@ -45,8 +50,8 @@ export async function withAuth(
   } catch (err) {
     console.error('[v0] Auth middleware error:', err)
     return NextResponse.json(
-      { error: 'Authentication failed' },
-      { status: 500 }
+      { error: 'Unauthorized: Invalid token' },
+      { status: 401 }
     )
   }
 }
