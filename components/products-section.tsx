@@ -39,20 +39,6 @@ export function ProductsSection() {
         .slice(0, 8)
     : products.slice(0, 8)
 
-  const handleAddToCart = (product: Product, quantity: number = 1) => {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-    const existingItem = cart.find((item: any) => item.id === product.id)
-    
-    if (existingItem) {
-      existingItem.quantity += quantity
-    } else {
-      cart.push({ ...product, quantity })
-    }
-    
-    localStorage.setItem('cart', JSON.stringify(cart))
-    window.dispatchEvent(new Event('cartUpdated'))
-  }
-
   return (
     <section className="px-[5%] py-16">
       {/* Section Header */}
@@ -110,7 +96,6 @@ export function ProductsSection() {
             <ProductCard
               key={product.id}
               {...product}
-              onAddToCart={handleAddToCart}
             />
           ))}
         </div>
