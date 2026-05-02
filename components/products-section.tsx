@@ -29,7 +29,8 @@ export function ProductsSection() {
   }, [])
 
   // Get unique categories from fetched products
- const categories = Array.from(new Set(products.map(p => p.category).filter((cat): cat is string => Boolean(cat)))).sort()  
+  const categories = Array.from(new Set(products.map(p => p.category).filter((cat): cat is string => Boolean(cat)))).sort()
+  
   const displayedProducts = category === 'all' 
     ? products.slice(0, 8)
     : products.filter(p => p.category === category).slice(0, 8)
@@ -72,7 +73,7 @@ export function ProductsSection() {
               : 'text-gray-500 border-transparent hover:text-green-600'
           }`}
         >
-          Tous
+          Toutes les catégories
         </button>
         {categories.map((cat) => (
           <button
@@ -112,3 +113,4 @@ export function ProductsSection() {
     </section>
   )
 }
+

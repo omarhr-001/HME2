@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ProductCard } from '@/components/product-card'
-import { Search, Filter } from 'lucide-react'
+import { Search, Filter, ChevronDown } from 'lucide-react'
 import { getProductsFromSupabase } from '@/lib/products'
 import type { Product } from '@/lib/types'
 
@@ -17,6 +17,7 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('newest')
   const [priceRange, setPriceRange] = useState([0, 2000])
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
 
   // Fetch products from Supabase on mount
   useEffect(() => {
@@ -91,6 +92,10 @@ export default function ProductsPage() {
     localStorage.setItem('cart', JSON.stringify(cart))
     window.dispatchEvent(new Event('cartUpdated'))
   }
+
+  const selectedCategoryLabel = selectedCategory === 'all' 
+    ? 'Toutes les catégories'
+    : categories.find(cat => cat === selectedCategory) || 'Toutes les catégories'
 
   return (
     <>
@@ -195,20 +200,68 @@ export default function ProductsPage() {
 
               {/* Main Content */}
               <div className="flex-1">
-              {/* Sort */}
-              <div className="flex items-center justify-between mb-8">
-                <p className="text-gray-600 text-sm">
-                  Affichage de <strong>{filteredProducts.length}</strong> produits
-                </p>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="px-4 py-2 border border-gray-200 rounded-lg text-sm outline-none bg-white"
-                >
-                  <option value="newest">Plus récents</option>
-                  <option value="price-low">Prix: Bas à Haut</option>
-                  <option value="price-high">Prix: Haut à Bas</option>
-                </select>
+              {/* Top Bar with Category Dropdown and Sort */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+                {/* Categories Dropdown */}
+                <div className="relative w-full sm:w-auto">
+                  <button
+                    onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                    className="flex items-center justify-between gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
+                  >
+                    <span>{selectedCategoryLabel}</span>
+                    <ChevronDown size={18} className={`transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {showCategoryDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-max">
+                      <button
+                        onClick={() => {
+                          setSelectedCategory('all')
+                          setShowCategoryDropdown(false)
+                        }}
+                        className={`block w-full text-left px-4 py-2 text-sm transition-all ${
+                          selectedCategory === 'all'
+                            ? 'bg-green-100 text-green-700 font-semibold'
+                            : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        Toutes les catégories
+                      </button>
+                      {categories.map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => {
+                            setSelectedCategory(cat)
+                            setShowCategoryDropdown(false)
+                          }}
+                          className={`block w-full text-left px-4 py-2 text-sm transition-all ${
+                            selectedCategory === cat
+                              ? 'bg-green-100 text-green-700 font-semibold'
+                              : 'text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Sort and Results Count */}
+                <div className="flex items-center justify-between gap-4 w-full sm:w-auto">
+                  <p className="text-gray-600 text-sm">
+                    Affichage de <strong>{filteredProducts.length}</strong> produits
+                  </p>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="px-4 py-2 border border-gray-200 rounded-lg text-sm outline-none bg-white"
+                  >
+                    <option value="newest">Plus récents</option>
+                    <option value="price-low">Prix: Bas à Haut</option>
+                    <option value="price-high">Prix: Haut à Bas</option>
+                  </select>
+                </div>
               </div>
 
               {/* Products Grid */}
