@@ -95,24 +95,7 @@ export default function ProductsPage() {
   }, [products, selectedCategory, searchTerm, sortBy, priceRange, categories])
 
   const handleAddToCart = async (product: Product, quantity: number = 1) => {
-    const user = await getCurrentUser()
-    
-    if (!user) {
-      router.push('/auth/login')
-      return
-    }
-
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-    const existingItem = cart.find((item: any) => item.id === product.id)
-
-    if (existingItem) {
-      existingItem.quantity += quantity
-    } else {
-      cart.push({ ...product, quantity })
-    }
-
-    localStorage.setItem('cart', JSON.stringify(cart))
-    window.dispatchEvent(new Event('cartUpdated'))
+    // Handled by ProductCard component with useCart hook
   }
 
   const resetFilters = () => {
@@ -288,13 +271,12 @@ export default function ProductsPage() {
                 {/* Products Grid */}
                 {filteredProducts.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredProducts.map(product => (
-                      <ProductCard
-                        key={product.id}
-                        {...product}
-                        onAddToCart={handleAddToCart}
-                      />
-                    ))}
+                  {filteredProducts.map(product => (
+                    <ProductCard
+                      key={product.id}
+                      {...product}
+                    />
+                  ))}
                   </div>
                 ) : (
                   <div className="text-center py-16">

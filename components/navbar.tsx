@@ -1,27 +1,19 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import { useCart } from '@/lib/hooks'
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [cartCount, setCartCount] = useState(0)
   const { user, loading, signOut } = useAuth()
+  const { cartItems } = useCart()
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10)
-    window.addEventListener('scroll', handleScroll)
-    
-    // Load cart count from localStorage
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-    setCartCount(cart.length)
-    
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
+  const handleScroll = () => setScrolled(window.scrollY > 10)
+  
   const handleSignOut = async () => {
     await signOut()
     setMobileOpen(false)
@@ -50,9 +42,9 @@ export function Navbar() {
       <div className="flex items-center gap-2.5">
         <Link href="/cart" className="relative bg-none border-none cursor-pointer p-2 rounded-[10px] text-gray-600 transition-all duration-300 hover:bg-green-50 hover:text-green-700 flex items-center" style={{ fontSize: '20px' }}>
           <ShoppingCart size={20} />
-          {cartCount > 0 && (
+          {cartItems.length > 0 && (
             <span className="absolute -top-0.5 -right-0.5 bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs font-bold">
-              {cartCount}
+              {cartItems.length}
             </span>
           )}
         </Link>
