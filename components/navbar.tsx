@@ -99,7 +99,7 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Link href="/app/account/page.ts" className="no-underline text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 flex items-center gap-2">
+                <Link href="/app/account/page.tsx" className="no-underline text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 flex items-center gap-2">
                   <User size={16} /> Mon compte
                 </Link>
                 <button 
