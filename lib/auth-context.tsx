@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import type { User } from '@supabase/supabase-js'
-import { initializeSession, getCurrentSession } from './session'
+import { createSession, getCurrentSession } from './session'
 
 type AuthContextType = {
   user: User | null
@@ -30,9 +30,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Initialize session if user is logged in
       if (authUser) {
-        const session = await initializeSession(authUser.id)
-        if (mounted) {
-          setSessionId(session?.id ?? null)
+        const sessionResult = await createSession(authUser.id, authUser.email || '')
+        if (mounted && sessionResult.success) {
+          setSessionId(authUser.id)
         }
       }
       
@@ -46,9 +46,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(authUser)
         
         if (authUser) {
-          const userSession = await initializeSession(authUser.id)
-          if (mounted) {
-            setSessionId(userSession?.id ?? null)
+          const sessionResult = await createSession(authUser.id, authUser.email || '')
+          if (mounted && sessionResult.success) {
+            setSessionId(authUser.id)
           }
         } else {
           if (mounted) {

@@ -46,20 +46,26 @@ export default function SignupPage() {
 
     setLoading(true)
 
-    const result = await signUp(
-      formData.email,
-      formData.password,
-      formData.firstName,
-      formData.lastName
-    )
+    try {
+      const result = await signUp(
+        formData.email,
+        formData.password,
+        formData.firstName,
+        formData.lastName
+      )
 
-    if (result.success) {
-      setSuccess(true)
-      setTimeout(() => {
-        router.push('/auth/login')
-      }, 3000)
-    } else {
-      setError(result.error || 'Une erreur est survenue lors de l\'inscription')
+      if (result.success) {
+        setSuccess(true)
+        setTimeout(() => {
+          router.push('/auth/login')
+        }, 3000)
+      } else {
+        setError(result.error || 'Une erreur est survenue lors de l\'inscription')
+      }
+    } catch (err) {
+      console.error('[v0] Signup error:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Erreur serveur inattendue'
+      setError(errorMessage)
     }
 
     setLoading(false)
