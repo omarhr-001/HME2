@@ -41,3 +41,18 @@ export async function signOut() {
 
   return { success: true }
 }
+
+export async function getCurrentUser() {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser()
+    
+    if (error || !user) {
+      return null
+    }
+
+    return user
+  } catch (error) {
+    console.error('Error getting current user:', error)
+    return null
+  }
+}
