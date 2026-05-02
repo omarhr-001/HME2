@@ -40,16 +40,22 @@ export function Navbar() {
 
       {/* Actions */}
       <div className="flex items-center gap-2.5">
-        <Link href="/cart" className="relative bg-none border-none cursor-pointer p-2 rounded-[10px] text-gray-600 transition-all duration-300 hover:bg-green-50 hover:text-green-700 flex items-center" style={{ fontSize: '20px' }}>
-          <ShoppingCart size={20} />
-          {cartItems.length > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs font-bold">
-              {cartItems.length}
-            </span>
-          )}
-        </Link>
+        {user && (
+          <Link href="/cart" className="relative bg-none border-none cursor-pointer p-2 rounded-[10px] text-gray-600 transition-all duration-300 hover:bg-green-50 hover:text-green-700 flex items-center" style={{ fontSize: '20px' }}>
+            <ShoppingCart size={20} />
+            {cartItems.length > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs font-bold">
+                {cartItems.length}
+              </span>
+            )}
+          </Link>
+        )}
         
-        {!loading && !user ? (
+        {loading ? (
+          <div className="hidden md:flex items-center gap-2">
+            <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+        ) : !user ? (
           <>
             <Link href="/auth/login" className="btn-outline hidden md:inline-block">Connexion</Link>
             <Link href="/auth/signup" className="btn-primary hidden md:inline-block">S'inscrire</Link>
@@ -84,7 +90,9 @@ export function Navbar() {
             <Link href="/products" className="no-underline text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100">Produits</Link>
             <Link href="/about" className="no-underline text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100">À propos</Link>
             <Link href="/contact" className="no-underline text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100">Contact</Link>
-            {!loading && !user ? (
+            {loading ? (
+              <div className="px-4 py-2 text-gray-500 text-sm">Chargement...</div>
+            ) : !user ? (
               <>
                 <Link href="/auth/login" className="btn-outline w-full mt-2">Connexion</Link>
                 <Link href="/auth/signup" className="btn-primary w-full mt-2">S'inscrire</Link>
