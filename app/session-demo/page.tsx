@@ -4,14 +4,26 @@ import { useAuth } from '@/lib/auth-context'
 import { useCart, useAddToCart, useRemoveFromCart, useUpdateQuantity, useCreateOrder } from '@/lib/hooks'
 import { useState } from 'react'
 import useSWR from 'swr'
+import { supabase } from '@/lib/supabase'
 
-const fetcher = (url: string) => fetch(url).then(res => res.json())
+const authenticatedFetcher = async (url: string) => {
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+  const res = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  })
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
 
 export default function SessionDemoPage() {
   const { user, sessionId, loading } = useAuth()
   const { data: cartItems = [], isLoading: cartLoading, mutate: mutateCart } = useSWR(
-    user ? `/api/cart?userId=${user.id}` : null,
-    fetcher
+    user ? `/api/cart` : null,
+    authenticatedFetcher
   )
   const { trigger: addToCart, isMutating: isAdding } = useAddToCart()
   const { trigger: removeItem, isMutating: isRemoving } = useRemoveFromCart()
@@ -30,7 +42,7 @@ export default function SessionDemoPage() {
       })
       mutateCart()
     } catch (err) {
-      console.error('Failed to add to cart:', err)
+      console.error('[v0] Failed to add to cart:', err)
     }
   }
 
@@ -47,7 +59,7 @@ export default function SessionDemoPage() {
       alert(`Order created: ${order?.id}`)
       mutateCart()
     } catch (err) {
-      console.error('Failed to create order:', err)
+      console.error('[v0] Failed to create order:', err)
       alert('Failed to create order')
     }
   }
@@ -139,6 +151,7 @@ export default function SessionDemoPage() {
         <p className="mb-2"><strong>This demo shows:</strong></p>
         <ul className="list-disc list-inside space-y-1 text-gray-700">
           <li>User session automatically created on login</li>
+          <li>JWT token sent with all API requests</li>
           <li>Cart persists in database across sessions</li>
           <li>Add, update, remove items from persistent cart</li>
           <li>Create orders from cart items</li>
