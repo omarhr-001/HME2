@@ -21,7 +21,10 @@ export default function AccountPage() {
     await signOut()
   }
 
-  // Show loading while checking auth
+  const firstName = user?.user_metadata?.first_name || ''
+  const lastName = user?.user_metadata?.last_name || ''
+  const fullName = `${firstName} ${lastName}`.trim() || 'Utilisateur'
+
   if (!mounted || loading) {
     return (
       <>
@@ -41,28 +44,25 @@ export default function AccountPage() {
     )
   }
 
-  // Only show login page if user is definitely not logged in (after loading is complete)
   if (!user) {
     return (
       <>
         <Navbar />
         <div className="pt-17 min-h-screen bg-gray-50">
-          <div className="max-w-2xl mx-auto px-[5%] py-12 text-center">
-            <h1 className="text-2xl font-bold text-gray-800 mb-4">Veuillez vous connecter</h1>
-            <p className="text-gray-600 mb-6">Vous devez être connecté pour accéder à votre compte.</p>
-            <Link href="/auth/login" className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
-              Aller à la connexion
-            </Link>
+          <div className="max-w-2xl mx-auto px-[5%] py-12">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Bienvenue sur votre compte</h2>
+              <p className="text-gray-600 mb-6">Connectez-vous pour accéder à votre profil, historique de commandes et plus encore.</p>
+              <Link href="/auth/login" className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
+                Se connecter
+              </Link>
+            </div>
           </div>
         </div>
         <Footer />
       </>
     )
   }
-
-  const firstName = user.user_metadata?.first_name || ''
-  const lastName = user.user_metadata?.last_name || ''
-  const fullName = `${firstName} ${lastName}`.trim() || 'Utilisateur'
 
   return (
     <>
