@@ -7,15 +7,22 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Mail, LogOut, User, Package, Lock, Settings, CreditCard, MapPin, Edit2, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 export default function AccountPage() {
   const { user, loading, signOut } = useAuth()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleSignOut = async () => {
     await signOut()
   }
 
-  if (loading) {
+  // Show loading while checking auth
+  if (!mounted || loading) {
     return (
       <>
         <Navbar />
@@ -34,6 +41,7 @@ export default function AccountPage() {
     )
   }
 
+  // Only show login page if user is definitely not logged in (after loading is complete)
   if (!user) {
     return (
       <>

@@ -7,12 +7,18 @@ import { useCart, useRemoveFromCart, useUpdateQuantity } from '@/lib/hooks'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export default function CartPage() {
   const { user, loading: authLoading } = useAuth()
   const { cartItems, cartTotal, isLoading } = useCart()
   const { trigger: removeItem } = useRemoveFromCart()
   const { trigger: updateQuantity } = useUpdateQuantity()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleRemove = async (itemId: string) => {
     await removeItem({ cartItemId: itemId })
@@ -29,7 +35,8 @@ export default function CartPage() {
   const shipping = cartTotal > 500 ? 0 : 15
   const total = cartTotal + shipping
 
-  if (authLoading) {
+  // Show loading while checking auth
+  if (!mounted || authLoading) {
     return (
       <main className="min-h-screen bg-gray-50">
         <Navbar />
@@ -41,6 +48,7 @@ export default function CartPage() {
     )
   }
 
+  // Only show login page if user is definitely not logged in (after loading is complete)
   if (!user) {
     return (
       <main className="min-h-screen bg-gray-50">
