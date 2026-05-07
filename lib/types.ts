@@ -74,12 +74,13 @@ export interface Category {
 }
 
 export interface CartItem {
-  id: number;
-  user_id: number;
-  product_id: number;
-  quantity: number;
-  created_at: Date;
-  updated_at: Date;
+  id: string
+  user_id: string
+  product_id: string
+  quantity: number
+  products?: Product
+  created_at: Date
+  updated_at: Date
 }
 
 export interface WishlistItem {

@@ -8,6 +8,7 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import type { CartItem } from '@/lib/types'
 
 export default function CartPage() {
   const { user, loading: authLoading } = useAuth()
@@ -69,7 +70,7 @@ export default function CartPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-4">
-              {cartItems.map((item) => (
+              {cartItems.map((item: CartItem) => (
                 <div key={item.id} className="bg-white rounded-xl p-6 flex gap-6 border border-gray-200">
                   {/* Product Image */}
                   <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
