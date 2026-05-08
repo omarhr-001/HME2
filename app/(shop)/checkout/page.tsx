@@ -8,6 +8,7 @@ import { useCart, useCreateOrder } from '@/lib/hooks'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ChevronRight } from 'lucide-react'
+import type { CartItemWithProduct } from '@/lib/types'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -263,7 +264,7 @@ export default function CheckoutPage() {
 
               {/* Items */}
               <div className="space-y-3 mb-6 pb-6 border-b border-gray-200 max-h-64 overflow-y-auto">
-                {cartItems.map((item) => (
+                {cartItems.map((item: CartItemWithProduct) => (
                   <div key={item.id} className="flex justify-between text-sm">
                     <span className="text-gray-700">
                       {item.products?.name || 'Produit'} x {item.quantity}

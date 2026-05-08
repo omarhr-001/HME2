@@ -8,9 +8,24 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, Bell, Eye, Lock, Globe } from 'lucide-react'
 import Link from 'next/link'
 
+type SettingsState = {
+  emailNotifications: boolean
+  smsNotifications: boolean
+  marketingEmails: boolean
+  newsEmails: boolean
+  orderUpdates: boolean
+  twoFactorAuth: boolean
+  language: string
+  theme: string
+}
+
+type ToggleSettingKey = {
+  [K in keyof SettingsState]: SettingsState[K] extends boolean ? K : never
+}[keyof SettingsState]
+
 export default function SettingsPage() {
   const { user, loading: authLoading } = useProtectedRoute()
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<SettingsState>({
     emailNotifications: true,
     smsNotifications: false,
     marketingEmails: true,
@@ -21,7 +36,7 @@ export default function SettingsPage() {
     theme: 'light',
   })
 
-  const handleToggle = (key: string) => {
+  const handleToggle = (key: ToggleSettingKey) => {
     setSettings(prev => ({
       ...prev,
       [key]: !prev[key]

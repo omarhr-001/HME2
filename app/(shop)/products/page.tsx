@@ -92,7 +92,7 @@ export default function ProductsPage() {
     }
 
     return filtered
-  }, [products, selectedCategory, searchTerm, sortBy, priceRange, categories])
+  }, [products, selectedCategory, searchTerm, sortBy, priceRange])
 
   const handleAddToCart = async (product: Product, quantity: number = 1) => {
     // Handled by ProductCard component with useCart hook

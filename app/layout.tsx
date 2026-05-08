@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Syne, DM_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/lib/auth-context'
@@ -10,12 +10,13 @@ const dmSans = DM_Sans({ subsets: ["latin"], variable: '--font-dm-sans' });
 export const metadata: Metadata = {
   title: 'Hamroun Meuble & Electro - L\'électroménager de qualité',
   description: 'Découvrez notre large gamme d\'équipements électroménagers de qualité pour votre maison.',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({

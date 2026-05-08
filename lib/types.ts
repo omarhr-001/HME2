@@ -30,6 +30,7 @@ export interface Product {
   cost?: number;
   stock_quantity?: number;
   category?: string;
+  category_id?: string;
   image?: string;
   image_url?: string;
   sku?: string;
@@ -40,6 +41,24 @@ export interface Product {
   is_active?: boolean;
   created_at?: Date;
   updated_at?: Date;
+}
+
+export interface CartProduct {
+  id: string | number;
+  name?: string;
+  category?: string;
+  price?: number;
+  image_url?: string;
+}
+
+export interface CartItemWithProduct {
+  id: string;
+  user_id?: string;
+  product_id: string | number;
+  quantity: number;
+  price?: number;
+  product_name?: string;
+  products?: CartProduct | null;
 }
 
 export interface Order {

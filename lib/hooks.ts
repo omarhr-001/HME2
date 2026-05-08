@@ -4,6 +4,7 @@ import { useAuth } from './auth-context'
 import { supabase } from './supabase'
 import useSWR from 'swr'
 import { useState } from 'react'
+import type { CartItemWithProduct } from './types'
 
 // Helper to get JWT token and create authenticated fetcher
 async function getAuthToken() {
@@ -26,7 +27,7 @@ const authenticatedFetcher = async (url: string) => {
 export function useCart() {
   const { user } = useAuth()
   
-  const { data: cartItems, mutate, error, isLoading } = useSWR(
+  const { data: cartItems, mutate, error, isLoading } = useSWR<CartItemWithProduct[]>(
     user ? `/api/cart` : null,
     authenticatedFetcher,
     { revalidateOnFocus: false, dedupingInterval: 5000 }
@@ -91,7 +92,7 @@ export function useCart() {
     }
   }
 
-  const cartTotal = (cartItems || []).reduce((total, item) => {
+  const cartTotal = (cartItems || []).reduce((total: number, item: CartItemWithProduct) => {
     return total + (item.products?.price || 0) * item.quantity
   }, 0)
 
