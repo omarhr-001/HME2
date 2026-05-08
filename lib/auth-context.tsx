@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from './supabase'
-import type { User } from '@supabase/supabase-js'
+import type { Session, User } from '@supabase/supabase-js'
 
 type AuthContextType = {
   user: User | null
@@ -13,6 +13,36 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+function decodeBase64Url(value: string) {
+  const base64 = value.replace(/-/g, '+').replace(/_/g, '/')
+  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=')
+
+  return atob(padded)
+}
+
+function getSessionId(session: Session | null) {
+  const accessToken = session?.access_token
+
+  if (!accessToken) {
+    return null
+  }
+
+  try {
+    const [, payload] = accessToken.split('.')
+
+    if (!payload) {
+      return null
+    }
+
+    const claims = JSON.parse(decodeBase64Url(payload)) as { session_id?: unknown }
+
+    return typeof claims.session_id === 'string' ? claims.session_id : null
+  } catch (error) {
+    console.warn('Unable to read Supabase session_id claim:', error)
+    return null
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -21,34 +51,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true
 
-    // 1. initial session
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!mounted) return
-      const authUser = data.session?.user ?? null
-      setUser(authUser)
-      
-      // Set session ID from user ID
-      if (authUser) {
-        setSessionId(authUser.id)
+    async function loadUser() {
+      const [{ data: sessionData }, { data: userData, error }] = await Promise.all([
+        supabase.auth.getSession(),
+        supabase.auth.getUser(),
+      ])
+
+      if (!mounted) {
+        return
       }
-      
+
+      if (error || !userData.user) {
+        setUser(null)
+        setSessionId(null)
+      } else {
+        setUser(userData.user)
+        setSessionId(getSessionId(sessionData.session))
+      }
+
+      setLoading(false)
+    }
+
+    loadUser()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      setSessionId(getSessionId(session ?? null))
       setLoading(false)
     })
-
-    // 2. listen auth changes
-    const { data: { subscription } } =
-      supabase.auth.onAuthStateChange(async (_event, session) => {
-        const authUser = session?.user ?? null
-        setUser(authUser)
-        
-        if (authUser) {
-          setSessionId(authUser.id)
-        } else {
-          setSessionId(null)
-        }
-        
-        setLoading(false)
-      })
 
     return () => {
       mounted = false
@@ -57,7 +89,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut()
+
+    if (error) {
+      throw error
+    }
+
     setUser(null)
     setSessionId(null)
   }
