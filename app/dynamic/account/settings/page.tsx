@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useProtectedRoute } from '@/hooks/use-protected-route'
+import { useAuth } from '@/lib/auth-context'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,7 @@ import { ArrowLeft, Bell, Eye, Lock, Globe } from 'lucide-react'
 import Link from 'next/link'
 
 export default function SettingsPage() {
-  const { user, loading: authLoading } = useProtectedRoute()
+  const { user, loading: authLoading } = useAuth()
   const [settings, setSettings] = useState({
     emailNotifications: true,
     smsNotifications: false,

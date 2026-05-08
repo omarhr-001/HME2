@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useProtectedRoute } from '@/hooks/use-protected-route'
+import { useAuth } from '@/lib/auth-context'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
@@ -14,7 +14,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 export default function ChangePasswordPage() {
-  const { user, loading: authLoading } = useProtectedRoute()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)

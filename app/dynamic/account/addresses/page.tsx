@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useProtectedRoute } from '@/hooks/use-protected-route'
+import { useAuth } from '@/lib/auth-context'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,7 @@ import { ArrowLeft, Loader2, Plus, Edit2, Trash2, MapPin } from 'lucide-react'
 import Link from 'next/link'
 
 export default function AddressesPage() {
-  const { user, loading: authLoading } = useProtectedRoute()
+  const { user, loading: authLoading } = useAuth()
   const [showForm, setShowForm] = useState(false)
   const [loading, setLoading] = useState(false)
   
