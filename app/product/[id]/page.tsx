@@ -1,14 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Heart, ShoppingCart, Truck, Shield, RefreshCw, Check } from 'lucide-react'
 import Link from 'next/link'
-import { useAuth } from '@/lib/auth-context'
-import { useAddToCart } from '@/lib/hooks'
 import type { Product } from '@/lib/types'
 
 interface ProductPageProps {
@@ -18,14 +15,11 @@ interface ProductPageProps {
 }
 
 export default function ProductPage({ params }: ProductPageProps) {
-  const router = useRouter()
-  const { user } = useAuth()
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
-  const { trigger: addToCart, isMutating } = useAddToCart()
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -77,22 +71,21 @@ export default function ProductPage({ params }: ProductPageProps) {
     )
   }
 
-  const handleAddToCart = async () => {
-    if (!user) {
-      router.push('/auth/login')
-      return
+  const handleAddToCart = () => {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+    const existingItem = cart.find((item: any) => item.id === product.id)
+
+    if (existingItem) {
+      existingItem.quantity += quantity
+    } else {
+      cart.push({ ...product, quantity })
     }
 
-    try {
-      await addToCart({
-        productId: product.id,
-        quantity,
-      })
-      setAddedToCart(true)
-      setTimeout(() => setAddedToCart(false), 2000)
-    } catch (error) {
-      console.error('[v0] Error adding to cart:', error)
-    }
+    localStorage.setItem('cart', JSON.stringify(cart))
+    window.dispatchEvent(new Event('cartUpdated'))
+    
+    setAddedToCart(true)
+    setTimeout(() => setAddedToCart(false), 2000)
   }
 
   return (
@@ -187,15 +180,15 @@ export default function ProductPage({ params }: ProductPageProps) {
               <div className="flex gap-4 mb-8">
                 <button
                   onClick={handleAddToCart}
-                  disabled={(product.stock_quantity ?? 0) === 0 || isMutating}
+                  disabled={(product.stock_quantity ?? 0) === 0}
                   className={`flex-1 py-4 px-6 rounded-full font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${
                     (product.stock_quantity ?? 0) > 0
                       ? 'bg-green-500 text-white hover:bg-green-600 hover:shadow-lg'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  } ${addedToCart ? 'bg-green-600' : ''} ${isMutating ? 'opacity-50 cursor-wait' : ''}`}
+                  } ${addedToCart ? 'bg-green-600' : ''}`}
                 >
                   <ShoppingCart size={20} />
-                  {isMutating ? 'Ajout...' : addedToCart ? 'Ajouté au panier!' : 'Ajouter au panier'}
+                  {addedToCart ? 'Ajouté au panier!' : 'Ajouter au panier'}
                 </button>
                 <button
                   onClick={() => setIsWishlisted(!isWishlisted)}

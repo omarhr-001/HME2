@@ -2,7 +2,6 @@ export interface Product {
   id: string
   name: string
   category: string
-  category_id?: string
   price: number
   originalPrice: number
   image: string
@@ -11,14 +10,6 @@ export interface Product {
   description: string
   specs: Record<string, string>
   inStock: boolean
-}
-
-export interface Category {
-  id: string
-  name: string
-  slug: string
-  emoji?: string
-  createdAt: string
 }
 
 // Supabase functions for fetching products from database
@@ -41,7 +32,6 @@ export async function getProductsFromSupabase(): Promise<Product[]> {
       id: item.id.toString(),
       name: item.name,
       category: item.category,
-      category_id: item.category_id,
       price: item.price,
       originalPrice: item.original_price || item.price,
       image: item.image_url || '',
@@ -76,7 +66,6 @@ export async function getProductByIdFromSupabase(id: string): Promise<Product | 
       id: data.id.toString(),
       name: data.name,
       category: data.category,
-      category_id: data.category_id,
       price: data.price,
       originalPrice: data.original_price || data.price,
       image: data.image_url || '',
@@ -92,17 +81,13 @@ export async function getProductByIdFromSupabase(id: string): Promise<Product | 
   }
 }
 
-/**
- * Fetch all categories from the categories table
- * Includes emoji and slug for better UI presentation
- */
-export async function getCategoriesFromSupabase(): Promise<Category[]> {
+export async function getCategoriesFromSupabase(): Promise<string[]> {
   try {
     const { supabase } = await import('./supabase')
     const { data, error } = await supabase
-      .from('categories')
-      .select('id, name, slug, emoji, created_at')
-      .order('name', { ascending: true })
+      .from('products')
+      .select('category')
+      .not('category', 'is', null)
 
     if (error) {
       console.error('Error fetching categories from Supabase:', error)
@@ -111,29 +96,11 @@ export async function getCategoriesFromSupabase(): Promise<Category[]> {
 
     if (!data) return []
 
-    // Transform Supabase data to match Category interface
-    return data.map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      slug: item.slug,
-      emoji: item.emoji,
-      createdAt: item.created_at
-    }))
+    // Get unique categories
+    const categories = new Set(data.map((item: any) => item.category as string))
+    return Array.from(categories).sort()
   } catch (error) {
     console.error('Error loading categories from Supabase:', error)
-    return []
-  }
-}
-
-/**
- * Get categories as simple string array (for backward compatibility)
- */
-export async function getCategoryNamesFromSupabase(): Promise<string[]> {
-  try {
-    const categories = await getCategoriesFromSupabase()
-    return categories.map(cat => cat.name)
-  } catch (error) {
-    console.error('Error getting category names:', error)
     return []
   }
 }

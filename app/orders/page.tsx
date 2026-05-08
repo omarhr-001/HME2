@@ -1,57 +1,52 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import useSWR from 'swr'
-import { useAuth } from '@/lib/auth-context'
-import { supabase } from '@/lib/supabase'
+import { useProtectedRoute } from '@/hooks/use-protected-route'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
 import { Package, ArrowLeft, Eye, Download, Filter } from 'lucide-react'
-
-const authenticatedFetcher = async (url: string) => {
-  const { data } = await supabase.auth.getSession()
-  const token = data.session?.access_token
-  const res = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  })
-  if (!res.ok) throw new Error(`API error: ${res.status}`)
-  return res.json()
-}
+import Link from 'next/link'
+import { useState } from 'react'
 
 interface Order {
   id: string
+  orderNumber: string
+  date: string
+  total: number
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
-  total_amount: number
-  created_at: string
-  order_items?: Array<{
-    id: string
-    quantity: number
-    unit_price: number
-  }>
+  items: number
 }
 
 export default function OrdersPage() {
-  const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useProtectedRoute()
   const [filterStatus, setFilterStatus] = useState('all')
 
-  const { data: orders = [], isLoading, error } = useSWR(
-    user ? '/api/orders' : null,
-    authenticatedFetcher,
-    { revalidateOnFocus: false, dedupingInterval: 5000 }
-  )
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/auth/login')
-    }
-  }, [user, authLoading, router])
+  const orders: Order[] = [
+    {
+      id: '1',
+      orderNumber: '#ORD-2024-001',
+      date: '2024-05-01',
+      total: 2499.99,
+      status: 'delivered',
+      items: 3
+    },
+    {
+      id: '2',
+      orderNumber: '#ORD-2024-002',
+      date: '2024-04-15',
+      total: 1899.50,
+      status: 'shipped',
+      items: 2
+    },
+    {
+      id: '3',
+      orderNumber: '#ORD-2024-003',
+      date: '2024-04-01',
+      total: 3599.99,
+      status: 'processing',
+      items: 4
+    },
+  ]
 
   const statusColors = {
     pending: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-800', label: 'En attente' },
@@ -61,11 +56,11 @@ export default function OrdersPage() {
     cancelled: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', label: 'Annulé' },
   }
 
-  const filteredOrders = filterStatus === 'all'
-    ? orders
-    : orders.filter((order: Order) => order.status === filterStatus)
+  const filteredOrders = filterStatus === 'all' 
+    ? orders 
+    : orders.filter(order => order.status === filterStatus)
 
-  if (authLoading || isLoading) {
+  if (authLoading || !user) {
     return (
       <>
         <Navbar />
@@ -150,12 +145,6 @@ export default function OrdersPage() {
               </div>
             </div>
 
-            {error && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center">
-                <p className="text-red-600 font-semibold">Erreur lors du chargement des commandes</p>
-              </div>
-            )}
-
             {/* Orders List */}
             {filteredOrders.length === 0 ? (
               <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-12 text-center">
@@ -170,9 +159,8 @@ export default function OrdersPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredOrders.map((order: Order) => {
+                {filteredOrders.map(order => {
                   const colors = statusColors[order.status]
-                  const itemCount = order.order_items?.length || 0
                   return (
                     <div
                       key={order.id}
@@ -180,9 +168,9 @@ export default function OrdersPage() {
                     >
                       <div className="flex items-start justify-between gap-4 mb-4">
                         <div>
-                          <h3 className="text-lg font-bold text-gray-900 mb-1">{order.id.substring(0, 8).toUpperCase()}</h3>
+                          <h3 className="text-lg font-bold text-gray-900 mb-1">{order.orderNumber}</h3>
                           <p className="text-sm text-gray-600">
-                            {new Date(order.created_at).toLocaleDateString('fr-FR', {
+                            {new Date(order.date).toLocaleDateString('fr-FR', {
                               year: 'numeric',
                               month: 'long',
                               day: 'numeric'
@@ -197,30 +185,26 @@ export default function OrdersPage() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4 border-y border-gray-200">
                         <div>
                           <p className="text-sm text-gray-600 mb-1">Articles</p>
-                          <p className="text-lg font-bold text-gray-900">{itemCount}</p>
+                          <p className="text-lg font-bold text-gray-900">{order.items}</p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-600 mb-1">Montant total</p>
-                          <p className="text-lg font-bold text-green-600">{order.total_amount.toFixed(2)} DT</p>
+                          <p className="text-lg font-bold text-green-600">{order.total.toFixed(2)} DT</p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600 mb-1">Date</p>
-                          <p className="text-lg font-bold text-gray-900">
-                            {new Date(order.created_at).toLocaleDateString('fr-FR')}
-                          </p>
+                          <p className="text-sm text-gray-600 mb-1">Numéro de suivi</p>
+                          <p className="text-lg font-bold text-gray-900">Voir détails</p>
                         </div>
                       </div>
 
                       <div className="flex gap-3 pt-4">
-                        <Link href={`/orders/${order.id}`} className="flex-1">
-                          <Button
-                            variant="outline"
-                            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg border border-gray-300 hover:bg-gray-50"
-                          >
-                            <Eye className="w-4 h-4" />
-                            Voir les détails
-                          </Button>
-                        </Link>
+                        <Button
+                          variant="outline"
+                          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border border-gray-300 hover:bg-gray-50"
+                        >
+                          <Eye className="w-4 h-4" />
+                          Voir les détails
+                        </Button>
                         <Button
                           variant="outline"
                           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border border-gray-300 hover:bg-gray-50"
@@ -241,4 +225,3 @@ export default function OrdersPage() {
     </>
   )
 }
-

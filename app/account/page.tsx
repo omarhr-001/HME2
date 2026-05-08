@@ -1,31 +1,26 @@
 'use client'
 
+import { useProtectedRoute } from '@/hooks/use-protected-route'
 import { useAuth } from '@/lib/auth-context'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Mail, LogOut, User, Package, Lock, Settings, CreditCard, MapPin, Edit2, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
 
 export default function AccountPage() {
-  const { user, loading, signOut } = useAuth()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const { user, loading } = useProtectedRoute()
+  const { signOut } = useAuth()
+  const router = useRouter()
 
   const handleSignOut = async () => {
     await signOut()
+    router.push('/auth/login')
   }
 
-  const firstName = user?.user_metadata?.first_name || ''
-  const lastName = user?.user_metadata?.last_name || ''
-  const fullName = `${firstName} ${lastName}`.trim() || 'Utilisateur'
-
-  if (!mounted || loading) {
+  if (loading) {
     return (
       <>
         <Navbar />
@@ -45,24 +40,12 @@ export default function AccountPage() {
   }
 
   if (!user) {
-    return (
-      <>
-        <Navbar />
-        <div className="pt-17 min-h-screen bg-gray-50">
-          <div className="max-w-2xl mx-auto px-[5%] py-12">
-            <div className="bg-white rounded-2xl p-8 border border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Bienvenue sur votre compte</h2>
-              <p className="text-gray-600 mb-6">Connectez-vous pour accéder à votre profil, historique de commandes et plus encore.</p>
-              <Link href="/auth/login" className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
-                Se connecter
-              </Link>
-            </div>
-          </div>
-        </div>
-        <Footer />
-      </>
-    )
+    return null
   }
+
+  const firstName = user.user_metadata?.first_name || ''
+  const lastName = user.user_metadata?.last_name || ''
+  const fullName = `${firstName} ${lastName}`.trim() || 'Utilisateur'
 
   return (
     <>

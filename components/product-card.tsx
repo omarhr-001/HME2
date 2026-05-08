@@ -2,15 +2,12 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import { Heart, ShoppingCart } from 'lucide-react'
 import { ProductDetailsModal } from './product-details-modal'
-import { useCart } from '@/lib/hooks'
-import { getCurrentUser } from '@/lib/auth'
 import type { Product } from '@/lib/types'
 
 interface ProductCardProps extends Product {
-  onAddToCart?: (product: Product, quantity: number) => void
+  onAddToCart: (product: Product, quantity: number) => void
 }
 
 export function ProductCard({
@@ -29,8 +26,6 @@ export function ProductCard({
 }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const router = useRouter()
-  const { addToCart } = useCart()
 
   const product: Product = {
     id,
@@ -48,22 +43,22 @@ export function ProductCard({
   
   const discount = Math.round(((originalPrice - price) / originalPrice) * 100)
 
-  const handleAddToCartFromCard = async () => {
-    const user = await getCurrentUser()
-    if (!user) {
-      router.push('/auth/login')
-      return
-    }
-    await addToCart(id, 1)
+  const handleAddToCartFromCard = () => {
+    onAddToCart(product, 1)
   }
 
-  const handleAddToCartFromModal = async (product: Product, quantity: number) => {
-    const user = await getCurrentUser()
-    if (!user) {
-      router.push('/auth/login')
-      return
+  const handleAddToCartFromModal = (product: Product, quantity: number) => {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+    const existingItem = cart.find((item: any) => item.id === product.id)
+
+    if (existingItem) {
+      existingItem.quantity += quantity
+    } else {
+      cart.push({ ...product, quantity })
     }
-    await addToCart(product.id, quantity)
+
+    localStorage.setItem('cart', JSON.stringify(cart))
+    window.dispatchEvent(new Event('cartUpdated'))
   }
 
   return (

@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Phone, Mail, MapPin, ArrowRight } from 'lucide-react'
-import { getCategoriesFromSupabase, type Category } from '@/lib/products'
+import { Phone, Mail, MapPin } from 'lucide-react'
+import { getCategoriesFromSupabase } from '@/lib/products'
 
 export function Footer() {
-  const [categories, setCategories] = useState<Category[]>([])
+  const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -36,32 +36,25 @@ export function Footer() {
             <p className="text-sm text-gray-400 mb-4">Votre destination pour les meilleurs équipements électroménagers de qualité.</p>
           </div>
 
-          {/* Products - Categories */}
+          {/* Products */}
           <div>
-            <h4 className="font-bold text-white mb-4 text-base">Catégories</h4>
+            <h4 className="font-bold text-white mb-4 text-base">Produits</h4>
             <ul className="text-sm text-gray-400 space-y-3">
               {!loading && categories.length > 0 ? (
                 <>
                   {categories.map(category => (
-                    <li key={category.id}>
-                      <Link 
-                        href={`/products?category=${encodeURIComponent(category.slug || category.name)}`} 
-                        className="hover:text-green-500 transition flex items-center gap-2 group"
-                      >
-                        <span className="text-lg">{category.emoji || '📦'}</span>
-                        <span className="group-hover:translate-x-1 transition-transform">{category.name}</span>
+                    <li key={category}>
+                      <Link href={`/products?category=${encodeURIComponent(category)}`} className="hover:text-green-500 transition">
+                        {category}
                       </Link>
                     </li>
                   ))}
-                  <li className="pt-2 border-t border-gray-800">
-                    <Link href="/products" className="hover:text-green-500 transition font-semibold flex items-center gap-2 group">
-                      <span>Tous les produits</span>
-                      <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </li>
+                  <li><Link href="/products" className="hover:text-green-500 transition font-semibold mt-2">Tous les produits</Link></li>
                 </>
               ) : (
-                <li><a href="#" className="text-gray-500">Chargement des catégories...</a></li>
+                <>
+                  <li><a href="#" className="text-gray-500">Chargement...</a></li>
+                </>
               )}
             </ul>
           </div>

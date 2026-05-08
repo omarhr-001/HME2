@@ -3,41 +3,50 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ProductCard } from './product-card'
-import { getProductsFromSupabase, getCategoriesFromSupabase, type Category } from '@/lib/products'
+import { getProductsFromSupabase } from '@/lib/products'
 import { ArrowRight } from 'lucide-react'
 import type { Product } from '@/lib/types'
 
 export function ProductsSection() {
   const [products, setProducts] = useState<Product[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [category, setCategory] = useState('all')
 
-  // Fetch products and categories on mount
+  // Fetch products from Supabase on mount
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchProducts = async () => {
       try {
-        const [productsData, categoriesData] = await Promise.all([
-          getProductsFromSupabase(),
-          getCategoriesFromSupabase()
-        ])
-        setProducts(productsData)
-        setCategories(categoriesData)
+        const data = await getProductsFromSupabase()
+        setProducts(data)
       } catch (error) {
-        console.error('Error fetching data:', error)
+        console.error('Error fetching products:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchData()
+    fetchProducts()
   }, [])
 
-  const displayedProducts = selectedCategory
-    ? products
-        .filter(p => p.category_id === selectedCategory)
-        .slice(0, 8)
-    : products.slice(0, 8)
+  // Get unique categories from fetched products
+ const categories = Array.from(new Set(products.map(p => p.category).filter((cat): cat is string => Boolean(cat)))).sort()  
+  const displayedProducts = category === 'all' 
+    ? products.slice(0, 8)
+    : products.filter(p => p.category === category).slice(0, 8)
+
+  const handleAddToCart = (product: Product, quantity: number = 1) => {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+    const existingItem = cart.find((item: any) => item.id === product.id)
+    
+    if (existingItem) {
+      existingItem.quantity += quantity
+    } else {
+      cart.push({ ...product, quantity })
+    }
+    
+    localStorage.setItem('cart', JSON.stringify(cart))
+    window.dispatchEvent(new Event('cartUpdated'))
+  }
 
   return (
     <section className="px-[5%] py-16">
@@ -53,30 +62,29 @@ export function ProductsSection() {
         </Link>
       </div>
 
-      {/* Category Tabs - Dynamic from Database */}
-      <div className="flex gap-0 overflow-x-auto mb-8 pb-4 border-b border-gray-200 -mx-[5%] px-[5%]">
+      {/* Category Tabs */}
+      <div className="flex gap-0 overflow-x-auto mb-8 pb-4 border-b border-gray-200">
         <button
-          onClick={() => setSelectedCategory(null)}
+          onClick={() => setCategory('all')}
           className={`px-5 py-3.5 text-xs font-medium whitespace-nowrap transition-all duration-300 border-b-[2.5px] ${
-            selectedCategory === null
+            category === 'all'
               ? 'text-green-700 border-green-500 font-semibold'
               : 'text-gray-500 border-transparent hover:text-green-600'
           }`}
         >
-          Toutes les catégories
+          Tous
         </button>
         {categories.map((cat) => (
           <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(cat.id)}
-            className={`px-5 py-3.5 text-xs font-medium whitespace-nowrap transition-all duration-300 border-b-[2.5px] flex items-center gap-2 ${
-              selectedCategory === cat.id
+            key={cat}
+            onClick={() => setCategory(cat)}
+            className={`px-5 py-3.5 text-xs font-medium whitespace-nowrap transition-all duration-300 border-b-[2.5px] ${
+              category === cat
                 ? 'text-green-700 border-green-500 font-semibold'
                 : 'text-gray-500 border-transparent hover:text-green-600'
             }`}
           >
-            <span className="text-base">{cat.emoji || '📦'}</span>
-            {cat.name}
+            {cat}
           </button>
         ))}
       </div>
@@ -96,6 +104,7 @@ export function ProductsSection() {
             <ProductCard
               key={product.id}
               {...product}
+              onAddToCart={handleAddToCart}
             />
           ))}
         </div>
@@ -103,4 +112,3 @@ export function ProductsSection() {
     </section>
   )
 }
-
