@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import useSWR from 'swr'
 import { useAuth } from '@/lib/auth-context'
@@ -37,7 +36,6 @@ interface Order {
 }
 
 export default function OrdersPage() {
-  const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   const [filterStatus, setFilterStatus] = useState('all')
 
@@ -46,12 +44,6 @@ export default function OrdersPage() {
     authenticatedFetcher,
     { revalidateOnFocus: false, dedupingInterval: 5000 }
   )
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/auth/login')
-    }
-  }, [user, authLoading, router])
 
   const statusColors = {
     pending: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-800', label: 'En attente' },

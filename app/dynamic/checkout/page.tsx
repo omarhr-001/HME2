@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { useCart, useCreateOrder } from '@/lib/hooks'
@@ -10,7 +9,6 @@ import { Footer } from '@/components/footer'
 import { ChevronRight } from 'lucide-react'
 
 export default function CheckoutPage() {
-  const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   const { cartItems, cartTotal, isLoading: cartLoading } = useCart()
   const { trigger: createOrder, isMutating: isCreating } = useCreateOrder()
@@ -29,13 +27,10 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/auth/login')
-    }
     if (user && user.email) {
       setFormData(prev => ({ ...prev, email: user.email || '' }))
     }
-  }, [user, authLoading, router])
+  }, [user])
 
   useEffect(() => {
     if (!cartLoading && cartItems.length === 0) {

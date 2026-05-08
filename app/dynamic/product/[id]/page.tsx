@@ -1,13 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Heart, ShoppingCart, Truck, Shield, RefreshCw, Check } from 'lucide-react'
 import Link from 'next/link'
-import { useAuth } from '@/lib/auth-context'
 import { useAddToCart } from '@/lib/hooks'
 import type { Product } from '@/lib/types'
 
@@ -18,8 +16,6 @@ interface ProductPageProps {
 }
 
 export default function ProductPage({ params }: ProductPageProps) {
-  const router = useRouter()
-  const { user } = useAuth()
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
@@ -78,11 +74,6 @@ export default function ProductPage({ params }: ProductPageProps) {
   }
 
   const handleAddToCart = async () => {
-    if (!user) {
-      router.push('/auth/login')
-      return
-    }
-
     try {
       await addToCart({
         productId: product.id,
