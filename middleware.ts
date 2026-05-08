@@ -1,44 +1,15 @@
-import { type NextRequest, NextResponse } from 'next/server'
-import { jwtVerify } from 'jose'
+import { NextResponse } from 'next/server'
 
-const secret = new TextEncoder().encode(
-  process.env.SUPABASE_JWT_SECRET || 'your-secret-key'
-)
-
-// Routes qui nécessitent une authentification
-const protectedRoutes = [
-  '/cart',
-  '/checkout',
-  '/orders',
-  '/account',
-  '/session-demo',
-]
-
-export async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
-
-  // Vérifier si la route est protégée
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
-
-  if (!isProtectedRoute) {
-    return NextResponse.next()
-  }
-
-  // Récupérer le token depuis les cookies
-  const token = request.cookies.get('auth-token')?.value
-
-  if (!token) {
-    return NextResponse.redirect(new URL('/auth/login', request.url))
-  }
-
-  try {
-    // Vérifier le token JWT
-    await jwtVerify(token, secret)
-    return NextResponse.next()
-  } catch (err) {
-    // Token invalide ou expiré
-    return NextResponse.redirect(new URL('/auth/login', request.url))
-  }
+/**
+ * Supabase keeps the current browser session in client-side storage in this app.
+ * The old middleware checked for a custom `auth-token` cookie that is never set
+ * during login, so authenticated users were redirected back to `/auth/login`
+ * when opening pages like `/cart` or `/account`.
+ *
+ * Page-level client guards and API Bearer-token validation handle auth here.
+ */
+export function middleware() {
+  return NextResponse.next()
 }
 
 export const config = {
