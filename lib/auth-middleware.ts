@@ -6,9 +6,17 @@ export interface AuthenticatedUser {
   email?: string
 }
 
+function getSupabaseAnonKey() {
+  return (
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  )
+}
+
 /**
- * Middleware to authenticate API requests using JWT tokens
- * Verifies token with Supabase and extracts user information
+ * Middleware to authenticate API requests using Supabase access tokens.
+ * The token must come from the current Supabase session and is revalidated
+ * with Supabase Auth before the route handler receives the user.
  */
 export async function withAuth(
   req: NextRequest,
@@ -16,7 +24,9 @@ export async function withAuth(
 ) {
   try {
     const authHeader = req.headers.get('authorization')
-    const token = authHeader?.replace('Bearer ', '')
+    const token = authHeader?.startsWith('Bearer ')
+      ? authHeader.slice('Bearer '.length).trim()
+      : null
 
     if (!token) {
       console.log('[v0] No token provided')
@@ -26,12 +36,18 @@ export async function withAuth(
       )
     }
 
-    // Verify token with Supabase using service role key
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = getSupabaseAnonKey()
 
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('[v0] Missing Supabase URL or public key')
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey)
     const { data, error } = await supabase.auth.getUser(token)
 
     if (error || !data.user) {

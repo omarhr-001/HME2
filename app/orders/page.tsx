@@ -5,20 +5,15 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import useSWR from 'swr'
 import { useAuth } from '@/lib/auth-context'
-import { supabase } from '@/lib/supabase'
+import { createAuthHeaders } from '@/lib/auth-token'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
 import { Package, ArrowLeft, Eye, Download, Filter } from 'lucide-react'
 
 const authenticatedFetcher = async (url: string) => {
-  const { data } = await supabase.auth.getSession()
-  const token = data.session?.access_token
   const res = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
+    headers: await createAuthHeaders(true),
   })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()

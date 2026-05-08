@@ -1,44 +1,15 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { jwtVerify } from 'jose'
 
-const secret = new TextEncoder().encode(
-  process.env.SUPABASE_JWT_SECRET || 'your-secret-key'
-)
-
-// Routes qui nécessitent une authentification
-const protectedRoutes = [
-  '/cart',
-  '/checkout',
-  '/orders',
-  '/account',
-  '/session-demo',
-]
-
-export async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
-
-  // Vérifier si la route est protégée
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
-
-  if (!isProtectedRoute) {
-    return NextResponse.next()
-  }
-
-  // Récupérer le token depuis les cookies
-  const token = request.cookies.get('auth-token')?.value
-
-  if (!token) {
-    return NextResponse.redirect(new URL('/auth/login', request.url))
-  }
-
-  try {
-    // Vérifier le token JWT
-    await jwtVerify(token, secret)
-    return NextResponse.next()
-  } catch (err) {
-    // Token invalide ou expiré
-    return NextResponse.redirect(new URL('/auth/login', request.url))
-  }
+/*
+ * Supabase's browser client stores the current session in browser storage for
+ * this project. The old middleware expected a custom `auth-token` cookie that
+ * was never created, so authenticated users were redirected away from protected
+ * pages. Page-level client guards and API-level `supabase.auth.getUser(token)`
+ * validation now own authorization until the app is migrated to cookie-based
+ * SSR auth with @supabase/ssr.
+ */
+export function middleware(_request: NextRequest) {
+  return NextResponse.next()
 }
 
 export const config = {

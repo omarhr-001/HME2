@@ -1,19 +1,14 @@
 'use client'
 
 import { useAuth } from '@/lib/auth-context'
-import { useCart, useAddToCart, useRemoveFromCart, useUpdateQuantity, useCreateOrder } from '@/lib/hooks'
+import { type CartItem, useAddToCart, useRemoveFromCart, useUpdateQuantity, useCreateOrder } from '@/lib/hooks'
 import { useState } from 'react'
 import useSWR from 'swr'
-import { supabase } from '@/lib/supabase'
+import { createAuthHeaders } from '@/lib/auth-token'
 
 const authenticatedFetcher = async (url: string) => {
-  const { data } = await supabase.auth.getSession()
-  const token = data.session?.access_token
   const res = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
+    headers: await createAuthHeaders(true),
   })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
@@ -21,7 +16,7 @@ const authenticatedFetcher = async (url: string) => {
 
 export default function SessionDemoPage() {
   const { user, sessionId, loading } = useAuth()
-  const { data: cartItems = [], isLoading: cartLoading, mutate: mutateCart } = useSWR(
+  const { data: cartItems = [], isLoading: cartLoading, mutate: mutateCart } = useSWR<CartItem[]>(
     user ? `/api/cart` : null,
     authenticatedFetcher
   )
@@ -64,7 +59,7 @@ export default function SessionDemoPage() {
     }
   }
 
-  const cartTotal = (cartItems || []).reduce((total, item) => {
+  const cartTotal = (cartItems || []).reduce((total: number, item: CartItem) => {
     return total + (item.products?.price || 0) * item.quantity
   }, 0)
 
@@ -90,7 +85,7 @@ export default function SessionDemoPage() {
           <p className="text-gray-500">Cart is empty</p>
         ) : (
           <div className="space-y-3 mb-4">
-            {cartItems.map((item: any) => (
+            {cartItems.map((item) => (
               <div key={item.id} className="bg-white p-3 rounded flex justify-between items-center">
                 <div>
                   <p className="font-semibold">{item.product_name || item.product_id}</p>
