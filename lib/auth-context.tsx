@@ -19,6 +19,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [sessionId, setSessionId] = useState<string | null>(null)
 
   useEffect(() => {
+    // If supabase is not configured, skip auth initialization
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     let mounted = true
 
     // 1. initial session
@@ -57,7 +63,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    if (supabase) {
+      await supabase.auth.signOut()
+    }
     setUser(null)
     setSessionId(null)
   }
