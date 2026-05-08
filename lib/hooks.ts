@@ -3,8 +3,8 @@
 import { useAuth } from './auth-context'
 import { supabase } from './supabase'
 import useSWR from 'swr'
-import { useState } from 'react'
-import type { CartItemWithProduct } from './types'
+import { useEffect, useState } from 'react'
+import type { CartItemWithProduct, CheckoutPayload, Order } from './types'
 
 // Helper to get JWT token and create authenticated fetcher
 async function getAuthToken() {
@@ -32,6 +32,34 @@ export function useCart() {
     authenticatedFetcher,
     { revalidateOnFocus: false, dedupingInterval: 5000 }
   )
+
+ useEffect(() => {
+  if (!user?.id) return
+
+  // ✅ Évite de recréer un canal déjà existant
+  const existingChannel = supabase.getChannels().find(
+    (ch) => ch.topic === `realtime:cart-items-${user.id}`
+  )
+  if (existingChannel) return
+
+  const channel = supabase
+    .channel(`cart-items-${user.id}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'cart_items',
+        filter: `user_id=eq.${user.id}`,
+      },
+      () => mutate()
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [mutate, user?.id])
 
   const addToCart = async (productId: string, quantity: number) => {
     if (!user) return
@@ -111,13 +139,13 @@ export function useCart() {
 export function useOrders() {
   const { user } = useAuth()
   
-  const { data: orders, mutate, error, isLoading } = useSWR(
+  const { data: orders, mutate, error, isLoading } = useSWR<Order[]>(
     user ? `/api/orders` : null,
     authenticatedFetcher,
     { revalidateOnFocus: false, dedupingInterval: 5000 }
   )
 
-  const createOrder = async (items: any[], totalAmount: number) => {
+  const createOrder = async (payload: CheckoutPayload) => {
     if (!user) return
     try {
       const token = await getAuthToken()
@@ -128,8 +156,7 @@ export function useOrders() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          items,
-          totalAmount,
+          ...payload,
           status: 'pending',
         }),
       })
@@ -271,7 +298,7 @@ export function useCreateOrder() {
   const { user } = useAuth()
   const [isMutating, setIsMutating] = useState(false)
 
-  const trigger = async ({ items }: { items: any[] }) => {
+  const trigger = async (payload: CheckoutPayload) => {
     if (!user) return
     setIsMutating(true)
     try {
@@ -283,7 +310,7 @@ export function useCreateOrder() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          items,
+          ...payload,
           status: 'pending',
         }),
       })

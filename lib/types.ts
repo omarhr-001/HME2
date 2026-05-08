@@ -48,6 +48,7 @@ export interface CartProduct {
   name?: string;
   category?: string;
   price?: number;
+  stock_quantity?: number;
   image_url?: string;
 }
 
@@ -62,26 +63,44 @@ export interface CartItemWithProduct {
 }
 
 export interface Order {
-  id: number;
-  user_id: number;
-  order_number: string;
+  id: string;
+  user_id: string;
+  order_number?: string;
   total_amount: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  shipping_address?: string;
-  billing_address?: string;
+  shipping_address?: Record<string, unknown>;
+  billing_address?: Record<string, unknown>;
   notes?: string;
-  created_at: Date;
-  updated_at: Date;
+  created_at: string;
+  updated_at: string;
+  order_items?: OrderItemWithProduct[];
 }
 
-export interface OrderItem {
-  id: number;
-  order_id: number;
-  product_id: number;
+export interface OrderItemWithProduct {
+  id: string;
+  order_id: string;
+  product_id: string | number;
   quantity: number;
-  unit_price: number;
-  subtotal: number;
-  created_at: Date;
+  price: number;
+  created_at: string;
+  products?: CartProduct | null;
+}
+
+export interface CheckoutAddress {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  country?: string;
+}
+
+export interface CheckoutPayload {
+  shippingAddress: CheckoutAddress;
+  billingAddress: CheckoutAddress;
+  notes?: string;
 }
 
 export interface Category {
