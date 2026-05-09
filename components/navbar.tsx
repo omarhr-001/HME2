@@ -13,21 +13,24 @@ export function Navbar() {
   const { cartItems } = useCart()
 
   const handleScroll = () => setScrolled(window.scrollY > 10)
-  
+
   const handleSignOut = async () => {
     await signOut()
     setMobileOpen(false)
   }
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 h-17 flex items-center justify-between px-[5%] transition-all duration-300 ${
-      scrolled 
-        ? 'bg-white/100 shadow-lg' 
+    <nav className={`fixed top-0 left-0 right-0 z-50 h-17 flex items-center justify-between px-[5%] transition-all duration-300 ${scrolled
+        ? 'bg-white/100 shadow-lg'
         : 'bg-white/97 shadow-sm'
-    }`} style={{ backdropFilter: 'blur(16px)' }}>
+      }`} style={{ backdropFilter: 'blur(16px)' }}>
       {/* Logo */}
-      <Link href="/" className="flex items-center gap-2 no-underline cursor-pointer">
-        <img src="/logo.png" alt="Hamroun Meuble & Electro" className="w-12 h-12" />
+      <Link href="/" className="flex items-center gap-2.5 no-underline cursor-pointer group">
+        <img src="/logo.png" alt="Hamroun Meuble & Electro" className="w-12 h-12 flex-shrink-0" />
+        <div className="flex flex-col leading-tight">
+          <span className="text-gray-900 font-bold text-base tracking-tight group-hover:text-green-700 transition-colors duration-300">Hamroun</span>
+          <span className="text-green-700 font-semibold text-xs tracking-wide uppercase">Meuble & Electro</span>
+        </div>
       </Link>
 
       {/* Desktop Links */}
@@ -50,7 +53,7 @@ export function Navbar() {
             )}
           </Link>
         )}
-        
+
         {loading ? (
           <div className="hidden md:flex items-center gap-2">
             <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
@@ -65,7 +68,7 @@ export function Navbar() {
             <Link href="/account" className="hidden md:flex items-center gap-2 bg-none border-none cursor-pointer p-2 rounded-[10px] text-gray-600 transition-all duration-300 hover:bg-green-50 hover:text-green-700">
               <User size={20} />
             </Link>
-            <button 
+            <button
               onClick={handleSignOut}
               className="hidden md:flex items-center gap-2 bg-none border-none cursor-pointer p-2 rounded-[10px] text-gray-600 transition-all duration-300 hover:bg-red-50 hover:text-red-700"
             >
@@ -74,7 +77,7 @@ export function Navbar() {
           </>
         )}
 
-        <button 
+        <button
           onClick={() => setMobileOpen(!mobileOpen)}
           className="md:hidden bg-none border-none cursor-pointer p-2 text-gray-600"
         >
@@ -102,7 +105,7 @@ export function Navbar() {
                 <Link href="/app/account/page.tsx" className="no-underline text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 flex items-center gap-2">
                   <User size={16} /> Mon compte
                 </Link>
-                <button 
+                <button
                   onClick={handleSignOut}
                   className="no-underline text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 w-full text-left flex items-center gap-2"
                 >
