@@ -26,45 +26,47 @@ const authenticatedFetcher = async (url: string) => {
 
 export function useCart() {
   const { user } = useAuth()
-  
+
   const { data: cartItems, mutate, error, isLoading } = useSWR<CartItemWithProduct[]>(
     user ? `/api/cart` : null,
     authenticatedFetcher,
     { revalidateOnFocus: false, dedupingInterval: 5000 }
   )
 
- useEffect(() => {
-  if (!user?.id) return
+  useEffect(() => {
+    if (!user?.id) return
 
-  // ✅ Évite de recréer un canal déjà existant
-  const existingChannel = supabase.getChannels().find(
-    (ch) => ch.topic === `realtime:cart-items-${user.id}`
-  )
-  if (existingChannel) return
-
-  const channel = supabase
-    .channel(`cart-items-${user.id}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'cart_items',
-        filter: `user_id=eq.${user.id}`,
-      },
-      () => mutate()
+    // ✅ Évite de recréer un canal déjà existant
+    const existingChannel = supabase.getChannels().find(
+      (ch) => ch.topic === `realtime:cart-items-${user.id}`
     )
-    .subscribe()
+    if (existingChannel) return
 
-  return () => {
-    supabase.removeChannel(channel)
-  }
-}, [mutate, user?.id])
+    const channel = supabase
+      .channel(`cart-items-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cart_items',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => mutate()
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [mutate, user?.id])
 
   const addToCart = async (productId: string, quantity: number) => {
-    if (!user) return
+    if (!user) throw new Error('User not authenticated')
     try {
       const token = await getAuthToken()
+      if (!token) throw new Error('Failed to get authentication token')
+
       const res = await fetch('/api/cart', {
         method: 'POST',
         headers: {
@@ -76,17 +78,26 @@ export function useCart() {
           quantity,
         }),
       })
-      if (res.ok) {
-        mutate()
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || `Failed to add to cart: ${res.status}`)
       }
+
+      const data = await res.json()
+      mutate()
+      return data
     } catch (err) {
       console.error('[v0] Error adding to cart:', err)
+      throw err
     }
   }
 
   const updateCartItem = async (itemId: string, quantity: number) => {
     try {
       const token = await getAuthToken()
+      if (!token) throw new Error('Failed to get authentication token')
+
       const res = await fetch(`/api/cart/${itemId}`, {
         method: 'PUT',
         headers: {
@@ -95,28 +106,42 @@ export function useCart() {
         },
         body: JSON.stringify({ quantity }),
       })
-      if (res.ok) {
-        mutate()
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || `Failed to update cart item: ${res.status}`)
       }
+
+      const data = await res.json()
+      mutate()
+      return data
     } catch (err) {
       console.error('[v0] Error updating cart item:', err)
+      throw err
     }
   }
 
   const removeFromCart = async (itemId: string) => {
     try {
       const token = await getAuthToken()
+      if (!token) throw new Error('Failed to get authentication token')
+
       const res = await fetch(`/api/cart/${itemId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       })
-      if (res.ok) {
-        mutate()
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || `Failed to remove from cart: ${res.status}`)
       }
+
+      mutate()
     } catch (err) {
       console.error('[v0] Error removing from cart:', err)
+      throw err
     }
   }
 
@@ -138,7 +163,7 @@ export function useCart() {
 
 export function useOrders() {
   const { user } = useAuth()
-  
+
   const { data: orders, mutate, error, isLoading } = useSWR<Order[]>(
     user ? `/api/orders` : null,
     authenticatedFetcher,

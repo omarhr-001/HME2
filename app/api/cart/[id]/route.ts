@@ -1,13 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth-middleware'
-
-function createAuthenticatedClient(token: string) {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
+import { createUserScopedClient } from '@/lib/server-supabase'
 
 export async function DELETE(
   req: NextRequest,
@@ -17,7 +10,7 @@ export async function DELETE(
     try {
       const cartItemId = params.id
 
-      const supabase = createAuthenticatedClient(
+      const supabase = createUserScopedClient(
         req.headers.get('authorization')?.replace('Bearer ', '') || ''
       )
 
@@ -77,7 +70,7 @@ export async function PUT(
         )
       }
 
-      const supabase = createAuthenticatedClient(
+      const supabase = createUserScopedClient(
         req.headers.get('authorization')?.replace('Bearer ', '') || ''
       )
 

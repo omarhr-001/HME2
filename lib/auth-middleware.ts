@@ -26,11 +26,31 @@ export async function withAuth(
       )
     }
 
-    // Verify token with Supabase using service role key
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    // Verify token with Supabase using the token itself
+    // We need to use the service role key if available, otherwise fall back to token verification
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+
+    if (!supabaseUrl) {
+      console.error('[v0] Missing NEXT_PUBLIC_SUPABASE_URL')
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+
+    // Use service role key if available, otherwise use anon key
+    const key = serviceRoleKey || anonKey
+    if (!key) {
+      console.error('[v0] Missing Supabase credentials')
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+
+    const supabase = createClient(supabaseUrl, key)
 
     const { data, error } = await supabase.auth.getUser(token)
 

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useAuth } from '@/lib/auth-context'
 import { useCart, useRemoveFromCart, useUpdateQuantity } from '@/lib/hooks'
+import { useToast } from '@/hooks/use-toast'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react'
@@ -15,21 +16,50 @@ export default function CartPage() {
   const { cartItems, cartTotal, isLoading } = useCart()
   const { trigger: removeItem } = useRemoveFromCart()
   const { trigger: updateQuantity } = useUpdateQuantity()
+  const { toast } = useToast()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  const handleRemove = async (itemId: string) => {
-    await removeItem({ cartItemId: itemId })
+  const handleRemove = async (itemId: string, productName: string) => {
+    try {
+      await removeItem({ cartItemId: itemId })
+      toast({
+        title: 'Succ\u00e8s',
+        description: `${productName} a \u00e9t\u00e9 supprim\u00e9 du panier`,
+      })
+    } catch (error) {
+      console.error('Error removing from cart:', error)
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de supprimer l\'article du panier',
+      })
+    }
   }
 
-  const handleQuantityChange = async (itemId: string, quantity: number) => {
-    if (quantity <= 0) {
-      await removeItem({ cartItemId: itemId })
-    } else {
-      await updateQuantity({ cartItemId: itemId, quantity })
+  const handleQuantityChange = async (itemId: string, quantity: number, productName: string) => {
+    try {
+      if (quantity <= 0) {
+        await removeItem({ cartItemId: itemId })
+        toast({
+          title: 'Succ\u00e8s',
+          description: `${productName} a \u00e9t\u00e9 supprim\u00e9 du panier`,
+        })
+      } else {
+        await updateQuantity({ cartItemId: itemId, quantity })
+        toast({
+          title: 'Succ\u00e8s',
+          description: `Quantit\u00e9 mise \u00e0 jour`,
+        })
+      }
+    } catch (error) {
+      console.error('Error updating quantity:', error)
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de mettre \u00e0 jour la quantit\u00e9',
+      })
     }
   }
 
@@ -105,14 +135,14 @@ export default function CartPage() {
                     {/* Quantity Control */}
                     <div className="flex items-center gap-2 border border-gray-200 rounded-lg overflow-hidden">
                       <button
-                        onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                        onClick={() => handleQuantityChange(item.id, item.quantity - 1, item.products?.name || 'Produit')}
                         className="w-9 h-9 bg-gray-50 border-none cursor-pointer flex items-center justify-center hover:bg-gray-100 transition-colors"
                       >
                         <Minus size={16} />
                       </button>
                       <span className="w-12 text-center font-bold text-gray-800">{item.quantity}</span>
                       <button
-                        onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                        onClick={() => handleQuantityChange(item.id, item.quantity + 1, item.products?.name || 'Produit')}
                         className="w-9 h-9 bg-gray-50 border-none cursor-pointer flex items-center justify-center hover:bg-gray-100 transition-colors"
                       >
                         <Plus size={16} />
@@ -121,7 +151,7 @@ export default function CartPage() {
 
                     {/* Remove Button */}
                     <button
-                      onClick={() => handleRemove(item.id)}
+                      onClick={() => handleRemove(item.id, item.products?.name || 'Produit')}
                       className="text-red-500 hover:text-red-700 transition-colors"
                     >
                       <Trash2 size={20} />

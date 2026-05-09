@@ -1,18 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import { withAuth, validateUserOwnership } from '@/lib/auth-middleware'
-
-function createAuthenticatedClient(token: string) {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
+import { withAuth } from '@/lib/auth-middleware'
+import { createUserScopedClient } from '@/lib/server-supabase'
 
 export async function GET(req: NextRequest) {
   return withAuth(req, async (req, user) => {
     try {
-      const supabase = createAuthenticatedClient(
+      const supabase = createUserScopedClient(
         req.headers.get('authorization')?.replace('Bearer ', '') || ''
       )
 
@@ -50,7 +43,7 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      const supabase = createAuthenticatedClient(
+      const supabase = createUserScopedClient(
         req.headers.get('authorization')?.replace('Bearer ', '') || ''
       )
 

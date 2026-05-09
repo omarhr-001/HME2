@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation'
 import { Heart, ShoppingCart } from 'lucide-react'
 import { ProductDetailsModal } from './product-details-modal'
 import { useCart } from '@/lib/hooks'
-import { getCurrentUser } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
+import { useToast } from '@/hooks/use-toast'
 import type { Product } from '@/lib/types'
 
 interface ProductCardProps extends Product {
@@ -30,8 +31,11 @@ export function ProductCard({
 }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
   const router = useRouter()
+  const { user } = useAuth()
   const { addToCart } = useCart()
+  const { toast } = useToast()
 
   const displayOriginalPrice = originalPrice ?? price
   const displayImage = image || image_url || '/placeholder.jpg'
@@ -61,8 +65,11 @@ export function ProductCard({
     : 0
 
   const handleAddToCart = async (quantity = 1) => {
-    const user = await getCurrentUser()
     if (!user) {
+      toast({
+        title: 'Connexion requise',
+        description: 'Veuillez vous connecter pour ajouter des articles au panier',
+      })
       router.push('/auth/login')
       return
     }
@@ -72,7 +79,22 @@ export function ProductCard({
       return
     }
 
-    await addToCart(id, quantity)
+    setIsAdding(true)
+    try {
+      await addToCart(id, quantity)
+      toast({
+        title: 'Succès',
+        description: `${name} a été ajouté au panier`,
+      })
+    } catch (error) {
+      console.error('Error adding to cart:', error)
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'ajouter l\'article au panier',
+      })
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   return (
@@ -115,11 +137,10 @@ export function ProductCard({
               e.stopPropagation()
               setIsWishlisted(!isWishlisted)
             }}
-            className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm ${
-              isWishlisted
+            className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm ${isWishlisted
                 ? 'bg-red-50 border-red-300 text-red-500'
                 : 'bg-white border border-gray-200 text-gray-400 hover:bg-red-50 hover:border-red-300'
-            }`}
+              }`}
             aria-label="Ajouter aux favoris"
           >
             <Heart size={14} fill={isWishlisted ? 'currentColor' : 'none'} />
@@ -151,17 +172,20 @@ export function ProductCard({
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                if (isAvailable) handleAddToCart()
+                if (isAvailable && !isAdding) handleAddToCart()
               }}
-              disabled={!isAvailable}
-              className={`w-9 h-9 border-none rounded-2xl flex items-center justify-center cursor-pointer text-white text-base transition-all duration-300 shadow-md ${
-                isAvailable
+              disabled={!isAvailable || isAdding}
+              className={`w-9 h-9 border-none rounded-2xl flex items-center justify-center cursor-pointer text-white text-base transition-all duration-300 shadow-md ${isAvailable && !isAdding
                   ? 'bg-green-500 hover:bg-green-600 hover:scale-110'
                   : 'bg-gray-300 cursor-not-allowed'
-              }`}
+                }`}
               aria-label="Ajouter au panier"
             >
-              <ShoppingCart size={16} />
+              {isAdding ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <ShoppingCart size={16} />
+              )}
             </button>
           </div>
         </div>
