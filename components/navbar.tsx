@@ -26,8 +26,12 @@ export function Navbar() {
         : 'bg-white/97 shadow-sm'
     }`} style={{ backdropFilter: 'blur(16px)' }}>
       {/* Logo */}
-      <Link href="/" className="flex items-center gap-2 no-underline cursor-pointer">
-        <img src="/logo.png" alt="Hamroun Meuble & Electro" className="w-12 h-12" />
+      <Link href="/" className="flex items-center gap-2.5 no-underline cursor-pointer group">
+        <img src="/logo.png" alt="Hamroun Meuble & Electro" className="w-12 h-12 flex-shrink-0" />
+        <div className="flex flex-col leading-tight">
+          <span className="text-gray-900 font-bold text-base tracking-tight group-hover:text-green-700 transition-colors duration-300">Hamroun</span>
+          <span className="text-green-700 font-semibold text-xs tracking-wide uppercase">Meuble & Electro</span>
+        </div>
       </Link>
 
       {/* Desktop Links */}
