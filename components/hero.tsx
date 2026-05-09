@@ -1,9 +1,21 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Percent, Clock, Sparkles } from 'lucide-react'
+import { getTopOffers, type Offer } from '@/lib/offers'
 
 export function Hero() {
+  const [topOffers, setTopOffers] = useState<Offer[]>([])
+  const [maxDiscount, setMaxDiscount] = useState(0)
+
+  useEffect(() => {
+    const offers = getTopOffers(3)
+    setTopOffers(offers)
+    const maxDisc = Math.max(...offers.map(o => o.discount))
+    setMaxDiscount(maxDisc)
+  }, [])
+
   return (
     <section className="relative bg-gradient-to-br from-gray-800 via-gray-900 to-blue-gray-900 pt-32 pb-20 px-[5%] min-h-screen flex items-center overflow-hidden">
       {/* Decorative elements */}
@@ -58,47 +70,33 @@ export function Hero() {
                 </div>
                 <div>
                   <h3 className="text-white font-bold text-lg">Offres Spéciales</h3>
-                  <p className="text-white/60 text-sm">Économisez jusqu&apos;à 40%</p>
+                  <p className="text-white/60 text-sm">Économisez jusqu&apos;à {maxDiscount}%</p>
                 </div>
               </div>
 
               {/* Offers list */}
               <div className="space-y-3 mb-5">
-                <div className="bg-white/10 rounded-xl p-3 border border-white/10 hover:border-green-500/30 transition-colors cursor-pointer group">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-white font-medium text-sm group-hover:text-green-400 transition-colors">Réfrigérateurs</p>
-                      <p className="text-white/50 text-xs">Samsung, LG, Bosch</p>
+                {topOffers.length > 0 ? (
+                  topOffers.map((offer) => (
+                    <div key={offer.id} className="bg-white/10 rounded-xl p-3 border border-white/10 hover:border-green-500/30 transition-colors cursor-pointer group">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-white font-medium text-sm group-hover:text-green-400 transition-colors">{offer.title}</p>
+                          <p className="text-white/50 text-xs">{offer.description}</p>
+                        </div>
+                        <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded-full">-{offer.discount}%</span>
+                      </div>
                     </div>
-                    <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded-full">-30%</span>
-                  </div>
-                </div>
-                
-                <div className="bg-white/10 rounded-xl p-3 border border-white/10 hover:border-green-500/30 transition-colors cursor-pointer group">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-white font-medium text-sm group-hover:text-green-400 transition-colors">Machines à laver</p>
-                      <p className="text-white/50 text-xs">Toutes marques</p>
-                    </div>
-                    <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded-full">-25%</span>
-                  </div>
-                </div>
-                
-                <div className="bg-white/10 rounded-xl p-3 border border-white/10 hover:border-green-500/30 transition-colors cursor-pointer group">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-white font-medium text-sm group-hover:text-green-400 transition-colors">Climatiseurs</p>
-                      <p className="text-white/50 text-xs">Offre été 2026</p>
-                    </div>
-                    <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded-full">-40%</span>
-                  </div>
-                </div>
+                  ))
+                ) : (
+                  <div className="text-white/50 text-sm text-center py-4">Chargement des offres...</div>
+                )}
               </div>
 
               {/* Timer */}
               <div className="flex items-center gap-2 text-white/60 text-xs mb-4">
                 <Clock size={14} className="text-green-500" />
-                <span>Offre valable jusqu&apos;au 31 Mai 2026</span>
+                <span>Offre valable jusqu&apos;au {topOffers[0]?.expiresAt || '31 Mai 2026'}</span>
               </div>
 
               {/* CTA */}
