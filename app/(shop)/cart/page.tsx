@@ -39,12 +39,10 @@ export default function CartPage() {
         title: 'Succ\u00e8s',
         description: `${productName} a \u00e9t\u00e9 supprim\u00e9 du panier`,
       })
-      // Revalidate with server to ensure sync
-      mutate()
     } catch (error) {
       console.error('Error removing from cart:', error)
-      // Revert on error by revalidating
-      mutate()
+      // Revert on error by revalidating from server
+      await mutate()
       toast({
         title: 'Erreur',
         description: 'Impossible de supprimer l\'article du panier',
