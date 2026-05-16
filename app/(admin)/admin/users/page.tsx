@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Search } from 'lucide-react'
 import { DashboardCard, StatusBadge } from '@/components/admin-components'
+import { supabase } from '@/lib/supabase'
 
 interface User {
   id: string
@@ -25,17 +26,14 @@ export default function UsersPage() {
 
   async function fetchUsers() {
     try {
-      const res = await fetch('/api/admin/users')
-      const data = await res.json()
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-      if (!res.ok) {
-        console.error('[v0] Error fetching users:', data.error)
-      }
-
-      console.log('[v0] Fetched users:', data.users?.length || 0, 'users')
-      setUsers(data.users || [])
+      setUsers(data || [])
     } catch (error) {
-      console.error('[v0] Error fetching users:', error)
+      console.error('Error fetching users:', error)
     } finally {
       setLoading(false)
     }
