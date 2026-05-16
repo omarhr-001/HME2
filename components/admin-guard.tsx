@@ -10,7 +10,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading && (!user || role !== 'admin')) {
-      router.push('/login')
+      router.push('/auth/login')
     }
   }, [user, role, loading, router])
 

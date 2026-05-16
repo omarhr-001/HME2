@@ -23,20 +23,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true
 
-    // Fetch user role from profiles table
-    const fetchUserRole = async (userId: string) => {
+    // Fetch user role from API (bypasses RLS)
+    const fetchUserRole = async (token: string) => {
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', userId)
-          .single()
-
-        if (!error && data) {
-          return (data.role as 'admin' | 'client') || 'client'
+        const response = await fetch('/api/auth/user-role', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        if (!response.ok) {
+          return 'client'
         }
-        return 'client'
+        
+        const data = await response.json()
+        return (data.role as 'admin' | 'client') || 'client'
       } catch (err) {
+        console.error('[v0] Error fetching user role:', err)
         return 'client'
       }
     }
@@ -45,12 +48,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!mounted) return
       const authUser = data.session?.user ?? null
+      const token = data.session?.access_token
       setUser(authUser)
       
       // Set session ID from user ID
-      if (authUser) {
+      if (authUser && token) {
         setSessionId(authUser.id)
-        const userRole = await fetchUserRole(authUser.id)
+        const userRole = await fetchUserRole(token)
         if (mounted) {
           setRole(userRole)
         }
@@ -63,11 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } =
       supabase.auth.onAuthStateChange(async (_event, session) => {
         const authUser = session?.user ?? null
+        const token = session?.access_token
         setUser(authUser)
         
-        if (authUser) {
+        if (authUser && token) {
           setSessionId(authUser.id)
-          const userRole = await fetchUserRole(authUser.id)
+          const userRole = await fetchUserRole(token)
           if (mounted) {
             setRole(userRole)
           }
