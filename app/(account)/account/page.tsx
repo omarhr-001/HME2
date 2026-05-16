@@ -5,7 +5,7 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Mail, LogOut, User, Package, Lock, Settings, CreditCard, MapPin, Edit2, ArrowRight } from 'lucide-react'
+import { Mail, LogOut, User, Package, Lock, Edit2, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
@@ -106,7 +106,7 @@ export default function AccountPage() {
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-gray-600 font-semibold">Commandes</h3>
@@ -118,20 +118,10 @@ export default function AccountPage() {
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-gray-600 font-semibold">Adresses</h3>
-                <MapPin className="w-5 h-5 text-green-600" />
+                <h3 className="text-gray-600 font-semibold">Sécurité</h3>
+                <Lock className="w-5 h-5 text-green-600" />
               </div>
-              <p className="text-3xl font-bold text-gray-900">1</p>
-              <p className="text-sm text-gray-500 mt-2">Adresse(s) sauvegardée(s)</p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-gray-600 font-semibold">Wallet</h3>
-                <CreditCard className="w-5 h-5 text-green-600" />
-              </div>
-              <p className="text-3xl font-bold text-gray-900">0 DT</p>
-              <p className="text-sm text-gray-500 mt-2">Crédit disponible</p>
+              <p className="text-sm text-gray-600 mt-2">Protégez votre compte avec un mot de passe fort</p>
             </div>
           </div>
 
@@ -151,18 +141,6 @@ export default function AccountPage() {
                 </div>
               </Link>
 
-              {/* Addresses */}
-              <Link href="/account/addresses">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md hover:border-green-200 transition-all duration-300 cursor-pointer group h-full">
-                  <div className="flex items-start justify-between mb-4">
-                    <MapPin className="w-8 h-8 text-green-600" />
-                    <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-green-600 transition-colors" />
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Adresses</h3>
-                  <p className="text-gray-600 text-sm">Gérez vos adresses de livraison et de facturation</p>
-                </div>
-              </Link>
-
               {/* Change Password */}
               <Link href="/account/change-password">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md hover:border-green-200 transition-all duration-300 cursor-pointer group h-full">
@@ -172,18 +150,6 @@ export default function AccountPage() {
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2">Sécurité</h3>
                   <p className="text-gray-600 text-sm">Changez votre mot de passe et gérez la sécurité</p>
-                </div>
-              </Link>
-
-              {/* Settings */}
-              <Link href="/account/settings">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md hover:border-green-200 transition-all duration-300 cursor-pointer group h-full">
-                  <div className="flex items-start justify-between mb-4">
-                    <Settings className="w-8 h-8 text-green-600" />
-                    <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-green-600 transition-colors" />
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Paramètres</h3>
-                  <p className="text-gray-600 text-sm">Préférences, notifications et confidentialité</p>
                 </div>
               </Link>
             </div>
