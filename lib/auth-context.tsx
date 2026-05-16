@@ -16,6 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 async function fetchUserRole(userId: string) {
   try {
+    console.log('[v0] Fetching role for user:', userId)
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('role')
@@ -23,11 +24,13 @@ async function fetchUserRole(userId: string) {
       .single()
     
     if (error) {
-      console.error('[v0] Error fetching role:', error)
+      console.error('[v0] Error fetching role:', error.message)
       return 'client'
     }
     
-    return (profile?.role as 'admin' | 'client') || 'client'
+    const userRole = (profile?.role as 'admin' | 'client') || 'client'
+    console.log('[v0] User role fetched:', userRole, 'for user:', userId)
+    return userRole
   } catch (err) {
     console.error('[v0] Error in fetchUserRole:', err)
     return 'client'
