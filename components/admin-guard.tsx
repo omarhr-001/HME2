@@ -9,7 +9,10 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
+    console.log('[v0] AdminGuard: Checking access - user:', user?.email, 'role:', role, 'loading:', loading)
+    
     if (!loading && (!user || role !== 'admin')) {
+      console.log('[v0] AdminGuard: Access denied, redirecting to login')
       router.push('/auth/login')
     }
   }, [user, role, loading, router])

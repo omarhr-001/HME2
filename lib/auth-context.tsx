@@ -26,20 +26,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Fetch user role from API (bypasses RLS)
     const fetchUserRole = async (token: string) => {
       try {
+        console.log('[v0] Auth context: Fetching user role with token')
         const response = await fetch('/api/auth/user-role', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         })
         
+        console.log('[v0] Auth context: API response status:', response.status)
+        
         if (!response.ok) {
+          console.warn('[v0] Auth context: API returned error status')
           return 'client'
         }
         
         const data = await response.json()
+        console.log('[v0] Auth context: Got role from API:', data.role)
         return (data.role as 'admin' | 'client') || 'client'
       } catch (err) {
-        console.error('[v0] Error fetching user role:', err)
+        console.error('[v0] Auth context: Error fetching user role:', err)
         return 'client'
       }
     }
