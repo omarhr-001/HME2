@@ -117,7 +117,6 @@ create table if not exists public.profiles (
   last_name text,
   phone text,
   profile_image_url text,
-  role text not null default 'client' check (role in ('admin', 'client')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
