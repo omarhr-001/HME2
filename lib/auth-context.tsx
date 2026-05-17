@@ -26,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!mounted) return
       const authUser = data.session?.user ?? null
       setUser(authUser)
+      syncAdminTokenCookie(data.session?.access_token ?? null)
       
       // Set session ID from user ID
       if (authUser) {
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       supabase.auth.onAuthStateChange(async (_event, session) => {
         const authUser = session?.user ?? null
         setUser(authUser)
+        syncAdminTokenCookie(session?.access_token ?? null)
         
         if (authUser) {
           setSessionId(authUser.id)
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut()
+    syncAdminTokenCookie(null)
     setUser(null)
     setSessionId(null)
   }
@@ -73,4 +76,15 @@ export function useAuth() {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used within AuthProvider')
   return ctx
+}
+
+function syncAdminTokenCookie(token: string | null) {
+  if (typeof document === 'undefined') return
+
+  if (!token) {
+    document.cookie = 'sb-access-token=; Max-Age=0; Path=/; SameSite=Lax'
+    return
+  }
+
+  document.cookie = `sb-access-token=${encodeURIComponent(token)}; Path=/; Max-Age=3600; SameSite=Lax`
 }

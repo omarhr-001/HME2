@@ -98,8 +98,11 @@ export interface CheckoutAddress {
 }
 
 export interface CheckoutPayload {
-  shippingAddress: CheckoutAddress;
-  billingAddress: CheckoutAddress;
+  items?: CartItemWithProduct[];
+  totalAmount?: number;
+  status?: Order['status'];
+  shippingAddress?: CheckoutAddress;
+  billingAddress?: CheckoutAddress;
   notes?: string;
 }
 

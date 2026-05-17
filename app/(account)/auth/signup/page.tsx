@@ -176,7 +176,7 @@ export default function SignupPage() {
                     Prénom
                   </Label>
                   <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <User className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
                       id="firstName"
                       name="firstName"
@@ -186,7 +186,7 @@ export default function SignupPage() {
                       placeholder="Jean"
                       required
                       disabled={loading}
-                      className="pl-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                      className="bg-white pl-12 py-3 text-gray-900 placeholder:text-gray-400 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                     />
                   </div>
                 </div>
@@ -196,7 +196,7 @@ export default function SignupPage() {
                     Nom
                   </Label>
                   <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <User className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
                       id="lastName"
                       name="lastName"
@@ -206,7 +206,7 @@ export default function SignupPage() {
                       placeholder="Dupont"
                       required
                       disabled={loading}
-                      className="pl-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                      className="bg-white pl-12 py-3 text-gray-900 placeholder:text-gray-400 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                     />
                   </div>
                 </div>
@@ -218,7 +218,7 @@ export default function SignupPage() {
                   Adresse Email
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Mail className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     id="email"
                     name="email"
@@ -228,7 +228,7 @@ export default function SignupPage() {
                     placeholder="vous@exemple.com"
                     required
                     disabled={loading}
-                    className="pl-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                    className="bg-white pl-12 py-3 text-gray-900 placeholder:text-gray-400 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                   />
                 </div>
               </div>
@@ -239,7 +239,7 @@ export default function SignupPage() {
                   Mot de passe
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Lock className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     id="password"
                     name="password"
@@ -249,7 +249,7 @@ export default function SignupPage() {
                     placeholder="••••••••"
                     required
                     disabled={loading}
-                    className="pl-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                    className="bg-white pl-12 py-3 text-gray-900 placeholder:text-gray-400 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-2">Au minimum 6 caractères</p>
@@ -261,7 +261,7 @@ export default function SignupPage() {
                   Confirmer le mot de passe
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Lock className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
@@ -271,7 +271,7 @@ export default function SignupPage() {
                     placeholder="••••••••"
                     required
                     disabled={loading}
-                    className="pl-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                    className="bg-white pl-12 py-3 text-gray-900 placeholder:text-gray-400 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                   />
                 </div>
               </div>

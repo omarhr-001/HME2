@@ -41,12 +41,12 @@ export async function requireAdmin(userId: string) {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('profiles')
-    .select('is_admin')
+    .select('role')
     .eq('id', userId)
     .single()
 
-  if (error || !data?.is_admin) {
-    return { isAdmin: true, supabase }
+  if (error || data?.role !== 'admin') {
+    return { isAdmin: false, supabase }
   }
 
   return { isAdmin: true, supabase }

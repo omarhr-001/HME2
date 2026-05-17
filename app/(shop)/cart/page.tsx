@@ -13,11 +13,12 @@ import type { CartItemWithProduct } from '@/lib/types'
 
 export default function CartPage() {
   const { user, loading: authLoading } = useAuth()
-  const { cartItems, cartTotal, isLoading } = useCart()
+  const { cartItems, cartTotal, isLoading, mutate } = useCart()
   const { trigger: removeItem } = useRemoveFromCart()
   const { trigger: updateQuantity } = useUpdateQuantity()
   const { toast } = useToast()
   const [mounted, setMounted] = useState(false)
+  const [removingItems, setRemovingItems] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     setMounted(true)
@@ -25,6 +26,14 @@ export default function CartPage() {
 
   const handleRemove = async (itemId: string, productName: string) => {
     try {
+      // Add to removing set for animation
+      setRemovingItems((prev) => new Set(prev).add(itemId))
+
+      // Optimistic update: remove from UI immediately
+      const updatedItems = cartItems.filter((item: CartItemWithProduct) => item.id !== itemId)
+      mutate(updatedItems, false)
+
+      // Call API in background
       await removeItem({ cartItemId: itemId })
       toast({
         title: 'Succ\u00e8s',
@@ -32,9 +41,18 @@ export default function CartPage() {
       })
     } catch (error) {
       console.error('Error removing from cart:', error)
+      // Revert on error by revalidating from server
+      await mutate()
       toast({
         title: 'Erreur',
         description: 'Impossible de supprimer l\'article du panier',
+      })
+    } finally {
+      // Remove from removing set
+      setRemovingItems((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(itemId)
+        return newSet
       })
     }
   }
@@ -101,7 +119,13 @@ export default function CartPage() {
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-4">
               {cartItems.map((item: CartItemWithProduct) => (
-                <div key={item.id} className="bg-white rounded-xl p-6 flex gap-6 border border-gray-200">
+                <div
+                  key={item.id}
+                  className={`bg-white rounded-xl p-6 flex gap-6 border border-gray-200 transition-all duration-300 ease-out ${removingItems.has(item.id)
+                    ? 'opacity-0 scale-95 h-0 overflow-hidden'
+                    : 'opacity-100 scale-100'
+                    }`}
+                >
                   {/* Product Image */}
                   <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {item.products?.image_url ? (
