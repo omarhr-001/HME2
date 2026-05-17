@@ -26,13 +26,14 @@ const authenticatedFetcher = async (url: string) => {
 
 interface Order {
   id: string
+  order_number?: string
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
   total_amount: number
   created_at: string
   order_items?: Array<{
     id: string
     quantity: number
-    unit_price: number
+    price: number
   }>
 }
 
@@ -180,7 +181,7 @@ export default function OrdersPage() {
                     >
                       <div className="flex items-start justify-between gap-4 mb-4">
                         <div>
-                          <h3 className="text-lg font-bold text-gray-900 mb-1">{order.id.substring(0, 8).toUpperCase()}</h3>
+                          <h3 className="text-lg font-bold text-gray-900 mb-1">{order.order_number || order.id.substring(0, 8).toUpperCase()}</h3>
                           <p className="text-sm text-gray-600">
                             {new Date(order.created_at).toLocaleDateString('fr-FR', {
                               year: 'numeric',
@@ -221,13 +222,15 @@ export default function OrdersPage() {
                             Voir les détails
                           </Button>
                         </Link>
-                        <Button
-                          variant="outline"
-                          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border border-gray-300 hover:bg-gray-50"
-                        >
-                          <Download className="w-4 h-4" />
-                          Facture
-                        </Button>
+                        <Link href={`/orders/${order.id}/invoice`} className="flex-1">
+                          <Button
+                            variant="outline"
+                            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg border border-gray-300 hover:bg-gray-50"
+                          >
+                            <Download className="w-4 h-4" />
+                            Facture
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   )

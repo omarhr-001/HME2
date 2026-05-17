@@ -1,0 +1,4 @@
+name,description,price,original_price,cost,stock_quantity,category,image_url,sku,is_active,in_stock
+Refrigerateur 320L,Refrigerateur double porte economique,899,999,650,12,Refrigerateurs,/products/refrigerator-1.jpg,REF-320,true,true
+Machine a laver 8kg,Lave-linge grande capacite,549,649,390,7,Lavage,/products/washing-machine-1.jpg,WASH-8KG,true,true
+Micro-ondes 25L,Micro-ondes compact avec grill,179,219,120,0,Cuisine,/products/microwave-1.jpg,MICRO-25,true,false

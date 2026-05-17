@@ -1,13 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth-middleware'
-
-function createAuthenticatedClient(token: string) {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
+import { createServiceClient } from '@/lib/server-supabase'
 
 export async function GET(
   req: NextRequest,
@@ -17,9 +10,7 @@ export async function GET(
     try {
       const orderId = params.id
 
-      const supabase = createAuthenticatedClient(
-        req.headers.get('authorization')?.replace('Bearer ', '') || ''
-      )
+      const supabase = createServiceClient()
 
       const { data, error } = await supabase
         .from('orders')
@@ -68,9 +59,7 @@ export async function PUT(
         )
       }
 
-      const supabase = createAuthenticatedClient(
-        req.headers.get('authorization')?.replace('Bearer ', '') || ''
-      )
+      const supabase = createServiceClient()
 
       // Verify that this order belongs to the authenticated user
       const { data: orderData, error: fetchError } = await supabase
@@ -121,9 +110,7 @@ export async function DELETE(
     try {
       const orderId = params.id
 
-      const supabase = createAuthenticatedClient(
-        req.headers.get('authorization')?.replace('Bearer ', '') || ''
-      )
+      const supabase = createServiceClient()
 
       // Verify that this order belongs to the authenticated user
       const { data: orderData, error: fetchError } = await supabase

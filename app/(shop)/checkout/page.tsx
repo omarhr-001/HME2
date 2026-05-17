@@ -72,8 +72,23 @@ export default function CheckoutPage() {
     if (!validateForm()) return
 
     try {
+      const shippingAddress = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        postalCode: formData.postalCode,
+        country: 'Tunisia',
+      }
+
       const order = await createOrder({
         items: cartItems,
+        totalAmount: total,
+        shippingAddress,
+        billingAddress: shippingAddress,
+        notes: formData.notes,
       })
       
       if (order) {

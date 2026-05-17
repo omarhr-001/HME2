@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import useSWR from 'swr'
 import { useMemo, useState } from 'react'
-import { Download, Eye, Pencil, Plus, Save, Search, Trash2, Upload } from 'lucide-react'
+import { Download, Eye, FileSpreadsheet, Pencil, Plus, Save, Search, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -37,7 +37,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EmptyState } from '@/components/admin/admin-shell'
-import { adminFetch, downloadAdminFile } from '@/lib/admin/client'
+import { adminFetch, downloadAdminFile, adminUpload } from '@/lib/admin/client'
 import type { AdminCategory, AdminOrder, AdminProduct, AdminProfile, OrderStatus } from '@/lib/admin/types'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
@@ -165,7 +165,16 @@ export function ProductsPage() {
 
   return (
     <div className="space-y-5">
-      <Toolbar search={search} setSearch={setSearch} right={<ProductDialog categories={categories} onSave={saveProduct} />} />
+      <Toolbar
+        search={search}
+        setSearch={setSearch}
+        right={
+          <>
+            <ProductImportDialog onImported={() => mutate()} />
+            <ProductDialog categories={categories} onSave={saveProduct} />
+          </>
+        }
+      />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {products.map((product) => (
           <Card key={product.id} className="overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg">
@@ -465,6 +474,93 @@ function ProductDialog({ product, categories, onSave }: { product?: AdminProduct
           <ToggleRow label="In stock" checked={!!form.in_stock} onCheckedChange={(value) => setForm({ ...form, in_stock: value })} />
         </div>
         <DialogFooter><Button onClick={submit}>Save product</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function ProductImportDialog({ onImported }: { onImported: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [file, setFile] = useState<File | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<{ inserted: number; skipped: number; errors?: Array<{ row: number; error: string }> } | null>(null)
+
+  async function submit() {
+    if (!file) {
+      toast.error('Select an Excel or CSV file first')
+      return
+    }
+
+    setLoading(true)
+    setResult(null)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const response = await adminUpload<{ inserted: number; skipped: number; errors?: Array<{ row: number; error: string }> }>(
+        '/api/admin/products/import',
+        formData,
+      )
+      setResult(response)
+      toast.success(`${response.inserted} products imported`)
+      onImported()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Import failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <FileSpreadsheet className="mr-2 h-4 w-4" />
+          Import Excel
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Import products from Excel</DialogTitle>
+          <DialogDescription>
+            Upload .xlsx, .xls, or .csv with columns like name, description, price, stock_quantity, category, image_url, sku, is_active.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="rounded-lg border border-dashed p-5">
+            <Label htmlFor="product-import" className="mb-2 block font-medium">Product file</Label>
+            <Input
+              id="product-import"
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={(event) => setFile(event.target.files?.[0] || null)}
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              French headers are supported too: nom, prix, quantite, categorie, photo, reference.
+            </p>
+          </div>
+
+          {result && (
+            <div className="rounded-lg border bg-muted/30 p-4 text-sm">
+              <p className="font-medium">{result.inserted} products inserted, {result.skipped} rows skipped.</p>
+              {!!result.errors?.length && (
+                <div className="mt-3 max-h-36 space-y-1 overflow-auto text-destructive">
+                  {result.errors.slice(0, 8).map((item) => (
+                    <p key={`${item.row}-${item.error}`}>Row {item.row}: {item.error}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Close</Button>
+          <Button onClick={submit} disabled={loading}>
+            {loading ? 'Importing...' : 'Import products'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

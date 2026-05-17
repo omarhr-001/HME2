@@ -34,3 +34,24 @@ export async function downloadAdminFile(input: string, filename: string) {
   link.click()
   URL.revokeObjectURL(url)
 }
+
+export async function adminUpload<T>(input: string, body: FormData): Promise<T> {
+  const { data } = await supabase.auth.getSession()
+  const headers = new Headers()
+  if (data.session?.access_token) {
+    headers.set('authorization', `Bearer ${data.session.access_token}`)
+  }
+
+  const response = await fetch(input, {
+    method: 'POST',
+    headers,
+    body,
+  })
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({ error: 'Upload failed' }))
+    throw new Error(payload.reason || payload.error || 'Upload failed')
+  }
+
+  return response.json()
+}
