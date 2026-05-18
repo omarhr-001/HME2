@@ -21,7 +21,22 @@ export function Hero() {
   }, [])
 
   return (
-    <section className="relative bg-gradient-to-br from-gray-800 via-gray-900 to-blue-gray-900 pt-32 pb-20 px-[5%] min-h-screen flex items-center overflow-hidden">
+    <section className="relative pt-32 pb-20 px-[5%] min-h-screen flex items-center overflow-hidden">
+      {/* Background image with elegant overlay */}
+      <div className="absolute inset-0 w-full h-full">
+        <Image
+          src="/hero-bg.jpg"
+          alt="Modern home interior"
+          fill
+          className="object-cover"
+          priority
+        />
+      </div>
+
+      {/* Multi-layer gradient overlay for elegance */}
+      <div className="absolute inset-0 bg-gradient-to-r from-gray-900/95 via-gray-900/80 to-gray-900/70" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/40 to-gray-900/80" />
+      
       {/* Decorative elements */}
       <div className="absolute -top-30 -right-20 w-96 h-96 rounded-full opacity-10 pointer-events-none" style={{
         background: 'radial-gradient(circle, rgba(34,197,94,0.12) 0%, transparent 70%)'
