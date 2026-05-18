@@ -9,7 +9,7 @@ export type AdminProfile = {
   last_name: string | null
   phone: string | null
   profile_image_url: string | null
-  role: 'admin' | 'client'
+  role: 'admin' | 'client' | null
   created_at: string
 }
 
@@ -18,6 +18,15 @@ export type AdminCategory = {
   name: string
   slug: string
   emoji: string | null
+  created_at: string
+}
+
+export type AdminProductImage = {
+  id: string
+  product_id: number
+  image_url: string
+  is_main: boolean
+  sort_order: number
   created_at: string
 }
 
@@ -39,6 +48,7 @@ export type AdminProduct = {
   is_active: boolean
   created_at: string
   categories?: AdminCategory | null
+  product_images?: AdminProductImage[] | null
 }
 
 export type AdminOrderItem = {
@@ -70,7 +80,10 @@ export type AdminDashboardData = {
     totalProducts: number
     totalCustomers: number
     pendingOrders: number
+    processingOrders: number
     deliveredOrders: number
+    paidOrders: number
+    avgOrderValue: number
     revenueGrowth: number
   }
   revenueSeries: Array<{ label: string; revenue: number }>
@@ -78,6 +91,7 @@ export type AdminDashboardData = {
   monthlyRevenue: Array<{ label: string; revenue: number }>
   ordersSeries: Array<{ label: string; orders: number }>
   statusDistribution: Array<{ name: OrderStatus; value: number; fill: string }>
+  paymentDistribution: Array<{ name: PaymentStatus; value: number; fill: string }>
   bestSellers: Array<{ name: string; quantity: number; revenue: number }>
   customerGrowth: Array<{ label: string; customers: number }>
   lowStockProducts: AdminProduct[]

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminRequest, jsonError } from '@/lib/admin/auth'
-import { slugify } from '@/lib/admin/forms'
+import { sanitizeCategory } from '@/lib/admin/forms'
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdminRequest(req)
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { data, error } = await auth.context.supabase
       .from('categories')
-      .insert({ name: body.name, slug: body.slug || slugify(body.name), emoji: body.emoji || null })
+      .insert(sanitizeCategory(body))
       .select()
       .single()
     if (error) throw error

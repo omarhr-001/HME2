@@ -8,10 +8,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Mail, LogOut, User, Package, Lock, Settings, CreditCard, MapPin, Edit2, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { useOrders } from '@/lib/hooks'
 
 export default function AccountPage() {
   const { user, loading, signOut } = useAuth()
   const [mounted, setMounted] = useState(false)
+  const { orders = [], isLoading: ordersLoading } = useOrders()
 
   useEffect(() => {
     setMounted(true)
@@ -86,8 +88,8 @@ export default function AccountPage() {
                     <span>{user.email}</span>
                   </div>
                   <p className="text-sm text-gray-500">
-                    Membre depuis {new Date(user.created_at || '').toLocaleDateString('fr-FR', { 
-                      year: 'numeric', 
+                    Membre depuis {new Date(user.created_at || '').toLocaleDateString('fr-FR', {
+                      year: 'numeric',
                       month: 'long',
                       day: 'numeric'
                     })}
@@ -112,8 +114,8 @@ export default function AccountPage() {
                 <h3 className="text-gray-600 font-semibold">Commandes</h3>
                 <Package className="w-5 h-5 text-green-600" />
               </div>
-              <p className="text-3xl font-bold text-gray-900">0</p>
-              <p className="text-sm text-gray-500 mt-2">En attente</p>
+              <p className="text-3xl font-bold text-gray-900">{(orders || []).length}</p>
+              <p className="text-sm text-gray-500 mt-2">Total commandes</p>
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -147,7 +149,8 @@ export default function AccountPage() {
                     <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-green-600 transition-colors" />
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2">Mes Commandes</h3>
-                  <p className="text-gray-600 text-sm">Consultez l&apos;historique et le statut de vos commandes</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">{(orders || []).length}</p>
+                  <p className="text-gray-600 text-sm mt-2">Consultez l&apos;historique et le statut de vos commandes</p>
                 </div>
               </Link>
 

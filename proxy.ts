@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server'
  *
  * Page-level client guards and API Bearer-token validation handle auth here.
  */
-export function middleware() {
+export function proxy() {
   return NextResponse.next()
 }
 

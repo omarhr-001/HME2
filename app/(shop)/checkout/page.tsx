@@ -10,6 +10,8 @@ import { Footer } from '@/components/footer'
 import { Banknote, ChevronRight, Landmark } from 'lucide-react'
 import type { CartItemWithProduct, Order } from '@/lib/types'
 
+const WHATSAPP_NUMBER = '21627032081'
+
 export default function CheckoutPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
@@ -100,7 +102,7 @@ export default function CheckoutPage() {
       })
       
       if (order) {
-        router.push(`/orders/${order.id}`)
+        window.location.href = createWhatsAppOrderUrl(order)
         return
       }
 
@@ -119,6 +121,24 @@ export default function CheckoutPage() {
 
   const shipping = cartTotal > 500 ? 0 : 15
   const total = cartTotal + shipping
+
+  const createWhatsAppOrderUrl = (order: Order) => {
+    const orderRef = order.order_number || order.id
+    const lines = [
+      `Bonjour, je veux confirmer ma commande ${orderRef}.`,
+      `Nom: ${formData.firstName} ${formData.lastName}`,
+      `Telephone: ${formData.phone}`,
+      `Adresse: ${formData.address}, ${formData.city}, ${formData.postalCode}`,
+      `Total: ${total.toFixed(2)} DT`,
+      `Paiement: ${paymentMethod === 'cash_on_delivery' ? 'Paiement a la livraison' : 'Virement bancaire'}`,
+      '',
+      'Produits:',
+      ...cartItems.map((item) => `- ${item.products?.name || 'Produit'} x ${item.quantity}`),
+      formData.notes.trim() ? `Note: ${formData.notes.trim()}` : '',
+    ].filter(Boolean)
+
+    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join('\n'))}`
+  }
 
   if (authLoading || cartLoading) {
     return (
@@ -268,7 +288,7 @@ export default function CheckoutPage() {
 
               {/* Notes */}
               <div className="mb-8">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Paiement</h2>
+                <h2 className="text-xl font-bold text-gray-800 mb-4">Methode de paiement</h2>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <button
                     type="button"
@@ -281,8 +301,8 @@ export default function CheckoutPage() {
                   >
                     <Banknote className="mt-1 h-5 w-5 text-green-600" />
                     <span>
-                      <span className="block font-semibold text-gray-900">Paiement à la livraison</span>
-                      <span className="mt-1 block text-sm text-gray-600">Réglez la commande au moment de la réception.</span>
+                      <span className="block font-semibold text-gray-900">Paiement a la livraison</span>
+                      <span className="mt-1 block text-sm text-gray-600">La commande passe en traitement puis vous confirmez sur WhatsApp.</span>
                     </span>
                   </button>
                   <button
@@ -297,7 +317,7 @@ export default function CheckoutPage() {
                     <Landmark className="mt-1 h-5 w-5 text-green-600" />
                     <span>
                       <span className="block font-semibold text-gray-900">Virement bancaire</span>
-                      <span className="mt-1 block text-sm text-gray-600">Votre commande reste en attente jusqu'à confirmation.</span>
+                      <span className="mt-1 block text-sm text-gray-600">Envoyez la preuve ou les details dans la conversation WhatsApp.</span>
                     </span>
                   </button>
                 </div>
@@ -321,7 +341,7 @@ export default function CheckoutPage() {
                 disabled={isCreating}
                 className="w-full bg-green-500 text-white font-bold py-3 rounded-lg hover:bg-green-600 transition disabled:opacity-50"
               >
-                {isCreating ? 'Création en cours...' : 'Créer la commande'}
+                {isCreating ? 'Creation en cours...' : 'Confirmer sur WhatsApp'}
               </button>
             </form>
           </div>

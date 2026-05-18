@@ -3,11 +3,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useAuth } from '@/lib/auth-context'
-import { useCart, useRemoveFromCart, useUpdateQuantity } from '@/lib/hooks'
+import { useCart, useRemoveFromCart } from '@/lib/hooks'
 import { useToast } from '@/hooks/use-toast'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
-import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react'
+import { Trash2, ShoppingCart } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { CartItemWithProduct } from '@/lib/types'
 
@@ -15,7 +15,6 @@ export default function CartPage() {
   const { user, loading: authLoading } = useAuth()
   const { cartItems, cartTotal, isLoading, mutate } = useCart()
   const { trigger: removeItem } = useRemoveFromCart()
-  const { trigger: updateQuantity } = useUpdateQuantity()
   const { toast } = useToast()
   const [mounted, setMounted] = useState(false)
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set())
@@ -53,30 +52,6 @@ export default function CartPage() {
         const newSet = new Set(prev)
         newSet.delete(itemId)
         return newSet
-      })
-    }
-  }
-
-  const handleQuantityChange = async (itemId: string, quantity: number, productName: string) => {
-    try {
-      if (quantity <= 0) {
-        await removeItem({ cartItemId: itemId })
-        toast({
-          title: 'Succ\u00e8s',
-          description: `${productName} a \u00e9t\u00e9 supprim\u00e9 du panier`,
-        })
-      } else {
-        await updateQuantity({ cartItemId: itemId, quantity })
-        toast({
-          title: 'Succ\u00e8s',
-          description: `Quantit\u00e9 mise \u00e0 jour`,
-        })
-      }
-    } catch (error) {
-      console.error('Error updating quantity:', error)
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de mettre \u00e0 jour la quantit\u00e9',
       })
     }
   }
@@ -156,21 +131,8 @@ export default function CartPage() {
 
                   {/* Quantity & Actions */}
                   <div className="flex flex-col items-end gap-4">
-                    {/* Quantity Control */}
-                    <div className="flex items-center gap-2 border border-gray-200 rounded-lg overflow-hidden">
-                      <button
-                        onClick={() => handleQuantityChange(item.id, item.quantity - 1, item.products?.name || 'Produit')}
-                        className="w-9 h-9 bg-gray-50 border-none cursor-pointer flex items-center justify-center hover:bg-gray-100 transition-colors"
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <span className="w-12 text-center font-bold text-gray-800">{item.quantity}</span>
-                      <button
-                        onClick={() => handleQuantityChange(item.id, item.quantity + 1, item.products?.name || 'Produit')}
-                        className="w-9 h-9 bg-gray-50 border-none cursor-pointer flex items-center justify-center hover:bg-gray-100 transition-colors"
-                      >
-                        <Plus size={16} />
-                      </button>
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-800">
+                      Quantite: {item.quantity}
                     </div>
 
                     {/* Remove Button */}

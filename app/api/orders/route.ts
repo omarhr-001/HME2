@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         billingAddress,
         paymentMethod = 'cash_on_delivery',
         notes,
-        status = 'pending',
+        status = 'processing',
       } = await req.json()
 
       if (!VALID_STATUSES.includes(status)) {

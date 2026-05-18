@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { ZodError } from 'zod'
 
 export type AdminContext = {
   user: { id: string; email?: string }
@@ -97,6 +98,13 @@ export function toNumber(value: unknown) {
 }
 
 export function jsonError(error: unknown, fallback = 'Request failed') {
+  if (error instanceof ZodError) {
+    return NextResponse.json(
+      { error: error.issues[0]?.message || 'Invalid request body' },
+      { status: 400 },
+    )
+  }
+
   const message = error instanceof Error ? error.message : fallback
   return NextResponse.json({ error: message }, { status: 500 })
 }

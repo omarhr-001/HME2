@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminRequest, jsonError } from '@/lib/admin/auth'
-import { slugify } from '@/lib/admin/forms'
+import { sanitizeCategory } from '@/lib/admin/forms'
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdminRequest(req)
   if ('response' in auth) return auth.response
 
   try {
+    const { id } = await params
     const body = await req.json()
     const { data, error } = await auth.context.supabase
       .from('categories')
-      .update({ name: body.name, slug: body.slug || slugify(body.name), emoji: body.emoji || null })
-      .eq('id', params.id)
+      .update(sanitizeCategory(body))
+      .eq('id', id)
       .select()
       .single()
     if (error) throw error
@@ -21,12 +22,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdminRequest(req)
   if ('response' in auth) return auth.response
 
   try {
-    const { error } = await auth.context.supabase.from('categories').delete().eq('id', params.id)
+    const { id } = await params
+    const { error } = await auth.context.supabase.from('categories').delete().eq('id', id)
     if (error) throw error
     return NextResponse.json({ success: true })
   } catch (error) {

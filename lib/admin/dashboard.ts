@@ -1,7 +1,8 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { subDays, format, isAfter, startOfMonth, subMonths } from 'date-fns'
-import type { AdminDashboardData, AdminOrder, AdminProduct, OrderStatus } from './types'
+import type { AdminDashboardData, AdminOrder, AdminProduct, OrderStatus, PaymentStatus } from './types'
 import { toNumber } from './auth'
+import { normalizeProductImages } from './product-images'
 
 const statusColors: Record<OrderStatus, string> = {
   pending: '#f59e0b',
@@ -11,13 +12,20 @@ const statusColors: Record<OrderStatus, string> = {
   cancelled: '#ef4444',
 }
 
+const paymentStatusColors: Record<PaymentStatus, string> = {
+  pending: '#f59e0b',
+  paid: '#22c55e',
+  failed: '#ef4444',
+  refunded: '#64748b',
+}
+
 export async function getDashboardData(supabase: SupabaseClient): Promise<AdminDashboardData> {
   const [ordersResult, productsResult, profilesResult, categoriesResult] = await Promise.all([
     supabase
       .from('orders')
       .select('*, order_items(*, products(id, name, image_url, category, category_id))')
       .order('created_at', { ascending: false }),
-    supabase.from('products').select('*, categories(*)').order('created_at', { ascending: false }),
+    supabase.from('products').select('*, categories(*), product_images(*)').order('created_at', { ascending: false }),
     supabase.from('profiles').select('*').order('created_at', { ascending: false }),
     supabase.from('categories').select('*'),
   ])
@@ -32,7 +40,7 @@ export async function getDashboardData(supabase: SupabaseClient): Promise<AdminD
     ...order,
     profiles: profileMap.get(order.user_id) || null,
   }))
-  const products = (productsResult.data || []) as AdminProduct[]
+  const products = ((productsResult.data || []) as AdminProduct[]).map(normalizeProductImages)
   const profiles = profilesResult.data || []
   const categories = categoriesResult.data || []
   const now = new Date()
@@ -66,6 +74,11 @@ export async function getDashboardData(supabase: SupabaseClient): Promise<AdminD
     value: orders.filter((order) => order.status === status).length,
     fill: statusColors[status],
   }))
+  const paymentDistribution = (Object.keys(paymentStatusColors) as PaymentStatus[]).map((status) => ({
+    name: status,
+    value: orders.filter((order) => (order.payment_status || 'pending') === status).length,
+    fill: paymentStatusColors[status],
+  }))
 
   const productSales = new Map<string, { name: string; quantity: number; revenue: number }>()
   for (const order of orders) {
@@ -78,7 +91,7 @@ export async function getDashboardData(supabase: SupabaseClient): Promise<AdminD
     }
   }
 
-  const customers = profiles.filter((profile: any) => profile.role === 'client')
+  const customers = profiles.filter((profile: any) => (profile.role || 'client') === 'client')
   const topCustomers = Object.values(
     orders.reduce<Record<string, { id: string; name: string; email: string | null; total: number; orders: number }>>(
       (acc, order) => {
@@ -107,7 +120,10 @@ export async function getDashboardData(supabase: SupabaseClient): Promise<AdminD
       totalProducts: products.length,
       totalCustomers: customers.length,
       pendingOrders: orders.filter((order) => order.status === 'pending').length,
+      processingOrders: orders.filter((order) => order.status === 'processing').length,
       deliveredOrders: deliveredOrders.length,
+      paidOrders: orders.filter((order) => order.payment_status === 'paid').length,
+      avgOrderValue: revenueOrders.length ? totalRevenue / revenueOrders.length : 0,
       revenueGrowth,
     },
     revenueSeries,
@@ -115,6 +131,7 @@ export async function getDashboardData(supabase: SupabaseClient): Promise<AdminD
     monthlyRevenue,
     ordersSeries,
     statusDistribution,
+    paymentDistribution,
     bestSellers: Array.from(productSales.values()).sort((a, b) => b.quantity - a.quantity).slice(0, 8),
     customerGrowth: makeCustomerGrowth(customers),
     lowStockProducts,

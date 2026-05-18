@@ -19,9 +19,9 @@ import {
   Activity,
   AlertTriangle,
   ArrowUpRight,
-  Boxes,
   CheckCircle2,
   CircleDollarSign,
+  CreditCard,
   Package,
   ShoppingCart,
   Sparkles,
@@ -69,8 +69,10 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
             <StatCard title="Total Products" value={data.stats.totalProducts.toLocaleString()} icon={Package} trend="catalog" />
             <StatCard title="Total Customers" value={data.stats.totalCustomers.toLocaleString()} icon={Users} trend="profiles" />
             <StatCard title="Pending Orders" value={data.stats.pendingOrders.toLocaleString()} icon={Activity} trend="needs review" />
+            <StatCard title="Processing" value={data.stats.processingOrders.toLocaleString()} icon={ShoppingCart} trend="active orders" />
             <StatCard title="Delivered Orders" value={data.stats.deliveredOrders.toLocaleString()} icon={CheckCircle2} trend="fulfilled" />
-            <StatCard title="Revenue Growth" value={`${data.stats.revenueGrowth.toFixed(1)}%`} icon={TrendingUp} trend="month over month" />
+            <StatCard title="Paid Orders" value={data.stats.paidOrders.toLocaleString()} icon={CreditCard} trend="payment status" />
+            <StatCard title="Avg. Order" value={money.format(data.stats.avgOrderValue)} icon={TrendingUp} trend="basket value" />
             <StatCard title="Stock Alerts" value={(data.lowStockProducts.length + data.outOfStockProducts.length).toString()} icon={AlertTriangle} trend="inventory" />
           </div>
 
@@ -139,6 +141,58 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[250px] w-full">
+              <PieChart>
+                <Pie data={data.paymentDistribution} dataKey="value" nameKey="name" innerRadius={54} outerRadius={84}>
+                  {data.paymentDistribution.map((entry) => (
+                    <Cell key={entry.name} fill={entry.fill} />
+                  ))}
+                </Pie>
+                <ChartTooltip content={<ChartTooltipContent />} />
+              </PieChart>
+            </ChartContainer>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              {data.paymentDistribution.map((item) => (
+                <div key={item.name} className="flex items-center gap-2 rounded-md border px-2 py-1">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.fill }} />
+                  <span className="capitalize">{item.name}</span>
+                  <span className="ml-auto text-muted-foreground">{item.value}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Customers</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {data.topCustomers.map((customer) => (
+              <div key={customer.id} className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{customer.name}</p>
+                  <p className="truncate text-muted-foreground">{customer.email || `${customer.orders} orders`}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold">{money.format(customer.total)}</p>
+                  <Badge variant="secondary">{customer.orders} orders</Badge>
+                </div>
+              </div>
+            ))}
+            {data.topCustomers.length === 0 && (
+              <p className="text-sm text-muted-foreground">No customer orders yet.</p>
+            )}
           </CardContent>
         </Card>
       </div>

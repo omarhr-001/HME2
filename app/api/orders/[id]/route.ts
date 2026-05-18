@@ -4,11 +4,11 @@ import { createServiceClient } from '@/lib/server-supabase'
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   return withAuth(req, async (req, user) => {
     try {
-      const orderId = params.id
+      const { id: orderId } = await params
 
       const supabase = createServiceClient()
 
@@ -45,12 +45,12 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   return withAuth(req, async (req, user) => {
     try {
       const { status } = await req.json()
-      const orderId = params.id
+      const { id: orderId } = await params
 
       if (status !== 'cancelled') {
         return NextResponse.json(
@@ -111,11 +111,11 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   return withAuth(req, async (req, user) => {
     try {
-      const orderId = params.id
+      const { id: orderId } = await params
 
       const supabase = createServiceClient()
 

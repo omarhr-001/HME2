@@ -22,7 +22,6 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { user } = useAuth()
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
-  const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
   const { trigger: addToCart, isMutating } = useAddToCart()
@@ -86,7 +85,7 @@ export default function ProductPage({ params }: ProductPageProps) {
     try {
       await addToCart({
         productId: product.id,
-        quantity,
+        quantity: 1,
       })
       setAddedToCart(true)
       setTimeout(() => setAddedToCart(false), 2000)
@@ -119,7 +118,7 @@ export default function ProductPage({ params }: ProductPageProps) {
             <div className="flex items-center justify-center">
               <div className="relative w-full aspect-square bg-white rounded-3xl overflow-hidden border border-gray-200 shadow-sm">
                 <Image
-                  src={product.image_url || '/images/placeholder.jpg'}
+                  src={product.image || product.image_url || '/placeholder.jpg'}
                   alt={product.name}
                   fill
                   className="w-full h-full object-cover"
@@ -161,26 +160,6 @@ export default function ProductPage({ params }: ProductPageProps) {
                     Disponible
                   </div>
                 )}
-              </div>
-
-              {/* Quantity Selector */}
-              <div className="flex items-center gap-4 mb-6">
-                <span className="text-sm font-semibold text-gray-700">Quantité:</span>
-                <div className="flex items-center gap-3 bg-gray-200 rounded-full px-4 py-2">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="text-lg font-bold text-gray-700 hover:text-gray-900"
-                  >
-                    −
-                  </button>
-                  <span className="w-8 text-center font-semibold">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="text-lg font-bold text-gray-700 hover:text-gray-900"
-                  >
-                    +
-                  </button>
-                </div>
               </div>
 
               {/* Buttons */}

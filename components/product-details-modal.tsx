@@ -18,7 +18,6 @@ export function ProductDetailsModal({
   onClose,
   onAddToCart,
 }: ProductDetailsModalProps) {
-  const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
 
@@ -36,11 +35,10 @@ export function ProductDetailsModal({
     : 0
 
   const handleAddToCart = () => {
-    onAddToCart(product, quantity)
+    onAddToCart(product, 1)
     setAddedToCart(true)
     setTimeout(() => {
       setAddedToCart(false)
-      setQuantity(1)
     }, 2000)
   }
 
@@ -127,27 +125,6 @@ export function ProductDetailsModal({
                       En stock
                     </div>
                   )}
-                </div>
-
-                <div className="flex items-center gap-4 mb-4">
-                  <span className="text-sm font-semibold text-gray-700">Quantite:</span>
-                  <div className="flex items-center gap-3 bg-gray-200 rounded-full px-4 py-2">
-                    <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="text-lg font-bold text-gray-700 hover:text-gray-900"
-                      aria-label="Diminuer la quantite"
-                    >
-                      -
-                    </button>
-                    <span className="w-8 text-center font-semibold">{quantity}</span>
-                    <button
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="text-lg font-bold text-gray-700 hover:text-gray-900"
-                      aria-label="Augmenter la quantite"
-                    >
-                      +
-                    </button>
-                  </div>
                 </div>
 
                 <div className="flex gap-3">

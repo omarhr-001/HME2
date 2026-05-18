@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import { requireAdminRequest, jsonError } from '@/lib/admin/auth'
 import { sanitizeProduct, slugify } from '@/lib/admin/forms'
 
@@ -50,14 +50,7 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer())
-    const workbook = XLSX.read(buffer, { type: 'buffer' })
-    const firstSheetName = workbook.SheetNames[0]
-    if (!firstSheetName) {
-      return NextResponse.json({ error: 'The file does not contain a sheet' }, { status: 400 })
-    }
-
-    const sheet = workbook.Sheets[firstSheetName]
-    const rawRows = XLSX.utils.sheet_to_json<ImportRow>(sheet, { defval: '' })
+    const rawRows = await readImportRows(file.name, buffer)
 
     if (!rawRows.length) {
       return NextResponse.json({ error: 'The file is empty' }, { status: 400 })
@@ -120,13 +113,18 @@ export async function POST(req: NextRequest) {
         row.category_id = categoryId
       }
 
-      products.push(
-        sanitizeProduct({
+      try {
+        products.push(sanitizeProduct({
           ...row,
           is_active: parseBoolean(row.is_active, true),
           in_stock: parseBoolean(row.in_stock, Number(row.stock_quantity || 0) > 0),
-        }),
-      )
+        }))
+      } catch (error) {
+        errors.push({
+          row: rowNumber,
+          error: error instanceof Error ? error.message : 'Invalid product data',
+        })
+      }
     }
 
     if (!products.length) {
@@ -136,9 +134,25 @@ export async function POST(req: NextRequest) {
     const { data, error } = await auth.context.supabase
       .from('products')
       .insert(products)
-      .select('id, name')
+      .select('id, name, image_url')
 
     if (error) throw error
+
+    const mainImages = (data || [])
+      .filter((product: any) => product.image_url)
+      .map((product: any) => ({
+        product_id: product.id,
+        image_url: product.image_url,
+        is_main: true,
+        sort_order: 0,
+      }))
+
+    if (mainImages.length) {
+      const { error: imageError } = await auth.context.supabase
+        .from('product_images')
+        .insert(mainImages)
+      if (imageError) throw imageError
+    }
 
     return NextResponse.json({
       inserted: data?.length || 0,
@@ -161,6 +175,103 @@ function normalizeRow(rawRow: ImportRow) {
   }
 
   return row
+}
+
+async function readImportRows(filename: string, buffer: Buffer): Promise<ImportRow[]> {
+  const lowerName = filename.toLowerCase()
+
+  if (lowerName.endsWith('.csv')) {
+    return parseCsv(buffer.toString('utf8'))
+  }
+
+  if (!lowerName.endsWith('.xlsx')) {
+    throw new Error('Only .xlsx and .csv files are supported')
+  }
+
+  const workbook = new ExcelJS.Workbook()
+  await workbook.xlsx.load(buffer as any)
+
+  const worksheet = workbook.worksheets[0]
+  if (!worksheet) {
+    throw new Error('The file does not contain a sheet')
+  }
+
+  const headers = getRowValues(worksheet.getRow(1)).map((value) => String(value).trim())
+  const rows: ImportRow[] = []
+
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return
+
+    const values = getRowValues(row)
+    const item: ImportRow = {}
+
+    headers.forEach((header, index) => {
+      if (!header) return
+      item[header] = values[index] ?? ''
+    })
+
+    if (Object.values(item).some((value) => String(value).trim() !== '')) {
+      rows.push(item)
+    }
+  })
+
+  return rows
+}
+
+function getRowValues(row: ExcelJS.Row) {
+  const values = Array.isArray(row.values) ? row.values.slice(1) : []
+  return values.map((value) => {
+    if (value && typeof value === 'object' && 'text' in value) {
+      return String(value.text)
+    }
+    if (value instanceof Date) return value.toISOString()
+    return value ?? ''
+  })
+}
+
+function parseCsv(input: string): ImportRow[] {
+  const rows: string[][] = []
+  let row: string[] = []
+  let field = ''
+  let quoted = false
+
+  for (let index = 0; index < input.length; index += 1) {
+    const char = input[index]
+    const next = input[index + 1]
+
+    if (char === '"' && quoted && next === '"') {
+      field += '"'
+      index += 1
+    } else if (char === '"') {
+      quoted = !quoted
+    } else if (char === ',' && !quoted) {
+      row.push(field)
+      field = ''
+    } else if ((char === '\n' || char === '\r') && !quoted) {
+      if (char === '\r' && next === '\n') index += 1
+      row.push(field)
+      rows.push(row)
+      row = []
+      field = ''
+    } else {
+      field += char
+    }
+  }
+
+  row.push(field)
+  rows.push(row)
+
+  const headers = rows.shift()?.map((header) => header.trim()) || []
+
+  return rows
+    .filter((values) => values.some((value) => value.trim() !== ''))
+    .map((values) => {
+      const item: ImportRow = {}
+      headers.forEach((header, index) => {
+        if (header) item[header] = values[index]?.trim() || ''
+      })
+      return item
+    })
 }
 
 function normalizeKey(key: string) {

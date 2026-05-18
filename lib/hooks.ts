@@ -187,7 +187,7 @@ export function useOrders() {
         },
         body: JSON.stringify({
           ...payload,
-          status: 'pending',
+          status: 'processing',
         }),
       })
       if (!res.ok) throw new Error(await getApiErrorMessage(res, 'Erreur lors de la création de la commande'))
@@ -348,7 +348,7 @@ export function useCreateOrder() {
         },
         body: JSON.stringify({
           ...payload,
-          status: 'pending',
+          status: 'processing',
         }),
       })
 

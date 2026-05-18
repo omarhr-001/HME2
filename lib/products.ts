@@ -6,11 +6,25 @@ export interface Product {
   price: number
   originalPrice: number
   image: string
+  image_url?: string
+  product_images?: ProductImage[]
   rating: number
   reviews: number
   description: string
   specs: Record<string, string>
   inStock: boolean
+  stock_quantity?: number
+  sku?: string
+  is_active?: boolean
+}
+
+export interface ProductImage {
+  id: string
+  product_id: string | number
+  image_url: string
+  is_main: boolean
+  sort_order: number
+  created_at: string
 }
 
 export interface Category {
@@ -27,30 +41,18 @@ export async function getProductsFromSupabase(): Promise<Product[]> {
     const { supabase } = await import('./supabase')
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select('*, product_images(*)')
 
     if (error) {
       console.error('Error fetching products from Supabase:', error)
-      return []
+      const fallback = await supabase.from('products').select('*')
+      if (fallback.error) return []
+      return (fallback.data || []).map(mapProduct)
     }
 
     if (!data) return []
 
-    // Transform Supabase data to match Product interface
-    return data.map((item: any) => ({
-      id: item.id.toString(),
-      name: item.name,
-      category: item.category,
-      category_id: item.category_id,
-      price: item.price,
-      originalPrice: item.original_price || item.price,
-      image: item.image_url || '',
-      rating: item.rating || 0,
-      reviews: item.reviews_count || 0,
-      description: item.description || '',
-      specs: item.specs ? JSON.parse(typeof item.specs === 'string' ? item.specs : JSON.stringify(item.specs)) : {},
-      inStock: item.in_stock !== false
-    }))
+    return data.map(mapProduct)
   } catch (error) {
     console.error('Error loading Supabase client:', error)
     return []
@@ -62,34 +64,82 @@ export async function getProductByIdFromSupabase(id: string): Promise<Product | 
     const { supabase } = await import('./supabase')
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select('*, product_images(*)')
       .eq('id', parseInt(id))
       .single()
 
     if (error || !data) {
       console.error('Error fetching product from Supabase:', error)
-      return undefined
+      const fallback = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', parseInt(id))
+        .single()
+
+      if (fallback.error || !fallback.data) return undefined
+      return mapProduct(fallback.data)
     }
 
-    // Transform Supabase data to match Product interface
-    return {
-      id: data.id.toString(),
-      name: data.name,
-      category: data.category,
-      category_id: data.category_id,
-      price: data.price,
-      originalPrice: data.original_price || data.price,
-      image: data.image_url || '',
-      rating: data.rating || 0,
-      reviews: data.reviews_count || 0,
-      description: data.description || '',
-      specs: data.specs ? JSON.parse(typeof data.specs === 'string' ? data.specs : JSON.stringify(data.specs)) : {},
-      inStock: data.in_stock !== false
-    }
+    return mapProduct(data)
   } catch (error) {
     console.error('Error loading from Supabase:', error)
     return undefined
   }
+}
+
+function mapProduct(item: any): Product {
+  const image = getMainImage(item)
+  const price = toNumber(item.price)
+  const originalPrice = item.original_price === null || item.original_price === undefined
+    ? price
+    : toNumber(item.original_price)
+
+  return {
+    id: item.id.toString(),
+    name: item.name,
+    category: item.category,
+    category_id: item.category_id,
+    price,
+    originalPrice,
+    image: image || '',
+    image_url: image || undefined,
+    product_images: item.product_images || [],
+    rating: toNumber(item.rating),
+    reviews: Number(item.reviews_count || 0),
+    description: item.description || '',
+    specs: normalizeSpecs(item.specs),
+    inStock: item.in_stock !== false,
+    stock_quantity: Number(item.stock_quantity || 0),
+    sku: item.sku || undefined,
+    is_active: item.is_active !== false,
+  }
+}
+
+function getMainImage(item: any) {
+  const images = Array.isArray(item.product_images) ? item.product_images : []
+  return (
+    images.find((image: ProductImage) => image.is_main)?.image_url ||
+    images.sort((a: ProductImage, b: ProductImage) => a.sort_order - b.sort_order)[0]?.image_url ||
+    item.image_url ||
+    null
+  )
+}
+
+function normalizeSpecs(specs: unknown): Record<string, string> {
+  if (!specs) return {}
+  if (typeof specs === 'string') {
+    try {
+      return JSON.parse(specs)
+    } catch {
+      return {}
+    }
+  }
+  if (typeof specs === 'object') return specs as Record<string, string>
+  return {}
+}
+
+function toNumber(value: unknown) {
+  return typeof value === 'number' ? value : Number(value || 0)
 }
 
 /**

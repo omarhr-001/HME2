@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from '@/lib/auth-context'
-import { useCart, useAddToCart, useRemoveFromCart, useUpdateQuantity, useCreateOrder } from '@/lib/hooks'
+import { useAddToCart, useRemoveFromCart, useCreateOrder } from '@/lib/hooks'
 import { useState } from 'react'
 import useSWR from 'swr'
 import { supabase } from '@/lib/supabase'
@@ -28,7 +28,6 @@ export default function SessionDemoPage() {
   )
   const { trigger: addToCart, isMutating: isAdding } = useAddToCart()
   const { trigger: removeItem, isMutating: isRemoving } = useRemoveFromCart()
-  const { trigger: updateQuantity } = useUpdateQuantity()
   const { trigger: createOrder, isMutating: isCreating } = useCreateOrder()
   const [demoProductId] = useState('demo-123')
 
@@ -113,12 +112,6 @@ export default function SessionDemoPage() {
                   <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => updateQuantity({ cartItemId: item.id, quantity: item.quantity + 1 })}
-                    className="px-2 py-1 bg-gray-200 rounded"
-                  >
-                    +
-                  </button>
                   <button
                     onClick={() => {
                       removeItem({ cartItemId: item.id })

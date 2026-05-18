@@ -4,11 +4,11 @@ import { createUserScopedClient } from '@/lib/server-supabase'
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   return withAuth(req, async (req, user) => {
     try {
-      const cartItemId = params.id
+      const { id: cartItemId } = await params
 
       const supabase = createUserScopedClient(
         req.headers.get('authorization')?.replace('Bearer ', '') || ''
@@ -56,12 +56,12 @@ export async function DELETE(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   return withAuth(req, async (req, user) => {
     try {
       const { quantity } = await req.json()
-      const cartItemId = params.id
+      const { id: cartItemId } = await params
 
       const requestedQuantity = Number(quantity)
 

@@ -41,6 +41,7 @@ import { adminFetch, downloadAdminFile, adminUpload } from '@/lib/admin/client'
 import type { AdminCategory, AdminOrder, AdminProduct, AdminProfile, OrderStatus, PaymentStatus } from '@/lib/admin/types'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
+import { supabase } from '@/lib/supabase'
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 const statuses: OrderStatus[] = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
@@ -138,8 +139,18 @@ export function OrdersPage() {
                 <TableCell>{customerName(order.profiles)}</TableCell>
                 <TableCell>{order.order_items?.length || 0}</TableCell>
                 <TableCell>{money.format(Number(order.total_amount))}</TableCell>
-                <TableCell><StatusBadge status={order.status} /></TableCell>
-                <TableCell><PaymentStatusBadge status={order.payment_status || 'pending'} /></TableCell>
+                <TableCell>
+                  <Select value={order.status} onValueChange={(value) => updateStatus(order.id, value as OrderStatus)}>
+                    <SelectTrigger className="h-9 w-36"><SelectValue /></SelectTrigger>
+                    <SelectContent>{statuses.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell>
+                  <Select value={order.payment_status || 'pending'} onValueChange={(value) => updatePaymentStatus(order.id, value as PaymentStatus)}>
+                    <SelectTrigger className="h-9 w-32"><SelectValue /></SelectTrigger>
+                    <SelectContent>{paymentStatuses.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent>
+                  </Select>
+                </TableCell>
                 <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
                   <OrderDetails order={order} onUpdate={updateStatus} onPaymentUpdate={updatePaymentStatus} />
@@ -275,7 +286,7 @@ export function CustomersPage() {
                 <TableCell className="font-medium">{customerName(profile)}</TableCell>
                 <TableCell>{profile.email || '-'}</TableCell>
                 <TableCell>{profile.phone || '-'}</TableCell>
-                <TableCell><Badge variant={profile.role === 'admin' ? 'default' : 'secondary'}>{profile.role}</Badge></TableCell>
+                <TableCell><Badge variant={profile.role === 'admin' ? 'default' : 'secondary'}>{profile.role || 'client'}</Badge></TableCell>
                 <TableCell>{new Date(profile.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="outline" size="sm" onClick={() => setRoleForUser(profile.id, profile.role === 'admin' ? 'client' : 'admin')}>
@@ -392,6 +403,49 @@ export function ReviewsPage() {
 
 export function SettingsPage() {
   const { user, signOut } = useAuth()
+  const [displayName, setDisplayName] = useState(user?.user_metadata?.display_name || '')
+  const [passwordForm, setPasswordForm] = useState({ password: '', confirmPassword: '' })
+  const [savingProfile, setSavingProfile] = useState(false)
+  const [savingPassword, setSavingPassword] = useState(false)
+
+  async function saveProfile() {
+    setSavingProfile(true)
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { display_name: displayName.trim() || null },
+      })
+      if (error) throw error
+      toast.success('Profile updated')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to update profile')
+    } finally {
+      setSavingProfile(false)
+    }
+  }
+
+  async function updatePassword() {
+    if (passwordForm.password.length < 6) {
+      toast.error('Password must contain at least 6 characters')
+      return
+    }
+
+    if (passwordForm.password !== passwordForm.confirmPassword) {
+      toast.error('Passwords do not match')
+      return
+    }
+
+    setSavingPassword(true)
+    try {
+      const { error } = await supabase.auth.updateUser({ password: passwordForm.password })
+      if (error) throw error
+      setPasswordForm({ password: '', confirmPassword: '' })
+      toast.success('Password updated')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to update password')
+    } finally {
+      setSavingPassword(false)
+    }
+  }
 
   return (
     <Tabs defaultValue="profile" className="space-y-5">
@@ -407,8 +461,10 @@ export function SettingsPage() {
             <Label>Email</Label>
             <Input value={user?.email || ''} readOnly />
             <Label>Display name</Label>
-            <Input placeholder="Admin name" />
-            <Button className="w-fit"><Save className="mr-2 h-4 w-4" /> Save profile</Button>
+            <Input placeholder="Admin name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+            <Button className="w-fit" onClick={saveProfile} disabled={savingProfile}>
+              <Save className="mr-2 h-4 w-4" /> {savingProfile ? 'Saving...' : 'Save profile'}
+            </Button>
           </CardContent>
         </Card>
       </TabsContent>
@@ -416,9 +472,21 @@ export function SettingsPage() {
         <Card>
           <CardHeader><CardTitle>Change Password</CardTitle></CardHeader>
           <CardContent className="grid max-w-2xl gap-4">
-            <Input type="password" placeholder="New password" />
-            <Input type="password" placeholder="Confirm password" />
-            <Button className="w-fit">Update password</Button>
+            <Input
+              type="password"
+              placeholder="New password"
+              value={passwordForm.password}
+              onChange={(event) => setPasswordForm({ ...passwordForm, password: event.target.value })}
+            />
+            <Input
+              type="password"
+              placeholder="Confirm password"
+              value={passwordForm.confirmPassword}
+              onChange={(event) => setPasswordForm({ ...passwordForm, confirmPassword: event.target.value })}
+            />
+            <Button className="w-fit" onClick={updatePassword} disabled={savingPassword}>
+              {savingPassword ? 'Updating...' : 'Update password'}
+            </Button>
           </CardContent>
         </Card>
       </TabsContent>
@@ -544,7 +612,7 @@ function ProductImportDialog({ onImported }: { onImported: () => void }) {
         <DialogHeader>
           <DialogTitle>Import products from Excel</DialogTitle>
           <DialogDescription>
-            Upload .xlsx, .xls, or .csv with columns like name, description, price, stock_quantity, category, image_url, sku, is_active.
+            Upload .xlsx or .csv with columns like name, description, price, stock_quantity, category, image_url, sku, is_active.
           </DialogDescription>
         </DialogHeader>
 
@@ -554,7 +622,7 @@ function ProductImportDialog({ onImported }: { onImported: () => void }) {
             <Input
               id="product-import"
               type="file"
-              accept=".xlsx,.xls,.csv"
+              accept=".xlsx,.csv"
               onChange={(event) => setFile(event.target.files?.[0] || null)}
             />
             <p className="mt-2 text-xs text-muted-foreground">

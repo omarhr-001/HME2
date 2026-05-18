@@ -33,6 +33,7 @@ export interface Product {
   category_id?: string;
   image?: string;
   image_url?: string;
+  product_images?: ProductImage[];
   sku?: string;
   rating?: number;
   reviews?: number;
@@ -41,6 +42,15 @@ export interface Product {
   is_active?: boolean;
   created_at?: Date;
   updated_at?: Date;
+}
+
+export interface ProductImage {
+  id: string;
+  product_id: string | number;
+  image_url: string;
+  is_main: boolean;
+  sort_order: number;
+  created_at: string;
 }
 
 export interface CartProduct {
