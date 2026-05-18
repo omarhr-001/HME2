@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowRight, Percent, Clock, Sparkles } from 'lucide-react'
 import { getTopOffers, type Offer } from '@/lib/offers'
 
@@ -78,17 +79,29 @@ export function Hero() {
               </div>
 
               {/* Offers list */}
-              <div className="space-y-3 mb-5">
+              <div className="space-y-4 mb-5">
                 {topOffers.length > 0 ? (
                   topOffers.map((offer) => (
                     <div key={offer.id} className="bg-white/10 rounded-xl p-3 border border-white/10 hover:border-green-500/30 transition-colors cursor-pointer group">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mb-2">
                         <div>
                           <p className="text-white font-medium text-sm group-hover:text-green-400 transition-colors">{offer.title}</p>
                           <p className="text-white/50 text-xs">{offer.description}</p>
                         </div>
                         <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded-full">-{offer.discount}%</span>
                       </div>
+
+                      {/* Products grid */}
+                      {offer.products && offer.products.length > 0 && (
+                        <div className="flex gap-2 mt-2">
+                          {offer.products.slice(0, 3).map((product) => (
+                            <div key={product.id} className="flex-1 bg-white/5 rounded-lg p-2 border border-white/10">
+                              <p className="text-white/80 text-xs font-medium line-clamp-1 mb-1">{product.name}</p>
+                              <p className="text-green-400 text-xs font-bold">{product.price.toFixed(2)} DT</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (
