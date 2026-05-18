@@ -82,30 +82,65 @@ export function Hero() {
               <div className="space-y-4 mb-5">
                 {topOffers.length > 0 ? (
                   topOffers.map((offer) => (
-                    <div key={offer.id} className="bg-white/10 rounded-xl p-3 border border-white/10 hover:border-green-500/30 transition-colors cursor-pointer group">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <p className="text-white font-medium text-sm group-hover:text-green-400 transition-colors">{offer.title}</p>
-                          <p className="text-white/50 text-xs">{offer.description}</p>
-                        </div>
-                        <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded-full">-{offer.discount}%</span>
-                      </div>
-
-                      {/* Products grid */}
-                      {offer.products && offer.products.length > 0 && (
-                        <div className="flex gap-2 mt-2">
-                          {offer.products.slice(0, 3).map((product) => (
-                            <div key={product.id} className="flex-1 bg-white/5 rounded-lg p-2 border border-white/10">
-                              <p className="text-white/80 text-xs font-medium line-clamp-1 mb-1">{product.name}</p>
-                              <p className="text-green-400 text-xs font-bold">{product.price.toFixed(2)} DT</p>
-                            </div>
-                          ))}
+                    <div 
+                      key={offer.id} 
+                      className="relative rounded-2xl overflow-hidden border border-white/15 hover:border-green-400/50 transition-all duration-300 group cursor-pointer hover:shadow-xl hover:shadow-green-500/20"
+                    >
+                      {/* Background with offer image */}
+                      {offer.image && (
+                        <div className="absolute inset-0 w-full h-full">
+                          <Image
+                            src={offer.image}
+                            alt={offer.title}
+                            fill
+                            className="object-cover opacity-40 group-hover:opacity-50 transition-opacity duration-300"
+                          />
                         </div>
                       )}
+                      
+                      {/* Gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-gray-900/95 via-gray-900/85 to-gray-900/70" />
+                      
+                      {/* Content */}
+                      <div className="relative p-4 space-y-3">
+                        {/* Header */}
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="text-white font-bold text-base group-hover:text-green-400 transition-colors">{offer.title}</h4>
+                            <p className="text-white/60 text-xs leading-relaxed">{offer.description}</p>
+                          </div>
+                          <span className="flex-shrink-0 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-full ml-2 whitespace-nowrap">
+                            -{offer.discount}%
+                          </span>
+                        </div>
+
+                        {/* Products showcase */}
+                        {offer.products && offer.products.length > 0 && (
+                          <div className="grid grid-cols-3 gap-2 pt-1">
+                            {offer.products.slice(0, 3).map((product) => (
+                              <div 
+                                key={product.id} 
+                                className="group/product bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20 hover:border-green-400/60 hover:bg-white/15 transition-all duration-200 hover:shadow-lg hover:shadow-green-500/10"
+                              >
+                                <div className="flex flex-col h-full">
+                                  <p className="text-white/90 text-xs font-medium line-clamp-2 mb-2 group-hover/product:text-green-300 transition-colors">{product.name}</p>
+                                  <div className="mt-auto flex items-baseline gap-1">
+                                    <span className="text-green-400 text-sm font-bold">{product.price.toFixed(2)}</span>
+                                    <span className="text-white/50 text-xs">DT</span>
+                                  </div>
+                                  {product.originalPrice && product.originalPrice > product.price && (
+                                    <span className="text-white/40 text-xs line-through">{product.originalPrice.toFixed(2)} DT</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))
                 ) : (
-                  <div className="text-white/50 text-sm text-center py-4">Chargement des offres...</div>
+                  <div className="text-white/50 text-sm text-center py-6">Chargement des offres...</div>
                 )}
               </div>
 
