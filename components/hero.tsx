@@ -10,10 +10,13 @@ export function Hero() {
   const [maxDiscount, setMaxDiscount] = useState(0)
 
   useEffect(() => {
-    const offers = getTopOffers(3)
-    setTopOffers(offers)
-    const maxDisc = Math.max(...offers.map(o => o.discount))
-    setMaxDiscount(maxDisc)
+    const loadOffers = async () => {
+      const offers = await getTopOffers(3)
+      setTopOffers(offers)
+      const maxDisc = offers.length > 0 ? Math.max(...offers.map(o => o.discount)) : 0
+      setMaxDiscount(maxDisc)
+    }
+    loadOffers()
   }, [])
 
   return (
