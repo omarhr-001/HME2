@@ -7,9 +7,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   try {
     const body = await req.json()
+    const payload: Record<string, string> = { updated_at: new Date().toISOString() }
+
+    if (body.status) payload.status = body.status
+    if (body.payment_status) payload.payment_status = body.payment_status
+
     const { data, error } = await auth.context.supabase
       .from('orders')
-      .update({ status: body.status, updated_at: new Date().toISOString() })
+      .update(payload)
       .eq('id', params.id)
       .select('*, profiles(*), order_items(*, products(id, name, image_url))')
       .single()

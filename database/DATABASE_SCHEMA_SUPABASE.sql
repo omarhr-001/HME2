@@ -83,6 +83,10 @@ create table if not exists public.orders (
     check (status in ('pending', 'processing', 'shipped', 'delivered', 'cancelled')),
   shipping_address jsonb,
   billing_address jsonb,
+  payment_method text not null default 'cash_on_delivery'
+    check (payment_method in ('cash_on_delivery', 'bank_transfer')),
+  payment_status text not null default 'pending'
+    check (payment_status in ('pending', 'paid', 'failed', 'refunded')),
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -90,6 +94,38 @@ create table if not exists public.orders (
 
 create index if not exists idx_orders_user_id on public.orders(user_id);
 create index if not exists idx_orders_status on public.orders(status);
+
+alter table public.orders
+add column if not exists payment_method text not null default 'cash_on_delivery';
+
+alter table public.orders
+add column if not exists payment_status text not null default 'pending';
+
+create index if not exists idx_orders_payment_status on public.orders(payment_status);
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'orders_payment_method_check'
+      and conrelid = 'public.orders'::regclass
+  ) then
+    alter table public.orders
+    add constraint orders_payment_method_check
+    check (payment_method in ('cash_on_delivery', 'bank_transfer'));
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'orders_payment_status_check'
+      and conrelid = 'public.orders'::regclass
+  ) then
+    alter table public.orders
+    add constraint orders_payment_status_check
+    check (payment_status in ('pending', 'paid', 'failed', 'refunded'));
+  end if;
+end;
+$$;
 
 drop trigger if exists set_orders_updated_at on public.orders;
 create trigger set_orders_updated_at
@@ -108,6 +144,170 @@ create table if not exists public.order_items (
 
 create index if not exists idx_order_items_order_id on public.order_items(order_id);
 create index if not exists idx_order_items_product_id on public.order_items(product_id);
+
+-- Transactional order creation from cart rows.
+drop function if exists public.create_order_from_cart(uuid, uuid[], jsonb, jsonb, text, text);
+
+create or replace function public.create_order_from_cart(
+  p_user_id uuid,
+  p_cart_item_ids uuid[] default null,
+  p_shipping_address jsonb default null,
+  p_billing_address jsonb default null,
+  p_payment_method text default 'cash_on_delivery',
+  p_payment_status text default 'pending',
+  p_notes text default null,
+  p_status text default 'pending'
+)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = public, pg_temp
+as $$
+declare
+  v_order public.orders%rowtype;
+  v_subtotal numeric(12, 2);
+  v_shipping_fee numeric(12, 2);
+  v_unavailable_products text;
+  v_low_stock_products text;
+begin
+  if p_user_id is null then
+    raise exception 'User is required';
+  end if;
+
+  if p_status not in ('pending', 'processing', 'shipped', 'delivered', 'cancelled') then
+    raise exception 'Invalid order status';
+  end if;
+
+  if p_payment_method not in ('cash_on_delivery', 'bank_transfer') then
+    raise exception 'Invalid payment method';
+  end if;
+
+  if p_payment_status not in ('pending', 'paid', 'failed', 'refunded') then
+    raise exception 'Invalid payment status';
+  end if;
+
+  create temporary table if not exists selected_order_cart_items (
+    cart_item_id uuid primary key,
+    product_id bigint not null,
+    quantity integer not null,
+    product_name text not null,
+    price numeric(12, 2) not null,
+    stock_quantity integer not null,
+    in_stock boolean not null,
+    is_active boolean not null
+  ) on commit drop;
+
+  truncate table selected_order_cart_items;
+
+  insert into selected_order_cart_items (
+    cart_item_id,
+    product_id,
+    quantity,
+    product_name,
+    price,
+    stock_quantity,
+    in_stock,
+    is_active
+  )
+  select
+    ci.id,
+    ci.product_id,
+    ci.quantity,
+    p.name,
+    p.price,
+    p.stock_quantity,
+    p.in_stock,
+    p.is_active
+  from public.cart_items ci
+  join public.products p on p.id = ci.product_id
+  where ci.user_id = p_user_id
+    and (
+      coalesce(array_length(p_cart_item_ids, 1), 0) = 0
+      or ci.id = any(p_cart_item_ids)
+    )
+  for update of p, ci;
+
+  if not exists (select 1 from selected_order_cart_items) then
+    raise exception 'Cart is empty';
+  end if;
+
+  select string_agg(product_name, ', ')
+  into v_unavailable_products
+  from selected_order_cart_items
+  where not is_active;
+
+  if v_unavailable_products is not null then
+    raise exception 'Unavailable products: %', v_unavailable_products;
+  end if;
+
+  select string_agg(
+    product_name || ' (requested ' || quantity || ', available ' || stock_quantity || ')',
+    ', '
+  )
+  into v_low_stock_products
+  from selected_order_cart_items
+  where not in_stock or stock_quantity < quantity;
+
+  if v_low_stock_products is not null then
+    raise exception 'Not enough stock: %', v_low_stock_products;
+  end if;
+
+  select coalesce(sum(price * quantity), 0)::numeric(12, 2)
+  into v_subtotal
+  from selected_order_cart_items;
+
+  v_shipping_fee := case when v_subtotal > 500 then 0 else 15 end;
+
+  insert into public.orders (
+    user_id,
+    order_number,
+    total_amount,
+    status,
+    shipping_address,
+    billing_address,
+    payment_method,
+    payment_status,
+    notes
+  )
+  values (
+    p_user_id,
+    'HME-' || to_char(now(), 'YYYYMMDD') || '-' || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6)),
+    v_subtotal + v_shipping_fee,
+    p_status,
+    p_shipping_address,
+    coalesce(p_billing_address, p_shipping_address),
+    p_payment_method,
+    p_payment_status,
+    nullif(btrim(coalesce(p_notes, '')), '')
+  )
+  returning * into v_order;
+
+  insert into public.order_items (order_id, product_id, quantity, price)
+  select v_order.id, product_id, quantity, price
+  from selected_order_cart_items;
+
+  update public.products p
+  set
+    stock_quantity = p.stock_quantity - selected.quantity,
+    in_stock = (p.stock_quantity - selected.quantity) > 0,
+    updated_at = now()
+  from selected_order_cart_items selected
+  where p.id = selected.product_id;
+
+  delete from public.cart_items ci
+  using selected_order_cart_items selected
+  where ci.id = selected.cart_item_id
+    and ci.user_id = p_user_id;
+
+  return to_jsonb(v_order);
+exception
+  when unique_violation then
+    raise exception 'Could not generate a unique order number, please retry';
+end;
+$$;
+
+revoke execute on function public.create_order_from_cart(uuid, uuid[], jsonb, jsonb, text, text, text, text) from public;
+grant execute on function public.create_order_from_cart(uuid, uuid[], jsonb, jsonb, text, text, text, text) to service_role;
 
 -- Optional tables matching lib/types.ts for later account features.
 create table if not exists public.profiles (
@@ -283,7 +483,7 @@ on conflict (slug) do update set
 
 -- Minimal sample products. Replace image_url values with your real assets.
 insert into public.products
-  (name, description, category, category_id, price, original_price, image_url, sku, rating, reviews_count, specs, in_stock)
+  (name, description, category, category_id, price, original_price, stock_quantity, image_url, sku, rating, reviews_count, specs, in_stock)
 select
   'Réfrigérateur double porte',
   'Réfrigérateur familial grande capacité.',
@@ -291,6 +491,7 @@ select
   c.id,
   1299.00,
   1499.00,
+  8,
   '/images/placeholder.jpg',
   'REF-DOUBLE-001',
   4.6,
@@ -299,10 +500,12 @@ select
   true
 from public.categories c
 where c.slug = 'refrigerateurs'
-on conflict (sku) do nothing;
+on conflict (sku) do update set
+  stock_quantity = greatest(public.products.stock_quantity, excluded.stock_quantity),
+  in_stock = greatest(public.products.stock_quantity, excluded.stock_quantity) > 0;
 
 insert into public.products
-  (name, description, category, category_id, price, original_price, image_url, sku, rating, reviews_count, specs, in_stock)
+  (name, description, category, category_id, price, original_price, stock_quantity, image_url, sku, rating, reviews_count, specs, in_stock)
 select
   'Four encastrable électrique',
   'Four moderne avec chaleur tournante.',
@@ -310,6 +513,7 @@ select
   c.id,
   699.00,
   799.00,
+  12,
   '/images/placeholder.jpg',
   'FOUR-ENCAST-001',
   4.4,
@@ -318,4 +522,6 @@ select
   true
 from public.categories c
 where c.slug = 'fours'
-on conflict (sku) do nothing;
+on conflict (sku) do update set
+  stock_quantity = greatest(public.products.stock_quantity, excluded.stock_quantity),
+  in_stock = greatest(public.products.stock_quantity, excluded.stock_quantity) > 0;

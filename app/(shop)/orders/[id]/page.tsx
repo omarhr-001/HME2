@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
-import { ArrowLeft, Download, MapPin, Package, Receipt, Truck } from 'lucide-react'
+import { ArrowLeft, CreditCard, Download, MapPin, Package, Receipt, Truck } from 'lucide-react'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
@@ -41,6 +41,18 @@ const statusClasses = {
   shipped: 'bg-purple-50 text-purple-800 border-purple-200',
   delivered: 'bg-green-50 text-green-800 border-green-200',
   cancelled: 'bg-red-50 text-red-800 border-red-200',
+}
+
+const paymentMethodLabels = {
+  cash_on_delivery: 'Paiement à la livraison',
+  bank_transfer: 'Virement bancaire',
+}
+
+const paymentStatusLabels = {
+  pending: 'Paiement en attente',
+  paid: 'Payée',
+  failed: 'Paiement échoué',
+  refunded: 'Remboursée',
 }
 
 export default function OrderDetailsPage({ params }: { params: { id: string } }) {
@@ -169,6 +181,27 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                   <div className="border-t pt-3 flex justify-between text-lg font-bold text-gray-900">
                     <span>Total</span>
                     <span className="text-green-600">{Number(order.total_amount).toFixed(2)} DT</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border bg-white p-6 shadow-sm">
+                <div className="mb-4 flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-green-600" />
+                  <h2 className="text-xl font-bold text-gray-900">Paiement</h2>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between gap-4 text-gray-600">
+                    <span>Méthode</span>
+                    <span className="font-semibold text-gray-900">
+                      {paymentMethodLabels[order.payment_method || 'cash_on_delivery']}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4 text-gray-600">
+                    <span>Statut</span>
+                    <span className="font-semibold text-gray-900">
+                      {paymentStatusLabels[order.payment_status || 'pending']}
+                    </span>
                   </div>
                 </div>
               </div>

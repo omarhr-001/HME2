@@ -36,7 +36,9 @@ export async function POST(req: NextRequest) {
     try {
       const { productId, quantity } = await req.json()
 
-      if (!productId || !quantity || quantity <= 0) {
+      const requestedQuantity = Number(quantity)
+
+      if (!productId || !Number.isInteger(requestedQuantity) || requestedQuantity <= 0) {
         return NextResponse.json(
           { error: 'Invalid product ID or quantity' },
           { status: 400 }
@@ -47,10 +49,10 @@ export async function POST(req: NextRequest) {
         req.headers.get('authorization')?.replace('Bearer ', '') || ''
       )
 
-      // Check if product exists
+      // Check if product exists and has enough stock.
       const { data: product, error: productError } = await supabase
         .from('products')
-        .select('id')
+        .select('id, name, stock_quantity, in_stock, is_active')
         .eq('id', productId)
         .single()
 
@@ -58,6 +60,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           { error: 'Product not found' },
           { status: 404 }
+        )
+      }
+
+      if (!product.is_active || !product.in_stock || Number(product.stock_quantity || 0) <= 0) {
+        return NextResponse.json(
+          { error: `${product.name || 'Product'} is out of stock` },
+          { status: 409 }
         )
       }
 
@@ -69,11 +78,20 @@ export async function POST(req: NextRequest) {
         .eq('product_id', productId)
         .single()
 
+      const nextQuantity = Number(existingItem?.quantity || 0) + requestedQuantity
+
+      if (nextQuantity > Number(product.stock_quantity || 0)) {
+        return NextResponse.json(
+          { error: `${product.name || 'Product'} only has ${product.stock_quantity} in stock` },
+          { status: 409 }
+        )
+      }
+
       if (existingItem) {
         // Update quantity
         const { data, error } = await supabase
           .from('cart_items')
-          .update({ quantity: existingItem.quantity + quantity })
+          .update({ quantity: nextQuantity })
           .eq('id', existingItem.id)
           .eq('user_id', user.id)
           .select()
@@ -85,7 +103,7 @@ export async function POST(req: NextRequest) {
       // Add new item with authenticated user_id
       const { data, error } = await supabase
         .from('cart_items')
-        .insert([{ user_id: user.id, product_id: productId, quantity }])
+        .insert([{ user_id: user.id, product_id: productId, quantity: requestedQuantity }])
         .select()
 
       if (error) throw error

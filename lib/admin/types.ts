@@ -1,4 +1,6 @@
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+export type PaymentMethod = 'cash_on_delivery' | 'bank_transfer'
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
 
 export type AdminProfile = {
   id: string
@@ -52,6 +54,8 @@ export type AdminOrder = {
   user_id: string
   total_amount: number
   status: OrderStatus
+  payment_method: PaymentMethod | null
+  payment_status: PaymentStatus | null
   created_at: string
   updated_at: string
   notes: string | null

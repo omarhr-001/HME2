@@ -41,10 +41,19 @@ export async function GET(req: NextRequest) {
 
     if (format === 'csv') {
       const csv = [
-        'Order ID,Customer,Products Count,Total Amount,Status,Date',
+        'Order ID,Customer,Products Count,Total Amount,Status,Payment Method,Payment Status,Date',
         ...orders.map((order: any) => {
           const customer = [order.profiles?.first_name, order.profiles?.last_name].filter(Boolean).join(' ') || order.profiles?.email || 'Customer'
-          return [order.order_number || order.id, customer, order.order_items?.length || 0, order.total_amount, order.status, order.created_at]
+          return [
+            order.order_number || order.id,
+            customer,
+            order.order_items?.length || 0,
+            order.total_amount,
+            order.status,
+            order.payment_method || 'cash_on_delivery',
+            order.payment_status || 'pending',
+            order.created_at,
+          ]
             .map((value) => `"${String(value).replace(/"/g, '""')}"`)
             .join(',')
         }),

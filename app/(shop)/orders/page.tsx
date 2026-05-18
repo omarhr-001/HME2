@@ -28,6 +28,8 @@ interface Order {
   id: string
   order_number?: string
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+  payment_method?: 'cash_on_delivery' | 'bank_transfer'
+  payment_status?: 'pending' | 'paid' | 'failed' | 'refunded'
   total_amount: number
   created_at: string
   order_items?: Array<{
@@ -60,6 +62,18 @@ export default function OrdersPage() {
     shipped: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-800', label: 'Expédié' },
     delivered: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800', label: 'Livré' },
     cancelled: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', label: 'Annulé' },
+  }
+
+  const paymentLabels = {
+    cash_on_delivery: 'Paiement à la livraison',
+    bank_transfer: 'Virement bancaire',
+  }
+
+  const paymentStatusLabels = {
+    pending: 'Paiement en attente',
+    paid: 'Payée',
+    failed: 'Échoué',
+    refunded: 'Remboursée',
   }
 
   const filteredOrders = filterStatus === 'all'
@@ -210,6 +224,17 @@ export default function OrdersPage() {
                             {new Date(order.created_at).toLocaleDateString('fr-FR')}
                           </p>
                         </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 text-sm text-gray-600">
+                        <p>
+                          <span className="font-semibold text-gray-900">Paiement: </span>
+                          {paymentLabels[order.payment_method || 'cash_on_delivery']}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-gray-900">Statut paiement: </span>
+                          {paymentStatusLabels[order.payment_status || 'pending']}
+                        </p>
                       </div>
 
                       <div className="flex gap-3 pt-4">

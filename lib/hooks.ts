@@ -24,6 +24,11 @@ const authenticatedFetcher = async (url: string) => {
   return res.json()
 }
 
+async function getApiErrorMessage(res: Response, fallback: string) {
+  const errorData = await res.json().catch(() => ({}))
+  return typeof errorData?.error === 'string' ? errorData.error : fallback
+}
+
 export function useCart() {
   const { user } = useAuth()
 
@@ -185,12 +190,12 @@ export function useOrders() {
           status: 'pending',
         }),
       })
-      if (res.ok) {
-        mutate()
-        return await res.json()
-      }
+      if (!res.ok) throw new Error(await getApiErrorMessage(res, 'Erreur lors de la création de la commande'))
+      mutate()
+      return await res.json()
     } catch (err) {
       console.error('[v0] Error creating order:', err)
+      throw err
     }
   }
 
@@ -261,7 +266,7 @@ export function useAddToCart() {
           quantity,
         }),
       })
-      if (!res.ok) throw new Error('Failed to add to cart')
+      if (!res.ok) throw new Error(await getApiErrorMessage(res, 'Failed to add to cart'))
       return await res.json()
     } finally {
       setIsMutating(false)
@@ -284,7 +289,7 @@ export function useRemoveFromCart() {
           'Authorization': `Bearer ${token}`,
         },
       })
-      if (!res.ok) throw new Error('Failed to remove from cart')
+      if (!res.ok) throw new Error(await getApiErrorMessage(res, 'Failed to remove from cart'))
       return await res.json()
     } finally {
       setIsMutating(false)
@@ -309,7 +314,7 @@ export function useUpdateQuantity() {
         },
         body: JSON.stringify({ quantity }),
       })
-      if (!res.ok) throw new Error('Failed to update quantity')
+      if (!res.ok) throw new Error(await getApiErrorMessage(res, 'Failed to update quantity'))
       return await res.json()
     } finally {
       setIsMutating(false)
@@ -322,12 +327,19 @@ export function useUpdateQuantity() {
 export function useCreateOrder() {
   const { user } = useAuth()
   const [isMutating, setIsMutating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const trigger = async (payload: CheckoutPayload) => {
     if (!user) return
     setIsMutating(true)
+    setError(null)
     try {
       const token = await getAuthToken()
+      if (!token) {
+        setError('Session expirée. Veuillez vous reconnecter.')
+        return null
+      }
+
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: {
@@ -339,12 +351,22 @@ export function useCreateOrder() {
           status: 'pending',
         }),
       })
-      if (!res.ok) throw new Error('Failed to create order')
+
+      if (!res.ok) {
+        const message = await getApiErrorMessage(res, 'Erreur lors de la création de la commande')
+        setError(message)
+        return null
+      }
+
       return await res.json()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur lors de la création de la commande'
+      setError(message)
+      return null
     } finally {
       setIsMutating(false)
     }
   }
 
-  return { trigger, isMutating }
+  return { trigger, isMutating, error }
 }

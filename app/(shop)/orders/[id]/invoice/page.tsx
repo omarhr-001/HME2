@@ -10,6 +10,18 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import type { Order } from '@/lib/types'
 
+const paymentMethodLabels = {
+  cash_on_delivery: 'Paiement à la livraison',
+  bank_transfer: 'Virement bancaire',
+}
+
+const paymentStatusLabels = {
+  pending: 'En attente',
+  paid: 'Payée',
+  failed: 'Échoué',
+  refunded: 'Remboursée',
+}
+
 const authenticatedFetcher = async (url: string) => {
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
@@ -91,6 +103,11 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
           <div>
             <h2 className="mb-3 font-bold">Statut</h2>
             <p className="text-sm capitalize text-gray-600">{order.status}</p>
+            <h2 className="mb-3 mt-5 font-bold">Paiement</h2>
+            <div className="space-y-1 text-sm text-gray-600">
+              <p>{paymentMethodLabels[order.payment_method || 'cash_on_delivery']}</p>
+              <p>{paymentStatusLabels[order.payment_status || 'pending']}</p>
+            </div>
           </div>
         </div>
 

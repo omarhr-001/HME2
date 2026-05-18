@@ -68,6 +68,8 @@ export interface Order {
   order_number?: string;
   total_amount: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  payment_method?: 'cash_on_delivery' | 'bank_transfer';
+  payment_status?: 'pending' | 'paid' | 'failed' | 'refunded';
   shipping_address?: Record<string, unknown>;
   billing_address?: Record<string, unknown>;
   notes?: string;
@@ -101,6 +103,7 @@ export interface CheckoutPayload {
   items?: CartItemWithProduct[];
   totalAmount?: number;
   status?: Order['status'];
+  paymentMethod?: Order['payment_method'];
   shippingAddress?: CheckoutAddress;
   billingAddress?: CheckoutAddress;
   notes?: string;

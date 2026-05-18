@@ -7,14 +7,14 @@ import { useAuth } from '@/lib/auth-context'
 import { useCart, useCreateOrder } from '@/lib/hooks'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
-import { ChevronRight } from 'lucide-react'
-import type { CartItemWithProduct } from '@/lib/types'
+import { Banknote, ChevronRight, Landmark } from 'lucide-react'
+import type { CartItemWithProduct, Order } from '@/lib/types'
 
 export default function CheckoutPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   const { cartItems, cartTotal, isLoading: cartLoading } = useCart()
-  const { trigger: createOrder, isMutating: isCreating } = useCreateOrder()
+  const { trigger: createOrder, isMutating: isCreating, error: createOrderError } = useCreateOrder()
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -28,6 +28,7 @@ export default function CheckoutPage() {
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [paymentMethod, setPaymentMethod] = useState<Order['payment_method']>('cash_on_delivery')
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -43,6 +44,12 @@ export default function CheckoutPage() {
       router.push('/cart')
     }
   }, [cartItems, cartLoading, router])
+
+  useEffect(() => {
+    if (createOrderError) {
+      setErrors({ form: createOrderError })
+    }
+  }, [createOrderError])
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -86,6 +93,7 @@ export default function CheckoutPage() {
       const order = await createOrder({
         items: cartItems,
         totalAmount: total,
+        paymentMethod,
         shippingAddress,
         billingAddress: shippingAddress,
         notes: formData.notes,
@@ -93,10 +101,19 @@ export default function CheckoutPage() {
       
       if (order) {
         router.push(`/orders/${order.id}`)
+        return
       }
+
+      setErrors({
+        form: createOrderError || 'Erreur lors de la création de la commande',
+      })
     } catch (error) {
       console.error('[v0] Error creating order:', error)
-      setErrors({ form: 'Erreur lors de la création de la commande' })
+      setErrors({
+        form: error instanceof Error
+          ? error.message
+          : 'Erreur lors de la création de la commande',
+      })
     }
   }
 
@@ -246,6 +263,43 @@ export default function CheckoutPage() {
                     />
                     {errors.postalCode && <p className="text-red-500 text-xs mt-1">{errors.postalCode}</p>}
                   </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="mb-8">
+                <h2 className="text-xl font-bold text-gray-800 mb-4">Paiement</h2>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('cash_on_delivery')}
+                    className={`flex min-h-24 items-start gap-3 rounded-lg border p-4 text-left transition ${
+                      paymentMethod === 'cash_on_delivery'
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    <Banknote className="mt-1 h-5 w-5 text-green-600" />
+                    <span>
+                      <span className="block font-semibold text-gray-900">Paiement à la livraison</span>
+                      <span className="mt-1 block text-sm text-gray-600">Réglez la commande au moment de la réception.</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('bank_transfer')}
+                    className={`flex min-h-24 items-start gap-3 rounded-lg border p-4 text-left transition ${
+                      paymentMethod === 'bank_transfer'
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    <Landmark className="mt-1 h-5 w-5 text-green-600" />
+                    <span>
+                      <span className="block font-semibold text-gray-900">Virement bancaire</span>
+                      <span className="mt-1 block text-sm text-gray-600">Votre commande reste en attente jusqu'à confirmation.</span>
+                    </span>
+                  </button>
                 </div>
               </div>
 

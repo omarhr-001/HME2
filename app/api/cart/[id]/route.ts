@@ -63,7 +63,9 @@ export async function PUT(
       const { quantity } = await req.json()
       const cartItemId = params.id
 
-      if (quantity === undefined || quantity < 0) {
+      const requestedQuantity = Number(quantity)
+
+      if (quantity === undefined || !Number.isInteger(requestedQuantity) || requestedQuantity < 0) {
         return NextResponse.json(
           { error: 'Invalid quantity' },
           { status: 400 }
@@ -77,7 +79,15 @@ export async function PUT(
       // Verify that this cart item belongs to the authenticated user
       const { data: cartItem, error: fetchError } = await supabase
         .from('cart_items')
-        .select('user_id')
+        .select(`
+          user_id,
+          products (
+            name,
+            stock_quantity,
+            in_stock,
+            is_active
+          )
+        `)
         .eq('id', cartItemId)
         .single()
 
@@ -95,7 +105,7 @@ export async function PUT(
         )
       }
 
-      if (quantity === 0) {
+      if (requestedQuantity === 0) {
         // Delete if quantity is 0
         const { error } = await supabase
           .from('cart_items')
@@ -107,9 +117,18 @@ export async function PUT(
         return NextResponse.json({ success: true })
       }
 
+      const product = Array.isArray(cartItem.products) ? cartItem.products[0] : cartItem.products
+
+      if (!product || !product.is_active || !product.in_stock || requestedQuantity > Number(product.stock_quantity || 0)) {
+        return NextResponse.json(
+          { error: `${product?.name || 'Product'} only has ${product?.stock_quantity || 0} in stock` },
+          { status: 409 }
+        )
+      }
+
       const { data, error } = await supabase
         .from('cart_items')
-        .update({ quantity })
+        .update({ quantity: requestedQuantity })
         .eq('id', cartItemId)
         .eq('user_id', user.id)
         .select()

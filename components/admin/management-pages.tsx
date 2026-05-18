@@ -38,12 +38,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EmptyState } from '@/components/admin/admin-shell'
 import { adminFetch, downloadAdminFile, adminUpload } from '@/lib/admin/client'
-import type { AdminCategory, AdminOrder, AdminProduct, AdminProfile, OrderStatus } from '@/lib/admin/types'
+import type { AdminCategory, AdminOrder, AdminProduct, AdminProfile, OrderStatus, PaymentStatus } from '@/lib/admin/types'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 const statuses: OrderStatus[] = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
+const paymentStatuses: PaymentStatus[] = ['pending', 'paid', 'failed', 'refunded']
 
 const statusClass: Record<OrderStatus, string> = {
   pending: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200',
@@ -51,6 +52,18 @@ const statusClass: Record<OrderStatus, string> = {
   shipped: 'bg-violet-100 text-violet-800 dark:bg-violet-500/15 dark:text-violet-200',
   delivered: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200',
   cancelled: 'bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-200',
+}
+
+const paymentMethodLabels = {
+  cash_on_delivery: 'Cash on delivery',
+  bank_transfer: 'Bank transfer',
+}
+
+const paymentStatusClass: Record<PaymentStatus, string> = {
+  pending: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200',
+  paid: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200',
+  failed: 'bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-200',
+  refunded: 'bg-slate-100 text-slate-800 dark:bg-slate-500/15 dark:text-slate-200',
 }
 
 export function OrdersPage() {
@@ -68,6 +81,12 @@ export function OrdersPage() {
   async function updateStatus(id: string, nextStatus: OrderStatus) {
     await adminFetch(`/api/admin/orders/${id}`, { method: 'PATCH', body: JSON.stringify({ status: nextStatus }) })
     toast.success('Order status updated')
+    mutate()
+  }
+
+  async function updatePaymentStatus(id: string, nextStatus: PaymentStatus) {
+    await adminFetch(`/api/admin/orders/${id}`, { method: 'PATCH', body: JSON.stringify({ payment_status: nextStatus }) })
+    toast.success('Payment status updated')
     mutate()
   }
 
@@ -107,6 +126,7 @@ export function OrdersPage() {
               <TableHead>Products</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Payment</TableHead>
               <TableHead>Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -119,9 +139,10 @@ export function OrdersPage() {
                 <TableCell>{order.order_items?.length || 0}</TableCell>
                 <TableCell>{money.format(Number(order.total_amount))}</TableCell>
                 <TableCell><StatusBadge status={order.status} /></TableCell>
+                <TableCell><PaymentStatusBadge status={order.payment_status || 'pending'} /></TableCell>
                 <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
-                  <OrderDetails order={order} onUpdate={updateStatus} />
+                  <OrderDetails order={order} onUpdate={updateStatus} onPaymentUpdate={updatePaymentStatus} />
                   <Button variant="ghost" size="icon" onClick={() => updateStatus(order.id, 'delivered')} aria-label="Mark delivered">
                     <Save className="h-4 w-4" />
                   </Button>
@@ -589,7 +610,15 @@ function CategoryDialog({ category, onSave }: { category?: AdminCategory; onSave
   )
 }
 
-function OrderDetails({ order, onUpdate }: { order: AdminOrder; onUpdate: (id: string, status: OrderStatus) => Promise<void> }) {
+function OrderDetails({
+  order,
+  onUpdate,
+  onPaymentUpdate,
+}: {
+  order: AdminOrder
+  onUpdate: (id: string, status: OrderStatus) => Promise<void>
+  onPaymentUpdate: (id: string, status: PaymentStatus) => Promise<void>
+}) {
   return (
     <Dialog>
       <DialogTrigger asChild><Button variant="ghost" size="icon" aria-label="View order"><Eye className="h-4 w-4" /></Button></DialogTrigger>
@@ -599,6 +628,16 @@ function OrderDetails({ order, onUpdate }: { order: AdminOrder; onUpdate: (id: s
           <DialogDescription>{customerName(order.profiles)} • {money.format(Number(order.total_amount))}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
+          <div className="grid gap-3 rounded-lg border p-3 text-sm sm:grid-cols-2">
+            <div>
+              <p className="text-muted-foreground">Payment method</p>
+              <p className="font-medium">{paymentMethodLabels[order.payment_method || 'cash_on_delivery']}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Payment status</p>
+              <PaymentStatusBadge status={order.payment_status || 'pending'} />
+            </div>
+          </div>
           {(order.order_items || []).map((item) => (
             <div key={item.id} className="flex items-center justify-between rounded-lg border p-3">
               <span>{item.products?.name || 'Product'}</span>
@@ -608,6 +647,10 @@ function OrderDetails({ order, onUpdate }: { order: AdminOrder; onUpdate: (id: s
           <Select value={order.status} onValueChange={(value) => onUpdate(order.id, value as OrderStatus)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>{statuses.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={order.payment_status || 'pending'} onValueChange={(value) => onPaymentUpdate(order.id, value as PaymentStatus)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{paymentStatuses.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent>
           </Select>
         </div>
       </DialogContent>
@@ -635,6 +678,10 @@ function ConfirmDelete({ onConfirm }: { onConfirm: () => void }) {
 
 function StatusBadge({ status }: { status: OrderStatus }) {
   return <span className={cn('inline-flex rounded-md px-2 py-1 text-xs font-medium capitalize', statusClass[status])}>{status}</span>
+}
+
+function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
+  return <span className={cn('inline-flex rounded-md px-2 py-1 text-xs font-medium capitalize', paymentStatusClass[status])}>{status}</span>
 }
 
 function Field({ label, value, onChange, type = 'text', icon }: { label: string; value: any; onChange: (value: string) => void; type?: string; icon?: React.ReactNode }) {

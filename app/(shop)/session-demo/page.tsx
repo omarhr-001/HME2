@@ -55,9 +55,24 @@ export default function SessionDemoPage() {
     
     try {
       const order = await createOrder({
-        items: cartItems
+        items: cartItems,
+        paymentMethod: 'cash_on_delivery',
+        shippingAddress: {
+          firstName: 'Demo',
+          lastName: 'User',
+          email: user.email || 'demo@example.com',
+          phone: '+21600000000',
+          address: 'Demo address',
+          city: 'Tunis',
+          postalCode: '1000',
+          country: 'Tunisia',
+        },
       })
-      alert(`Order created: ${order?.id}`)
+      if (!order) {
+        alert('Failed to create order')
+        return
+      }
+      alert(`Order created: ${order.id}`)
       mutateCart()
     } catch (err) {
       console.error('[v0] Failed to create order:', err)

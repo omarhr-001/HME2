@@ -52,9 +52,9 @@ export async function PUT(
       const { status } = await req.json()
       const orderId = params.id
 
-      if (!status) {
+      if (status !== 'cancelled') {
         return NextResponse.json(
-          { error: 'Status required' },
+          { error: 'Customers can only cancel an order' },
           { status: 400 }
         )
       }
@@ -64,7 +64,7 @@ export async function PUT(
       // Verify that this order belongs to the authenticated user
       const { data: orderData, error: fetchError } = await supabase
         .from('orders')
-        .select('user_id')
+        .select('user_id, status')
         .eq('id', orderId)
         .single()
 
@@ -79,6 +79,13 @@ export async function PUT(
         return NextResponse.json(
           { error: 'Forbidden: You can only update your own orders' },
           { status: 403 }
+        )
+      }
+
+      if (!['pending', 'processing'].includes(orderData.status)) {
+        return NextResponse.json(
+          { error: 'This order can no longer be cancelled online' },
+          { status: 409 }
         )
       }
 
