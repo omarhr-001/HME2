@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Heart, ShoppingCart } from 'lucide-react'
@@ -8,6 +8,7 @@ import { ProductDetailsModal } from './product-details-modal'
 import { useCart } from '@/lib/hooks'
 import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/hooks/use-toast'
+import { useLikedProducts } from '@/lib/hooks/use-liked-products'
 import type { Product } from '@/lib/types'
 
 interface ProductCardProps extends Product {
@@ -36,6 +37,14 @@ export function ProductCard({
   const { user } = useAuth()
   const { addToCart } = useCart()
   const { toast } = useToast()
+  const { likedProductIds, toggleLike, isInitialized } = useLikedProducts()
+
+  // Check if product is liked
+  useEffect(() => {
+    if (isInitialized) {
+      setIsWishlisted(likedProductIds.has(id))
+    }
+  }, [id, likedProductIds, isInitialized])
 
   const displayOriginalPrice = originalPrice ?? price
   const displayImage = image || image_url || '/placeholder.jpg'
@@ -135,7 +144,17 @@ export function ProductCard({
           <button
             onClick={(e) => {
               e.stopPropagation()
-              setIsWishlisted(!isWishlisted)
+              if (!user) {
+                toast({
+                  title: 'Connexion requise',
+                  description: 'Veuillez vous connecter pour ajouter aux favoris',
+                })
+                router.push('/auth/login')
+                return
+              }
+              const newState = !isWishlisted
+              setIsWishlisted(newState)
+              toggleLike(id)
             }}
             className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm ${isWishlisted
                 ? 'bg-red-50 border-red-300 text-red-500'
