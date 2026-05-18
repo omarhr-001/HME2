@@ -47,7 +47,10 @@ function PromotionDialog({
 }) {
     const [open, setOpen] = useState(false)
     const [form, setForm] = useState<any>(
-        promotion || {
+        promotion ? {
+            ...promotion,
+            product_ids: promotion.promotion_products?.map((p: any) => p.product_id) || [],
+        } : {
             title: '',
             description: '',
             status: 'active',
