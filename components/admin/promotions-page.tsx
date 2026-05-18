@@ -210,12 +210,26 @@ export function PromotionsPage() {
     const [search, setSearch] = useState('')
     const [page, setPage] = useState(1)
 
-    const { data: promotions = [], mutate: mutatePromotions } = useSWR(
+    type Promotion = {
+        id: string
+        title: string
+        description?: string
+        status: string
+        end_date: string
+        promotion_products?: any[]
+    }
+
+    const { data: promotions = [], mutate: mutatePromotions } = useSWR<Promotion[]>(
         '/api/admin/promotions',
         adminFetch
     )
+    type Product = {
+        id: number
+        name: string
+    }
 
-    const { data: products = [] } = useSWR(
+    const { data: products = [] } = useSWR<Product[]>(
+
         '/api/admin/products?limit=1000',
         adminFetch
     )
