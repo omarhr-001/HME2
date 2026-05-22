@@ -8,16 +8,19 @@ import { Footer } from '@/components/footer'
 import { ProductCard } from '@/components/product-card'
 import { Search, X, ChevronDown } from 'lucide-react'
 import { getProductsFromSupabase, getCategoriesFromSupabase, type Category } from '@/lib/products'
+import { getBrandsByCategoryFromSupabase } from '@/lib/brands'
 import { getCurrentUser } from '@/lib/auth'
-import type { Product } from '@/lib/types'
+import type { Product, Brand } from '@/lib/types'
 
 export default function ProductsPage() {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [brands, setBrands] = useState<Brand[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('newest')
   const [priceRange, setPriceRange] = useState([0, 2000])
@@ -44,6 +47,27 @@ export default function ProductsPage() {
     fetchData()
   }, [])
 
+  // Load brands when category is selected
+  useEffect(() => {
+    const loadBrands = async () => {
+      if (selectedCategory) {
+        try {
+          const brandsData = await getBrandsByCategoryFromSupabase(selectedCategory)
+          setBrands(brandsData)
+          setSelectedBrand(null) // Reset brand selection when category changes
+        } catch (err) {
+          console.error('Error fetching brands:', err)
+          setBrands([])
+        }
+      } else {
+        setBrands([])
+        setSelectedBrand(null)
+      }
+    }
+
+    loadBrands()
+  }, [selectedCategory])
+
   // Parse search parameters
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -65,6 +89,11 @@ export default function ProductsPage() {
     // Filter by category using category_id
     if (selectedCategory) {
       filtered = filtered.filter(p => p.category_id === selectedCategory)
+    }
+
+    // Filter by brand
+    if (selectedBrand) {
+      filtered = filtered.filter(p => p.brand_id === selectedBrand)
     }
 
     // Filter by search term
@@ -92,7 +121,7 @@ export default function ProductsPage() {
     }
 
     return filtered
-  }, [products, selectedCategory, searchTerm, sortBy, priceRange])
+  }, [products, selectedCategory, selectedBrand, searchTerm, sortBy, priceRange])
 
   const handleAddToCart = async (product: Product, quantity: number = 1) => {
     // Handled by ProductCard component with useCart hook
@@ -100,6 +129,7 @@ export default function ProductsPage() {
 
   const resetFilters = () => {
     setSelectedCategory(null)
+    setSelectedBrand(null)
     setSearchTerm('')
     setPriceRange([0, 2000])
     setSortBy('newest')
@@ -190,6 +220,50 @@ export default function ProductsPage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Brands Filter - Only show when category is selected */}
+                  {selectedCategory && brands.length > 0 && (
+                    <div className="bg-white rounded-lg p-4 border border-green-200 bg-green-50">
+                      <h3 className="font-semibold text-gray-800 mb-3 text-sm flex items-center gap-2">
+                        <span>🏷️</span>
+                        Marques
+                      </h3>
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => setSelectedBrand(null)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
+                            selectedBrand === null
+                              ? 'bg-green-100 text-green-700 font-medium'
+                              : 'text-gray-600 hover:bg-green-100'
+                          }`}
+                        >
+                          Toutes les marques
+                        </button>
+                        {brands.map(brand => (
+                          <button
+                            key={brand.id}
+                            onClick={() => setSelectedBrand(brand.id)}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-2 ${
+                              selectedBrand === brand.id
+                                ? 'bg-green-100 text-green-700 font-medium'
+                                : 'text-gray-600 hover:bg-green-100'
+                            }`}
+                          >
+                            {brand.logo_url && (
+                              <Image
+                                src={brand.logo_url}
+                                alt={brand.name}
+                                width={16}
+                                height={16}
+                                className="rounded"
+                              />
+                            )}
+                            {brand.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Price Range */}
                   <div className="bg-white rounded-lg p-4 border border-gray-200">

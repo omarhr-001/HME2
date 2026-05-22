@@ -31,6 +31,8 @@ export interface Product {
   stock_quantity?: number;
   category?: string;
   category_id?: string;
+  brand_id?: string;
+  brand?: Brand;
   image?: string;
   image_url?: string;
   product_images?: ProductImage[];
@@ -42,6 +44,23 @@ export interface Product {
   is_active?: boolean;
   created_at?: Date;
   updated_at?: Date;
+}
+
+export interface Brand {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  logo_url?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CategoryBrand {
+  id: string;
+  category_id: string;
+  brand_id: string;
+  created_at?: string;
 }
 
 export interface ProductImage {
