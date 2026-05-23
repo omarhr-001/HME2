@@ -10,7 +10,8 @@ import { Footer } from '@/components/footer'
 import { Banknote, ChevronRight, Landmark } from 'lucide-react'
 import type { CartItemWithProduct, Order } from '@/lib/types'
 
-const WHATSAPP_NUMBER = '21627032081'
+const WHATSAPP_NUMBER = '21695776655
+'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -289,8 +290,8 @@ export default function CheckoutPage() {
                     type="button"
                     onClick={() => setPaymentMethod('cash_on_delivery')}
                     className={`flex min-h-24 items-start gap-3 rounded-lg border p-4 text-left transition ${paymentMethod === 'cash_on_delivery'
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-gray-200 bg-white hover:border-gray-300'
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}
                   >
                     <Banknote className="mt-1 h-5 w-5 text-green-600" />
@@ -303,8 +304,8 @@ export default function CheckoutPage() {
                     type="button"
                     onClick={() => setPaymentMethod('bank_transfer')}
                     className={`flex min-h-24 items-start gap-3 rounded-lg border p-4 text-left transition ${paymentMethod === 'bank_transfer'
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-gray-200 bg-white hover:border-gray-300'
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}
                   >
                     <Landmark className="mt-1 h-5 w-5 text-green-600" />
