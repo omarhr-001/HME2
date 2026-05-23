@@ -25,11 +25,10 @@ export function ProductDetailsModal({
 
   const originalPrice = product.originalPrice ?? product.price
   const productImage = product.image || product.image_url || '/placeholder.jpg'
-  const productRating = product.rating ?? 0
-  const productReviews = product.reviews ?? 0
   const productSpecs = product.specs ?? {}
   const productInStock = product.inStock ?? true
   const productCategory = product.category || 'Produit'
+  const productBrand = product.brand?.name
   const discount = originalPrice > product.price
     ? Math.round(((originalPrice - product.price) / originalPrice) * 100)
     : 0
@@ -88,24 +87,17 @@ export function ProductDetailsModal({
                   <p className="text-sm font-bold text-green-600 uppercase mb-2">
                     {productCategory}
                   </p>
+                  {productBrand && (
+                    <p className="text-sm font-semibold text-gray-600 mb-2">
+                      Marque: {productBrand}
+                    </p>
+                  )}
                   <h1 className="text-2xl font-bold text-gray-800 mb-2">
                     {product.name}
                   </h1>
                   <p className="text-gray-600 text-sm leading-relaxed">
                     {product.description}
                   </p>
-                </div>
-
-                <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-200">
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <span key={i} className="text-amber-400">
-                        {i < Math.floor(productRating) ? '★' : '☆'}
-                      </span>
-                    ))}
-                  </div>
-                  <span className="font-semibold text-gray-700">{productRating}</span>
-                  <span className="text-gray-500">({productReviews} avis)</span>
                 </div>
 
                 <div className="mb-4 pb-4 border-b border-gray-200">
@@ -131,22 +123,20 @@ export function ProductDetailsModal({
                   <button
                     onClick={handleAddToCart}
                     disabled={!productInStock}
-                    className={`flex-1 py-3 px-4 rounded-full font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
-                      productInStock
-                        ? 'bg-green-500 text-white hover:bg-green-600'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    } ${addedToCart ? 'bg-green-600' : ''}`}
+                    className={`flex-1 py-3 px-4 rounded-full font-bold transition-all duration-300 flex items-center justify-center gap-2 ${productInStock
+                      ? 'bg-green-500 text-white hover:bg-green-600'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      } ${addedToCart ? 'bg-green-600' : ''}`}
                   >
                     <ShoppingCart size={18} />
                     {addedToCart ? 'Ajoute!' : 'Ajouter au panier'}
                   </button>
                   <button
                     onClick={() => setIsWishlisted(!isWishlisted)}
-                    className={`py-3 px-4 rounded-full font-bold transition-all duration-300 border-2 ${
-                      isWishlisted
-                        ? 'bg-red-50 border-red-300 text-red-500'
-                        : 'border-gray-300 text-gray-700 hover:border-red-300'
-                    }`}
+                    className={`py-3 px-4 rounded-full font-bold transition-all duration-300 border-2 ${isWishlisted
+                      ? 'bg-red-50 border-red-300 text-red-500'
+                      : 'border-gray-300 text-gray-700 hover:border-red-300'
+                      }`}
                     aria-label="Ajouter aux favoris"
                   >
                     <Heart size={18} fill={isWishlisted ? 'currentColor' : 'none'} />

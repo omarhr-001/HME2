@@ -16,7 +16,6 @@ import {
   Search,
   Settings,
   ShoppingCart,
-  Star,
   Users,
   X,
 } from 'lucide-react'
@@ -37,7 +36,6 @@ const nav = [
   { href: '/admin/promotions', label: 'Promotions', icon: Gift },
   { href: '/admin/customers', label: 'Customers', icon: Users },
   { href: '/admin/categories', label: 'Categories', icon: Grid3X3 },
-  { href: '/admin/reviews', label: 'Reviews', icon: Star },
   { href: '/admin/inventory', label: 'Inventory', icon: Boxes },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]

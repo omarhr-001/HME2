@@ -27,6 +27,19 @@ const headerAliases: Record<string, string> = {
   categorie: 'category',
   category_name: 'category',
   category_id: 'category_id',
+  meubles_salons: 'is_salon',
+  meuble_salon: 'is_salon',
+  salon: 'is_salon',
+  salons: 'is_salon',
+  meubles_chambres: 'is_chambre',
+  meuble_chambre: 'is_chambre',
+  chambre: 'is_chambre',
+  chambres: 'is_chambre',
+  brand: 'brand',
+  marque: 'brand',
+  tags: 'tags',
+  tag: 'tags',
+  etiquettes: 'tags',
   image: 'image_url',
   image_url: 'image_url',
   photo: 'image_url',
@@ -74,6 +87,16 @@ export async function POST(req: NextRequest) {
     for (const [index, rawRow] of rawRows.entries()) {
       const row = normalizeRow(rawRow)
       const rowNumber = index + 2
+
+      // If user provided furniture checkbox columns, map them to sensible categories
+      try {
+        if (!row.category) {
+          if (parseBoolean(row.is_salon, false)) row.category = 'Meubles/Salons'
+          else if (parseBoolean(row.is_chambre, false)) row.category = 'Meubles/Chambres'
+        }
+      } catch (err) {
+        // ignore parsing errors and continue
+      }
 
       if (!row.name) {
         errors.push({ row: rowNumber, error: 'Missing product name' })

@@ -3,13 +3,13 @@ export interface Product {
   name: string
   category: string
   category_id?: string
+  brand_id?: string
+  brand?: Brand
   price: number
   originalPrice: number
   image: string
   image_url?: string
   product_images?: ProductImage[]
-  rating: number
-  reviews: number
   description: string
   specs: Record<string, string>
   inStock: boolean
@@ -33,6 +33,13 @@ export interface Category {
   slug: string
   emoji?: string
   createdAt: string
+}
+
+export interface Brand {
+  id: string
+  name: string
+  slug: string
+  logo_url?: string
 }
 
 // Supabase functions for fetching products from database
@@ -99,19 +106,33 @@ function mapProduct(item: any): Product {
     name: item.name,
     category: item.category,
     category_id: item.category_id,
+    brand_id: item.brand_id,
+    brand: normalizeBrand(item.brands),
     price,
     originalPrice,
     image: image || '',
     image_url: image || undefined,
     product_images: item.product_images || [],
-    rating: toNumber(item.rating),
-    reviews: Number(item.reviews_count || 0),
     description: item.description || '',
     specs: normalizeSpecs(item.specs),
     inStock: item.in_stock !== false,
     stock_quantity: Number(item.stock_quantity || 0),
     sku: item.sku || undefined,
     is_active: item.is_active !== false,
+  }
+}
+
+function normalizeBrand(value: unknown): Brand | undefined {
+  if (!value || typeof value !== 'object') return undefined
+
+  const brand = value as Partial<Brand>
+  if (!brand.id || !brand.name) return undefined
+
+  return {
+    id: brand.id,
+    name: brand.name,
+    slug: brand.slug || brand.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    logo_url: brand.logo_url ?? undefined,
   }
 }
 

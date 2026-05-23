@@ -37,8 +37,6 @@ export interface Product {
   image_url?: string;
   product_images?: ProductImage[];
   sku?: string;
-  rating?: number;
-  reviews?: number;
   specs?: Record<string, string>;
   inStock?: boolean;
   is_active?: boolean;
@@ -160,18 +158,6 @@ export interface WishlistItem {
   user_id: number;
   product_id: number;
   created_at: Date;
-}
-
-export interface Review {
-  id: number;
-  product_id: number;
-  user_id: number;
-  rating: number;
-  title?: string;
-  comment?: string;
-  helpful_count: number;
-  created_at: Date;
-  updated_at: Date;
 }
 
 export interface Payment {

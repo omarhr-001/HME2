@@ -68,7 +68,7 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
             <StatCard title="Total Orders" value={data.stats.totalOrders.toLocaleString()} icon={ShoppingCart} trend="+orders" />
             <StatCard title="Total Products" value={data.stats.totalProducts.toLocaleString()} icon={Package} trend="catalog" />
             <StatCard title="Total Customers" value={data.stats.totalCustomers.toLocaleString()} icon={Users} trend="profiles" />
-            <StatCard title="Pending Orders" value={data.stats.pendingOrders.toLocaleString()} icon={Activity} trend="needs review" />
+            <StatCard title="Pending Orders" value={data.stats.pendingOrders.toLocaleString()} icon={Activity} trend="needs attention" />
             <StatCard title="Processing" value={data.stats.processingOrders.toLocaleString()} icon={ShoppingCart} trend="active orders" />
             <StatCard title="Delivered Orders" value={data.stats.deliveredOrders.toLocaleString()} icon={CheckCircle2} trend="fulfilled" />
             <StatCard title="Paid Orders" value={data.stats.paidOrders.toLocaleString()} icon={CreditCard} trend="payment status" />

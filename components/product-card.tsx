@@ -24,8 +24,6 @@ export function ProductCard({
   originalPrice,
   image,
   image_url,
-  rating,
-  reviews,
   description,
   specs,
   inStock,
@@ -49,8 +47,6 @@ export function ProductCard({
 
   const displayOriginalPrice = originalPrice ?? price
   const displayImage = image || image_url || '/placeholder.jpg'
-  const displayRating = rating ?? 0
-  const displayReviews = reviews ?? 0
   const displaySpecs = specs ?? {}
   const isAvailable = inStock ?? true
   const displayCategory = category || 'Produit'
@@ -63,8 +59,7 @@ export function ProductCard({
     originalPrice: displayOriginalPrice,
     image: displayImage,
     image_url,
-    rating: displayRating,
-    reviews: displayReviews,
+    brand,
     description,
     specs: displaySpecs,
     inStock: isAvailable,
@@ -158,8 +153,8 @@ export function ProductCard({
               toggleLike(id)
             }}
             className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm ${isWishlisted
-                ? 'bg-red-50 border-red-300 text-red-500'
-                : 'bg-white border border-gray-200 text-gray-400 hover:bg-red-50 hover:border-red-300'
+              ? 'bg-red-50 border-red-300 text-red-500'
+              : 'bg-white border border-gray-200 text-gray-400 hover:bg-red-50 hover:border-red-300'
               }`}
             aria-label="Ajouter aux favoris"
           >
@@ -173,17 +168,6 @@ export function ProductCard({
             <p className="text-xs text-gray-500 font-medium mb-1">Marque: {brand.name}</p>
           )}
           <p className="font-semibold text-sm text-gray-800 mb-1.5 line-clamp-2">{name}</p>
-
-          <div className="flex items-center gap-1.5 mb-3">
-            <div className="flex items-center gap-0.5">
-              {[...Array(5)].map((_, i) => (
-                <span key={i} className="text-amber-400 text-xs">
-                  {i < Math.floor(displayRating) ? '★' : '☆'}
-                </span>
-              ))}
-            </div>
-            <span className="text-xs text-gray-500">({displayReviews})</span>
-          </div>
 
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
@@ -199,8 +183,8 @@ export function ProductCard({
               }}
               disabled={!isAvailable || isAdding}
               className={`w-9 h-9 border-none rounded-2xl flex items-center justify-center cursor-pointer text-white text-base transition-all duration-300 shadow-md ${isAvailable && !isAdding
-                  ? 'bg-green-500 hover:bg-green-600 hover:scale-110'
-                  : 'bg-gray-300 cursor-not-allowed'
+                ? 'bg-green-500 hover:bg-green-600 hover:scale-110'
+                : 'bg-gray-300 cursor-not-allowed'
                 }`}
               aria-label="Ajouter au panier"
             >

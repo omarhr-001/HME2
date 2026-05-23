@@ -73,7 +73,7 @@ export default function ProductsPage() {
     const params = new URLSearchParams(window.location.search)
     const category = params.get('category')
     const search = params.get('search')
-    
+
     if (category) {
       const cat = categories.find(c => c.slug === category || c.name === category)
       setSelectedCategory(cat?.id || null)
@@ -203,11 +203,10 @@ export default function ProductsPage() {
                     <div className="space-y-2">
                       <button
                         onClick={() => setSelectedCategory(null)}
-                        className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-3 group ${
-                          selectedCategory === null
-                            ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md shadow-green-500/20'
-                            : 'text-gray-700 hover:bg-gray-100 border border-transparent'
-                        }`}
+                        className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-3 group ${selectedCategory === null
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md shadow-green-500/20'
+                          : 'text-gray-700 hover:bg-gray-100 border border-transparent'
+                          }`}
                       >
                         <span className={`text-lg transition-transform ${selectedCategory === null ? 'scale-110' : 'group-hover:scale-105'}`}>🎯</span>
                         Tous les produits
@@ -216,18 +215,17 @@ export default function ProductsPage() {
                         <button
                           key={cat.id}
                           onClick={() => setSelectedCategory(cat.id)}
-                          className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-3 group ${
-                            selectedCategory === cat.id
-                              ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md shadow-green-500/20'
-                              : 'text-gray-700 hover:bg-gray-100 border border-transparent'
-                          }`}
+                          className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-3 group ${selectedCategory === cat.id
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md shadow-green-500/20'
+                            : 'text-gray-700 hover:bg-gray-100 border border-transparent'
+                            }`}
                         >
                           <span className={`text-lg transition-transform ${selectedCategory === cat.id ? 'scale-110' : 'group-hover:scale-105'}`}>
                             {cat.emoji || '📦'}
                           </span>
                           <span className="flex-1">{cat.name}</span>
                           <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                            {cat.product_count || '0'}
+                            {products.filter(p => p.category_id === cat.id).length}
                           </span>
                         </button>
                       ))}
@@ -249,11 +247,10 @@ export default function ProductsPage() {
                       <div className="space-y-2">
                         <button
                           onClick={() => setSelectedBrand(null)}
-                          className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-3 group ${
-                            selectedBrand === null
-                              ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/20'
-                              : 'text-gray-700 hover:bg-amber-100 border border-transparent'
-                          }`}
+                          className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-3 group ${selectedBrand === null
+                            ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/20'
+                            : 'text-gray-700 hover:bg-amber-100 border border-transparent'
+                            }`}
                         >
                           <span className={`transition-transform ${selectedBrand === null ? 'scale-110' : 'group-hover:scale-105'}`}>✓</span>
                           Toutes les marques
@@ -262,11 +259,10 @@ export default function ProductsPage() {
                           <button
                             key={brand.id}
                             onClick={() => setSelectedBrand(brand.id)}
-                            className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-3 group ${
-                              selectedBrand === brand.id
-                                ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/20'
-                                : 'text-gray-700 hover:bg-amber-100 border border-transparent'
-                            }`}
+                            className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-3 group ${selectedBrand === brand.id
+                              ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/20'
+                              : 'text-gray-700 hover:bg-amber-100 border border-transparent'
+                              }`}
                           >
                             {brand.logo_url && (
                               <Image
@@ -378,12 +374,12 @@ export default function ProductsPage() {
                 {/* Products Grid */}
                 {filteredProducts.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredProducts.map(product => (
-                    <ProductCard
-                      key={product.id}
-                      {...product}
-                    />
-                  ))}
+                    {filteredProducts.map(product => (
+                      <ProductCard
+                        key={product.id}
+                        {...product}
+                      />
+                    ))}
                   </div>
                 ) : (
                   <div className="text-center py-16">

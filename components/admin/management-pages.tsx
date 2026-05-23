@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import useSWR from 'swr'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Download, Eye, FileSpreadsheet, Pencil, Plus, Save, Search, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -39,6 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EmptyState } from '@/components/admin/admin-shell'
 import { adminFetch, downloadAdminFile, adminUpload } from '@/lib/admin/client'
 import type { AdminCategory, AdminOrder, AdminProduct, AdminProfile, OrderStatus, PaymentStatus } from '@/lib/admin/types'
+import type { Brand } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
@@ -65,6 +66,13 @@ const paymentStatusClass: Record<PaymentStatus, string> = {
   paid: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200',
   failed: 'bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-200',
   refunded: 'bg-slate-100 text-slate-800 dark:bg-slate-500/15 dark:text-slate-200',
+}
+
+const defaultProductForm = {
+  is_active: true,
+  in_stock: true,
+  stock_quantity: 0,
+  brand_id: null,
 }
 
 export function OrdersPage() {
@@ -179,6 +187,7 @@ export function ProductsPage() {
   const [search, setSearch] = useState('')
   const { data: products = [], mutate } = useSWR<AdminProduct[]>(`/api/admin/products?search=${encodeURIComponent(search)}`, adminFetch)
   const { data: categories = [] } = useSWR<AdminCategory[]>('/api/admin/categories', adminFetch)
+  const { data: brands = [], mutate: mutateBrands } = useSWR<Brand[]>('/api/admin/brands', adminFetch)
 
   async function saveProduct(payload: Partial<AdminProduct>, id?: number) {
     await adminFetch(id ? `/api/admin/products/${id}` : '/api/admin/products', {
@@ -203,7 +212,7 @@ export function ProductsPage() {
         right={
           <>
             <ProductImportDialog onImported={() => mutate()} />
-            <ProductDialog categories={categories} onSave={saveProduct} />
+            <ProductDialog brands={brands} categories={categories} onSave={saveProduct} onBrandCreated={mutateBrands} />
           </>
         }
       />
@@ -230,7 +239,7 @@ export function ProductsPage() {
                 <p className="font-semibold">{money.format(Number(product.price))}</p>
               </div>
               <div className="mt-4 flex items-center justify-end gap-1">
-                <ProductDialog product={product} categories={categories} onSave={saveProduct} />
+                <ProductDialog product={product} brands={brands} categories={categories} onSave={saveProduct} onBrandCreated={mutateBrands} />
                 <ConfirmDelete onConfirm={() => deleteProduct(product.id)} />
               </div>
             </CardContent>
@@ -379,28 +388,6 @@ export function InventoryPage() {
   )
 }
 
-export function ReviewsPage() {
-  const { data = [] } = useSWR<Array<Pick<AdminProduct, 'id' | 'name' | 'image_url' | 'rating' | 'reviews_count'>>>('/api/admin/reviews', adminFetch)
-
-  return (
-    <Card>
-      <CardHeader><CardTitle>Average Ratings</CardTitle></CardHeader>
-      <CardContent className="space-y-3">
-        {data.map((product) => (
-          <div key={product.id} className="flex items-center justify-between gap-4 rounded-lg border p-4">
-            <div>
-              <p className="font-medium">{product.name}</p>
-              <p className="text-sm text-muted-foreground">{product.reviews_count} reviews</p>
-            </div>
-            <Badge variant="secondary">{Number(product.rating).toFixed(1)} / 5</Badge>
-          </div>
-        ))}
-        {data.length === 0 && <EmptyState title="No reviews yet" description="The current schema stores rating aggregates on products. Detailed review moderation will appear when a reviews table is added." />}
-      </CardContent>
-    </Card>
-  )
-}
-
 export function SettingsPage() {
   const { user, signOut } = useAuth()
   const [displayName, setDisplayName] = useState(user?.user_metadata?.display_name || '')
@@ -520,14 +507,69 @@ function Toolbar({ search, setSearch, right }: { search: string; setSearch: (val
   )
 }
 
-function ProductDialog({ product, categories, onSave }: { product?: AdminProduct; categories: AdminCategory[]; onSave: (payload: any, id?: number) => Promise<void> }) {
+function ProductDialog({
+  product,
+  categories,
+  brands,
+  onSave,
+  onBrandCreated,
+}: {
+  product?: AdminProduct
+  categories: AdminCategory[]
+  brands: Brand[]
+  onSave: (payload: any, id?: number) => Promise<void>
+  onBrandCreated?: () => Promise<Brand[] | void | undefined>
+}) {
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState<any>(product || { is_active: true, in_stock: true, stock_quantity: 0 })
+  const [form, setForm] = useState<any>(product || defaultProductForm)
+  const [newBrandName, setNewBrandName] = useState('')
+  const [showBrandCreator, setShowBrandCreator] = useState(false)
+  const [creatingBrand, setCreatingBrand] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+
+    setForm(product || defaultProductForm)
+    setNewBrandName('')
+    setShowBrandCreator(false)
+  }, [open, product])
 
   async function submit() {
     await onSave(form, product?.id)
     setOpen(false)
   }
+
+  async function createBrand() {
+    const name = newBrandName.trim()
+
+    if (!name) {
+      toast.error('Enter a brand name first')
+      return
+    }
+
+    try {
+      setCreatingBrand(true)
+      const createdBrand = await adminFetch<Brand>('/api/admin/brands', {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      })
+
+      if (onBrandCreated) {
+        await onBrandCreated()
+      }
+
+      setForm((current: any) => ({ ...current, brand_id: createdBrand.id }))
+      setShowBrandCreator(false)
+      setNewBrandName('')
+      toast.success(`Brand ${createdBrand.name} created`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to create brand')
+    } finally {
+      setCreatingBrand(false)
+    }
+  }
+
+  const selectValue = showBrandCreator ? '__create_new_brand__' : form.brand_id || ''
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -553,6 +595,43 @@ function ProductDialog({ product, categories, onSave }: { product?: AdminProduct
               <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
               <SelectContent>{categories.map((category) => <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>)}</SelectContent>
             </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label>Brand</Label>
+            <Select
+              value={selectValue}
+              onValueChange={(value) => {
+                if (value === '__create_new_brand__') {
+                  setShowBrandCreator(true)
+                  setForm((current: any) => ({ ...current, brand_id: null }))
+                  return
+                }
+
+                setShowBrandCreator(false)
+                setForm((current: any) => ({ ...current, brand_id: value }))
+              }}
+            >
+              <SelectTrigger><SelectValue placeholder="Select brand" /></SelectTrigger>
+              <SelectContent>
+                {brands.map((brand) => <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>)}
+                <SelectItem value="__create_new_brand__">+ Add a new brand</SelectItem>
+              </SelectContent>
+            </Select>
+            {showBrandCreator && (
+              <div className="rounded-lg border border-dashed p-3">
+                <p className="text-sm font-medium text-muted-foreground">Create a new brand in Supabase</p>
+                <div className="mt-2 flex gap-2">
+                  <Input
+                    value={newBrandName}
+                    onChange={(event) => setNewBrandName(event.target.value)}
+                    placeholder="Brand name"
+                  />
+                  <Button type="button" onClick={createBrand} disabled={creatingBrand}>
+                    {creatingBrand ? 'Saving...' : 'Save brand'}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           <div className="sm:col-span-2"><Field label="Image URL" value={form.image_url || ''} onChange={(value) => setForm({ ...form, image_url: value })} icon={<Upload className="h-4 w-4" />} /></div>
           <div className="grid gap-2 sm:col-span-2">

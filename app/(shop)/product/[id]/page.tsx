@@ -167,22 +167,20 @@ export default function ProductPage({ params }: ProductPageProps) {
                 <button
                   onClick={handleAddToCart}
                   disabled={(product.stock_quantity ?? 0) === 0 || isMutating}
-                  className={`flex-1 py-4 px-6 rounded-full font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${
-                    (product.stock_quantity ?? 0) > 0
+                  className={`flex-1 py-4 px-6 rounded-full font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${(product.stock_quantity ?? 0) > 0
                       ? 'bg-green-500 text-white hover:bg-green-600 hover:shadow-lg'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  } ${addedToCart ? 'bg-green-600' : ''} ${isMutating ? 'opacity-50 cursor-wait' : ''}`}
+                    } ${addedToCart ? 'bg-green-600' : ''} ${isMutating ? 'opacity-50 cursor-wait' : ''}`}
                 >
                   <ShoppingCart size={20} />
                   {isMutating ? 'Ajout...' : addedToCart ? 'Ajouté au panier!' : 'Ajouter au panier'}
                 </button>
                 <button
                   onClick={() => setIsWishlisted(!isWishlisted)}
-                  className={`py-4 px-6 rounded-full font-bold transition-all duration-300 border-2 ${
-                    isWishlisted
+                  className={`py-4 px-6 rounded-full font-bold transition-all duration-300 border-2 ${isWishlisted
                       ? 'bg-red-50 border-red-300 text-red-500'
                       : 'border-gray-300 text-gray-700 hover:border-red-300 hover:text-red-500'
-                  }`}
+                    }`}
                 >
                   <Heart size={20} fill={isWishlisted ? 'currentColor' : 'none'} />
                 </button>

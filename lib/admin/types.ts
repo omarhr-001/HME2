@@ -36,14 +36,13 @@ export type AdminProduct = {
   description: string | null
   category: string | null
   category_id: string | null
+  brand_id: string | null
   price: number
   original_price: number | null
   cost: number | null
   stock_quantity: number
   image_url: string | null
   sku: string | null
-  rating: number
-  reviews_count: number
   in_stock: boolean
   is_active: boolean
   created_at: string

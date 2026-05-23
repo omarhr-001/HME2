@@ -131,25 +131,34 @@ export async function GET(request: Request) {
         brands(id, name, slug)
       `)
 
+    const productsData = (products ?? []) as Array<{
+      id: string
+      name: string
+      category_id: string | null
+      brand_id: string | null
+      categories?: { name: string } | { name: string }[] | null
+      brands?: { name: string } | { name: string }[] | null
+    }>
+
     // Analyze categorization
     const stats = {
-      totalProducts: products?.length || 0,
-      productsWithCategory: products?.filter(p => p.category_id).length || 0,
-      productsWithBrand: products?.filter(p => p.brand_id).length || 0,
-      productsWithBoth: products?.filter(p => p.category_id && p.brand_id).length || 0,
-      productsWithoutCategory: products?.filter(p => !p.category_id).length || 0,
-      productsWithoutBrand: products?.filter(p => !p.brand_id).length || 0,
-      sampleProducts: products?.slice(0, 10).map(p => ({
+      totalProducts: productsData.length,
+      productsWithCategory: productsData.filter(p => p.category_id).length,
+      productsWithBrand: productsData.filter(p => p.brand_id).length,
+      productsWithBoth: productsData.filter(p => p.category_id && p.brand_id).length,
+      productsWithoutCategory: productsData.filter(p => !p.category_id).length,
+      productsWithoutBrand: productsData.filter(p => !p.brand_id).length,
+      sampleProducts: productsData.slice(0, 10).map(p => ({
         name: p.name,
-        category: p.categories?.name || 'Non catégorisé',
-        brand: p.brands?.name || 'Pas de marque'
+        category: Array.isArray(p.categories) ? p.categories[0]?.name || 'Non catégorisé' : p.categories?.name || 'Non catégorisé',
+        brand: Array.isArray(p.brands) ? p.brands[0]?.name || 'Pas de marque' : p.brands?.name || 'Pas de marque'
       }))
     }
 
     return NextResponse.json({
       success: true,
       statistics: stats,
-      details: products?.slice(0, 20)
+      details: productsData.slice(0, 20)
     })
   } catch (error) {
     console.error('[v0] Error:', error)

@@ -10,6 +10,7 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
+    domains: ['images.unsplash.com', 'picsum.photos', 'via.placeholder.com', 'placehold.co'],
   },
 }
 
