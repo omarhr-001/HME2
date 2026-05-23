@@ -10,8 +10,7 @@ import { Footer } from '@/components/footer'
 import { Banknote, ChevronRight, Landmark } from 'lucide-react'
 import type { CartItemWithProduct, Order } from '@/lib/types'
 
-const WHATSAPP_NUMBER = '21695776655
-'
+const WHATSAPP_NUMBER = '21695776655'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -227,7 +226,7 @@ export default function CheckoutPage() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    placeholder="+216 97 100 700
+                    placeholder="+216 XX XXX XXX  
 "
                     className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.phone ? 'border-red-500' : 'border-gray-300'
                       }`}
