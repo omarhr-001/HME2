@@ -146,7 +146,8 @@ export default function WarrantyPage() {
               <p className="text-gray-700 mb-4">Avez-vous besoin d'aide pour votre produit?</p>
               <div className="flex gap-4">
                 <a href="/contact" className="btn-primary">Contacter le Support</a>
-                <a href="tel:+21698123456" className="btn-outline">Appeler: +216 98 123 456</a>
+                <a href="tel:+21695776655
+" className="btn-outline">Appeler: +216 98 123 456</a>
               </div>
             </section>
           </div>

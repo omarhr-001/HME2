@@ -166,7 +166,8 @@ export default function ReturnsPage() {
               <p className="text-gray-700 mb-6">Contactez notre équipe de support avec votre numéro de commande. Nous sommes disponibles 24/7.</p>
               <div className="flex gap-4">
                 <a href="/contact" className="btn-primary">Contacter le Support</a>
-                <a href="tel:+21698123456" className="btn-outline">Appeler: +216 98 123 456</a>
+                <a href="tel:+21695776655
+" className="btn-outline">Appeler: +216 98 123 456</a>
               </div>
             </div>
           </div>
