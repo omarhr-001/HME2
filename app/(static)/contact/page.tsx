@@ -52,7 +52,8 @@ export default function ContactPage() {
             <div className="bg-white p-8 rounded-lg text-center hover:shadow-lg transition">
               <Phone className="w-12 h-12 mx-auto mb-4 text-green-500" />
               <h3 className="font-bold text-lg mb-2">Téléphone</h3>
-              <p className="text-gray-600 mb-4">+216 XX XXX XXX</p>
+              <p className="text-gray-600 mb-4">+216 97 100 700 / +216 95 776 655
+              </p>
               <p className="text-sm text-gray-500">Lun-Dim: 08:00 - 20:00</p>
             </div>
             <div className="bg-white p-8 rounded-lg text-center hover:shadow-lg transition">
@@ -64,7 +65,8 @@ export default function ContactPage() {
             <div className="bg-white p-8 rounded-lg text-center hover:shadow-lg transition">
               <MapPin className="w-12 h-12 mx-auto mb-4 text-green-500" />
               <h3 className="font-bold text-lg mb-2">Adresse</h3>
-              <p className="text-gray-600 mb-4">Tunis, Tunisie</p>
+              <p className="text-gray-600 mb-4">Rue du Koweit Hammamet - Tunisia, Hammamet, Tunisia, 8050
+              </p>
               <p className="text-sm text-gray-500">Visite sur rendez-vous</p>
             </div>
           </div>
@@ -73,7 +75,7 @@ export default function ContactPage() {
           <div className="max-w-3xl mx-auto">
             <div className="bg-white p-12 rounded-lg shadow-sm">
               <h2 className="text-3xl font-bold mb-8">Envoyez-nous un message</h2>
-              
+
               {submitted && (
                 <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
                   Merci! Votre message a été envoyé avec succès. Nous vous répondrons dans les 24 heures.
@@ -125,7 +127,8 @@ export default function ContactPage() {
                     value={formData.phone}
                     onChange={handleChange}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 transition"
-                    placeholder="+216 XX XXX XXX"
+                    placeholder="+216 XX XXX XXX
+"
                   />
                 </div>
 

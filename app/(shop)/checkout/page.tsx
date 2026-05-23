@@ -55,7 +55,7 @@ export default function CheckoutPage() {
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
-    
+
     if (!formData.firstName.trim()) newErrors.firstName = 'Le prénom est requis'
     if (!formData.lastName.trim()) newErrors.lastName = 'Le nom est requis'
     if (!formData.phone.trim()) newErrors.phone = 'Le téléphone est requis'
@@ -77,7 +77,7 @@ export default function CheckoutPage() {
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
 
     try {
@@ -100,7 +100,7 @@ export default function CheckoutPage() {
         billingAddress: shippingAddress,
         notes: formData.notes,
       })
-      
+
       if (order) {
         window.location.href = createWhatsAppOrderUrl(order)
         return
@@ -190,9 +190,8 @@ export default function CheckoutPage() {
                       value={formData.firstName}
                       onChange={handleInputChange}
                       placeholder="Votre prénom"
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                        errors.firstName ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.firstName ? 'border-red-500' : 'border-gray-300'
+                        }`}
                     />
                     {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
                   </div>
@@ -204,9 +203,8 @@ export default function CheckoutPage() {
                       value={formData.lastName}
                       onChange={handleInputChange}
                       placeholder="Votre nom"
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                        errors.lastName ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.lastName ? 'border-red-500' : 'border-gray-300'
+                        }`}
                     />
                     {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
                   </div>
@@ -228,10 +226,10 @@ export default function CheckoutPage() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    placeholder="+216 XX XXX XXX"
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                      errors.phone ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    placeholder="+216 97 100 700
+"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.phone ? 'border-red-500' : 'border-gray-300'
+                      }`}
                   />
                   {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
                 </div>
@@ -248,9 +246,8 @@ export default function CheckoutPage() {
                     value={formData.address}
                     onChange={handleInputChange}
                     placeholder="Rue, numéro..."
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                      errors.address ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.address ? 'border-red-500' : 'border-gray-300'
+                      }`}
                   />
                   {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
                 </div>
@@ -263,9 +260,8 @@ export default function CheckoutPage() {
                       value={formData.city}
                       onChange={handleInputChange}
                       placeholder="Tunis"
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                        errors.city ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.city ? 'border-red-500' : 'border-gray-300'
+                        }`}
                     />
                     {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
                   </div>
@@ -277,9 +273,8 @@ export default function CheckoutPage() {
                       value={formData.postalCode}
                       onChange={handleInputChange}
                       placeholder="1000"
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                        errors.postalCode ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.postalCode ? 'border-red-500' : 'border-gray-300'
+                        }`}
                     />
                     {errors.postalCode && <p className="text-red-500 text-xs mt-1">{errors.postalCode}</p>}
                   </div>
@@ -293,11 +288,10 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('cash_on_delivery')}
-                    className={`flex min-h-24 items-start gap-3 rounded-lg border p-4 text-left transition ${
-                      paymentMethod === 'cash_on_delivery'
+                    className={`flex min-h-24 items-start gap-3 rounded-lg border p-4 text-left transition ${paymentMethod === 'cash_on_delivery'
                         ? 'border-green-500 bg-green-50'
                         : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <Banknote className="mt-1 h-5 w-5 text-green-600" />
                     <span>
@@ -308,11 +302,10 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('bank_transfer')}
-                    className={`flex min-h-24 items-start gap-3 rounded-lg border p-4 text-left transition ${
-                      paymentMethod === 'bank_transfer'
+                    className={`flex min-h-24 items-start gap-3 rounded-lg border p-4 text-left transition ${paymentMethod === 'bank_transfer'
                         ? 'border-green-500 bg-green-50'
                         : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <Landmark className="mt-1 h-5 w-5 text-green-600" />
                     <span>

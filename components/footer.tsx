@@ -44,8 +44,8 @@ export function Footer() {
                 <>
                   {categories.map(category => (
                     <li key={category.id}>
-                      <Link 
-                        href={`/products?category=${encodeURIComponent(category.slug || category.name)}`} 
+                      <Link
+                        href={`/products?category=${encodeURIComponent(category.slug || category.name)}`}
                         className="hover:text-green-500 transition flex items-center gap-2 group"
                       >
                         <span className="text-lg">{category.emoji || '📦'}</span>
@@ -95,7 +95,8 @@ export function Footer() {
             <ul className="text-sm text-gray-400 space-y-4">
               <li className="flex gap-3 items-start">
                 <Phone size={16} className="mt-0.5 flex-shrink-0 text-green-500" />
-                <span>+216 XX XXX XXX</span>
+                <span>+216 97 100 700
+                </span>
               </li>
               <li className="flex gap-3 items-start">
                 <Mail size={16} className="mt-0.5 flex-shrink-0 text-green-500" />
@@ -103,7 +104,8 @@ export function Footer() {
               </li>
               <li className="flex gap-3 items-start">
                 <MapPin size={16} className="mt-0.5 flex-shrink-0 text-green-500" />
-                <span>Tunis, Tunisie</span>
+                <span>Rue du Koweit Hammamet - Tunisia, Hammamet, Tunisia, 8050
+                </span>
               </li>
             </ul>
           </div>
@@ -121,9 +123,9 @@ export function Footer() {
               <Link href="/cookies" className="hover:text-green-500 transition">Cookies</Link>
             </div>
             <div className="flex gap-4 md:justify-end">
-              <a href="#" className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center hover:bg-green-500 transition">f</a>
-              <a href="#" className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center hover:bg-green-500 transition">𝕏</a>
-              <a href="#" className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center hover:bg-green-500 transition">in</a>
+              <a href="https://www.facebook.com/hamrounmeubleetelectro" className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center hover:bg-green-500 transition">f</a>
+              <a href="https://www.instagram.com/hamrounmeuble" className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center hover:bg-green-500 transition">IG</a>
+
             </div>
           </div>
         </div>
