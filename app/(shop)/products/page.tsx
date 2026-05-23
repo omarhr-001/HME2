@@ -8,16 +8,19 @@ import { Footer } from '@/components/footer'
 import { ProductCard } from '@/components/product-card'
 import { Search, X, ChevronDown } from 'lucide-react'
 import { getProductsFromSupabase, getCategoriesFromSupabase, type Category } from '@/lib/products'
+import { getBrandsByCategoryFromSupabase } from '@/lib/brands'
 import { getCurrentUser } from '@/lib/auth'
-import type { Product } from '@/lib/types'
+import type { Product, Brand } from '@/lib/types'
 
 export default function ProductsPage() {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [brands, setBrands] = useState<Brand[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('newest')
   const [priceRange, setPriceRange] = useState([0, 2000])
@@ -44,6 +47,27 @@ export default function ProductsPage() {
     fetchData()
   }, [])
 
+  // Load brands when category is selected
+  useEffect(() => {
+    const loadBrands = async () => {
+      if (selectedCategory) {
+        try {
+          const brandsData = await getBrandsByCategoryFromSupabase(selectedCategory)
+          setBrands(brandsData)
+          setSelectedBrand(null) // Reset brand selection when category changes
+        } catch (err) {
+          console.error('Error fetching brands:', err)
+          setBrands([])
+        }
+      } else {
+        setBrands([])
+        setSelectedBrand(null)
+      }
+    }
+
+    loadBrands()
+  }, [selectedCategory])
+
   // Parse search parameters
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -65,6 +89,11 @@ export default function ProductsPage() {
     // Filter by category using category_id
     if (selectedCategory) {
       filtered = filtered.filter(p => p.category_id === selectedCategory)
+    }
+
+    // Filter by brand
+    if (selectedBrand) {
+      filtered = filtered.filter(p => p.brand_id === selectedBrand)
     }
 
     // Filter by search term
@@ -92,7 +121,7 @@ export default function ProductsPage() {
     }
 
     return filtered
-  }, [products, selectedCategory, searchTerm, sortBy, priceRange])
+  }, [products, selectedCategory, selectedBrand, searchTerm, sortBy, priceRange])
 
   const handleAddToCart = async (product: Product, quantity: number = 1) => {
     // Handled by ProductCard component with useCart hook
@@ -100,6 +129,7 @@ export default function ProductsPage() {
 
   const resetFilters = () => {
     setSelectedCategory(null)
+    setSelectedBrand(null)
     setSearchTerm('')
     setPriceRange([0, 2000])
     setSortBy('newest')
@@ -160,61 +190,137 @@ export default function ProductsPage() {
                   </div>
 
                   {/* Categories */}
-                  <div className="bg-white rounded-lg p-4 border border-gray-200">
-                    <h3 className="font-semibold text-gray-800 mb-3 text-sm">Catégories</h3>
+                  <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold text-sm">
+                        ⚙️
+                      </div>
+                      <h3 className="font-bold text-gray-800 text-base">Catégories</h3>
+                      <span className="ml-auto text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                        {categories.length}
+                      </span>
+                    </div>
                     <div className="space-y-2">
                       <button
                         onClick={() => setSelectedCategory(null)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-2 ${
+                        className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-3 group ${
                           selectedCategory === null
-                            ? 'bg-green-50 text-green-700 font-medium'
-                            : 'text-gray-600 hover:bg-gray-50'
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md shadow-green-500/20'
+                            : 'text-gray-700 hover:bg-gray-100 border border-transparent'
                         }`}
                       >
-                        <span>🎯</span>
+                        <span className={`text-lg transition-transform ${selectedCategory === null ? 'scale-110' : 'group-hover:scale-105'}`}>🎯</span>
                         Tous les produits
                       </button>
                       {categories.map(cat => (
                         <button
                           key={cat.id}
                           onClick={() => setSelectedCategory(cat.id)}
-                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-2 ${
+                          className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-3 group ${
                             selectedCategory === cat.id
-                              ? 'bg-green-50 text-green-700 font-medium'
-                              : 'text-gray-600 hover:bg-gray-50'
+                              ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md shadow-green-500/20'
+                              : 'text-gray-700 hover:bg-gray-100 border border-transparent'
                           }`}
                         >
-                          <span>{cat.emoji || '📦'}</span>
-                          {cat.name}
+                          <span className={`text-lg transition-transform ${selectedCategory === cat.id ? 'scale-110' : 'group-hover:scale-105'}`}>
+                            {cat.emoji || '📦'}
+                          </span>
+                          <span className="flex-1">{cat.name}</span>
+                          <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            {cat.product_count || '0'}
+                          </span>
                         </button>
                       ))}
                     </div>
                   </div>
 
+                  {/* Brands Filter - Only show when category is selected */}
+                  {selectedCategory && brands.length > 0 && (
+                    <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border-2 border-amber-200 shadow-sm hover:shadow-lg transition-all duration-300 animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-sm">
+                          🏷️
+                        </div>
+                        <h3 className="font-bold text-gray-800 text-base">Marques</h3>
+                        <span className="ml-auto text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-medium">
+                          {brands.length}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => setSelectedBrand(null)}
+                          className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-3 group ${
+                            selectedBrand === null
+                              ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/20'
+                              : 'text-gray-700 hover:bg-amber-100 border border-transparent'
+                          }`}
+                        >
+                          <span className={`transition-transform ${selectedBrand === null ? 'scale-110' : 'group-hover:scale-105'}`}>✓</span>
+                          Toutes les marques
+                        </button>
+                        {brands.map(brand => (
+                          <button
+                            key={brand.id}
+                            onClick={() => setSelectedBrand(brand.id)}
+                            className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-3 group ${
+                              selectedBrand === brand.id
+                                ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/20'
+                                : 'text-gray-700 hover:bg-amber-100 border border-transparent'
+                            }`}
+                          >
+                            {brand.logo_url && (
+                              <Image
+                                src={brand.logo_url}
+                                alt={brand.name}
+                                width={18}
+                                height={18}
+                                className="rounded object-contain"
+                              />
+                            )}
+                            {!brand.logo_url && <span className="text-lg">📦</span>}
+                            <span className="flex-1">{brand.name}</span>
+                            {selectedBrand === brand.id && <span className="text-sm font-bold">●</span>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Price Range */}
-                  <div className="bg-white rounded-lg p-4 border border-gray-200">
-                    <h3 className="font-semibold text-gray-800 mb-3 text-sm">Gamme de prix</h3>
-                    <div className="space-y-3">
+                  <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-sm">
+                        💰
+                      </div>
+                      <h3 className="font-bold text-gray-800 text-base">Gamme de prix</h3>
+                    </div>
+                    <div className="space-y-4 bg-white rounded-lg p-4 border border-gray-100">
                       <div>
-                        <label className="text-xs text-gray-600 block mb-1">Min: {priceRange[0]} DT</label>
+                        <div className="flex justify-between mb-2">
+                          <label className="text-xs font-semibold text-gray-700">Minimum</label>
+                          <span className="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{priceRange[0]} DT</span>
+                        </div>
                         <input
                           type="range"
                           min="0"
                           max="2000"
                           value={priceRange[0]}
                           onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+                          className="w-full h-2 bg-gradient-to-r from-blue-200 to-cyan-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                         />
                       </div>
                       <div>
-                        <label className="text-xs text-gray-600 block mb-1">Max: {priceRange[1]} DT</label>
+                        <div className="flex justify-between mb-2">
+                          <label className="text-xs font-semibold text-gray-700">Maximum</label>
+                          <span className="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{priceRange[1]} DT</span>
+                        </div>
                         <input
                           type="range"
                           min="0"
                           max="2000"
                           value={priceRange[1]}
                           onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+                          className="w-full h-2 bg-gradient-to-r from-blue-200 to-cyan-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                         />
                       </div>
                     </div>
@@ -223,8 +329,9 @@ export default function ProductsPage() {
                   {/* Reset Button */}
                   <button
                     onClick={resetFilters}
-                    className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                    className="w-full px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 rounded-xl text-sm font-bold transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 group"
                   >
+                    <span className="group-hover:rotate-180 transition-transform duration-300">↻</span>
                     Réinitialiser les filtres
                   </button>
                 </div>

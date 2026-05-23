@@ -19,6 +19,7 @@ export function ProductCard({
   id,
   name,
   category,
+  brand,
   price,
   originalPrice,
   image,
@@ -168,6 +169,9 @@ export function ProductCard({
 
         <div className="p-4">
           <p className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1">{displayCategory}</p>
+          {brand && (
+            <p className="text-xs text-gray-500 font-medium mb-1">Marque: {brand.name}</p>
+          )}
           <p className="font-semibold text-sm text-gray-800 mb-1.5 line-clamp-2">{name}</p>
 
           <div className="flex items-center gap-1.5 mb-3">
