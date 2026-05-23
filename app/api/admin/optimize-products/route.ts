@@ -6,10 +6,7 @@ export async function POST(request: Request) {
     // Security check
     const authHeader = request.headers.get('authorization')
     if (!authHeader || authHeader !== `Bearer ${process.env.ADMIN_SECRET}`) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const supabase = createServiceClient()
@@ -30,80 +27,61 @@ export async function POST(request: Request) {
 
     if (brandsError) throw brandsError
 
-    // Product to brand mapping - more intelligent matching
     const brandMappings: Record<string, string> = {
-      'Samsung': 'samsung',
-      'LG': 'lg',
-      'Whirlpool': 'whirlpool',
-      'Bosch': 'bosch',
-      'Electrolux': 'electrolux',
-      'Réfrigérateur': 'samsung', // Default for fridges
+      Samsung: 'samsung',
+      LG: 'lg',
+      Whirlpool: 'whirlpool',
+      Bosch: 'bosch',
+      Electrolux: 'electrolux',
+      'Réfrigérateur': 'samsung',
       'Machine à laver': 'bosch',
-      'Lave': 'bosch',
+      Lave: 'bosch',
       'Micro-ondes': 'samsung',
-      'Four': 'bosch',
-      'Climatiseur': 'electrolux'
+      Four: 'bosch',
+      Climatiseur: 'electrolux'
     }
 
     let updatedCount = 0
-    let categoryCorrectionCount = 0
     const results: any[] = []
 
-    // Process each product
     for (const product of products || []) {
-      let brandSlug = null
+      let brandSlug: string | null = null
 
-      // Find matching brand from product name
-      for (const [productKeyword, slug] of Object.entries(brandMappings)) {
-        if (product.name.toUpperCase().includes(productKeyword.toUpperCase())) {
+      for (const [keyword, slug] of Object.entries(brandMappings)) {
+        if (product.name.toLowerCase().includes(keyword.toLowerCase())) {
           brandSlug = slug
           break
         }
       }
 
-      if (brandSlug) {
-        const brand = brands?.find(b => b.slug === brandSlug)
-        if (brand) {
-          const { error: updateError } = await supabase
-            .from('products')
-            .update({ brand_id: brand.id })
-            .eq('id', product.id)
+      if (!brandSlug) continue
 
-          if (!updateError) {
-            updatedCount++
-            results.push({
-              productName: product.name,
-              brandAssigned: brand.name,
-              brandId: brand.id
-            })
-          }
-        }
+      const brand = brands?.find(b => b.slug === brandSlug)
+      if (!brand) continue
+
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({ brand_id: brand.id })
+        .eq('id', product.id)
+
+      if (!updateError) {
+        updatedCount++
+        results.push({
+          productName: product.name,
+          brandAssigned: brand.name
+        })
       }
     }
 
-    // Verify category assignments
-    const { data: productsWithoutCategory, error: verifyError } = await supabase
+    const { data: productsWithoutCategory } = await supabase
       .from('products')
-      .select('id, name')
+      .select('id')
       .is('category_id', null)
-
-    const unassignedCategories = productsWithoutCategory?.length || 0
-
-    // Get products by category for statistics
-    const { data: categoryStats } = await supabase
-      .from('categories')
-      .select(`
-        id,
-        name,
-        products:products(count)
-      `)
 
     return NextResponse.json({
       success: true,
-      message: 'Product optimization completed',
       brandsAssigned: updatedCount,
-      productsWithoutCategory: unassignedCategories,
-      categoryStatistics: categoryStats,
+      productsWithoutCategory: productsWithoutCategory?.length || 0,
       samplesAssigned: results.slice(0, 5)
     })
   } catch (error) {
@@ -115,11 +93,11 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const supabase = createServiceClient()
 
-    // Get product statistics
+    // ✅ FIX IMPORTANT: alias propre (évite arrays confus)
     const { data: products } = await supabase
       .from('products')
       .select(`
@@ -127,22 +105,21 @@ export async function GET(request: Request) {
         name,
         category_id,
         brand_id,
-        categories(id, name),
-        brands(id, name, slug)
+        category:categories!products_category_id_fkey(name),
+        brand:brands!products_brand_id_fkey(name, slug)
       `)
 
-    // Analyze categorization
     const stats = {
       totalProducts: products?.length || 0,
       productsWithCategory: products?.filter(p => p.category_id).length || 0,
       productsWithBrand: products?.filter(p => p.brand_id).length || 0,
-      productsWithBoth: products?.filter(p => p.category_id && p.brand_id).length || 0,
       productsWithoutCategory: products?.filter(p => !p.category_id).length || 0,
       productsWithoutBrand: products?.filter(p => !p.brand_id).length || 0,
+
       sampleProducts: products?.slice(0, 10).map(p => ({
         name: p.name,
-        category: p.categories?.name || 'Non catégorisé',
-        brand: p.brands?.name || 'Pas de marque'
+        category: p.category?.name || 'Non catégorisé',
+        brand: p.brand?.name || 'Pas de marque'
       }))
     }
 
