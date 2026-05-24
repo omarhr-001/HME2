@@ -33,7 +33,7 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-1">
             <img src="/logo.png" alt="Hamroun Meuble & Electro" className="w-16 h-16 mb-4" />
-            <p className="text-sm text-gray-400 mb-4">Votre destination pour les meilleurs équipements électroménagers de qualité.</p>
+            <p className="text-sm text-gray-400 mb-4">Votre destination pour les meilleurs meubles et électroménagers de qualité.</p>
           </div>
 
           {/* Products - Categories */}
