@@ -1,16 +1,35 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { useCart } from '@/lib/hooks'
+import { getCategoriesFromSupabase } from '@/lib/products'
+import type { Category } from '@/lib/products'
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [isHovering, setIsHovering] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loadingCategories, setLoadingCategories] = useState(true)
   const { user, loading, signOut } = useAuth()
   const { cartItems } = useCart()
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await getCategoriesFromSupabase()
+        setCategories(data)
+      } catch (error) {
+        console.error('Error loading categories:', error)
+      } finally {
+        setLoadingCategories(false)
+      }
+    }
+    loadCategories()
+  }, [])
 
   const handleScroll = () => setScrolled(window.scrollY > 10)
 
@@ -34,9 +53,34 @@ export function Navbar() {
       </Link>
 
       {/* Desktop Links */}
-      <div className="hidden md:flex items-center gap-1 list-none">
+      <div className="hidden md:flex items-center gap-1 list-none relative">
         <Link href="/" className="no-underline text-gray-600 text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-300 hover:text-green-700 hover:bg-green-50">Accueil</Link>
-        <Link href="/products" className="no-underline text-gray-600 text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-300 hover:text-green-700 hover:bg-green-50">Produits</Link>
+        
+        {/* Produits with Dropdown */}
+        <div
+          className="relative group"
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+        >
+          <Link href="/products" className="no-underline text-gray-600 text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-300 hover:text-green-700 hover:bg-green-50 block">Produits</Link>
+          
+          {/* Dropdown Menu */}
+          {isHovering && !loadingCategories && categories.length > 0 && (
+            <div className="absolute top-full left-0 mt-0 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[200px] z-40 max-h-96 overflow-y-auto">
+              {categories.map((category) => (
+                <Link
+                  key={category.id}
+                  href={`/products?category=${encodeURIComponent(category.slug)}`}
+                  className="no-underline text-gray-600 text-sm px-4 py-2 block hover:text-green-700 hover:bg-green-50 transition-all duration-200"
+                >
+                  {category.emoji && <span className="mr-2">{category.emoji}</span>}
+                  {category.name}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
         <Link href="/about" className="no-underline text-gray-600 text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-300 hover:text-green-700 hover:bg-green-50">À propos</Link>
         <Link href="/contact" className="no-underline text-gray-600 text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-300 hover:text-green-700 hover:bg-green-50">Contact</Link>
       </div>
