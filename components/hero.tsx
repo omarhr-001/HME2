@@ -55,12 +55,12 @@ export function Hero() {
 
           {/* Heading */}
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-5 leading-tight animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-            Équipez votre maison avec les meilleurs <span className="text-green-500">appareils électroménagers</span>
+            Transformez votre intérieur avec nos <span className="text-green-500">meubles et électroménagers</span>
           </h1>
 
           {/* Description */}
           <p className="text-lg text-white/65 leading-relaxed mb-9 max-w-md animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-            Découvrez notre large sélection d&apos;équipements de qualité supérieure pour votre cuisine, votre buanderie et plus encore.
+            Explorez notre collection complète de meubles élégants et d&apos;appareils électroménagers innovants pour créer la maison de vos rêves.
           </p>
 
           {/* Buttons */}
