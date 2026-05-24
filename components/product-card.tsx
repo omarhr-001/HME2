@@ -113,7 +113,7 @@ export function ProductCard({
 
       <div
         onClick={() => setIsModalOpen(true)}
-        className="bg-white rounded-3xl overflow-hidden border border-gray-200 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:border-green-300"
+        className="bg-white rounded-xl overflow-hidden border border-gray-200 transition-all duration-300 cursor-pointer hover:shadow-lg hover:border-indigo-300 hover:-translate-y-1"
       >
         <div className="relative w-full h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
           <Image
@@ -126,7 +126,7 @@ export function ProductCard({
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/4" />
 
           {discount > 0 && (
-            <span className="absolute top-3 left-3 bg-red-500 text-white px-2.5 py-0.5 rounded-full text-xs font-bold">
+            <span className="absolute top-3 left-3 bg-indigo-600 text-white px-3 py-1 rounded-lg text-xs font-bold shadow-md">
               -{discount}%
             </span>
           )}
@@ -153,8 +153,8 @@ export function ProductCard({
               toggleLike(id)
             }}
             className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm ${isWishlisted
-              ? 'bg-red-50 border-red-300 text-red-500'
-              : 'bg-white border border-gray-200 text-gray-400 hover:bg-red-50 hover:border-red-300'
+              ? 'bg-red-50 border border-red-300 text-red-500'
+              : 'bg-white border border-gray-200 text-gray-400 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600'
               }`}
             aria-label="Ajouter aux favoris"
           >
@@ -163,15 +163,15 @@ export function ProductCard({
         </div>
 
         <div className="p-4">
-          <p className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1">{displayCategory}</p>
+          <p className="text-xs text-indigo-700 font-bold uppercase tracking-wider mb-2">{displayCategory}</p>
           {brand && (
-            <p className="text-xs text-gray-500 font-medium mb-1">Marque: {brand.name}</p>
+            <p className="text-xs text-gray-500 font-medium mb-2">Marque: {brand.name}</p>
           )}
-          <p className="font-semibold text-sm text-gray-800 mb-1.5 line-clamp-2">{name}</p>
+          <p className="font-semibold text-sm text-gray-800 mb-3 line-clamp-2">{name}</p>
 
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
-              <span className="font-bold text-lg text-gray-800">{price.toFixed(2)} DT</span>
+              <span className="font-bold text-lg text-gray-900">{price.toFixed(2)} DT</span>
               {displayOriginalPrice > price && (
                 <span className="text-xs text-gray-400 line-through">{displayOriginalPrice.toFixed(2)} DT</span>
               )}
@@ -182,8 +182,8 @@ export function ProductCard({
                 if (isAvailable && !isAdding) handleAddToCart()
               }}
               disabled={!isAvailable || isAdding}
-              className={`w-9 h-9 border-none rounded-2xl flex items-center justify-center cursor-pointer text-white text-base transition-all duration-300 shadow-md ${isAvailable && !isAdding
-                ? 'bg-green-500 hover:bg-green-600 hover:scale-110'
+              className={`w-10 h-10 border-none rounded-lg flex items-center justify-center cursor-pointer text-white text-base transition-all duration-300 shadow-md ${isAvailable && !isAdding
+                ? 'bg-indigo-600 hover:bg-indigo-700 hover:scale-110'
                 : 'bg-gray-300 cursor-not-allowed'
                 }`}
               aria-label="Ajouter au panier"

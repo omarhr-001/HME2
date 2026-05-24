@@ -20,10 +20,10 @@ export function Navbar() {
   }
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 h-17 flex items-center justify-between px-[5%] transition-all duration-300 ${scrolled
-        ? 'bg-white/100 shadow-lg'
-        : 'bg-white/97 shadow-sm'
-      }`} style={{ backdropFilter: 'blur(16px)' }}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 h-18 flex items-center justify-between px-6 transition-all duration-300 ${scrolled
+        ? 'bg-white/95 shadow-md border-b border-gray-100'
+        : 'bg-white/90 shadow-sm border-b border-gray-50'
+      }`} style={{ backdropFilter: 'blur(12px)' }}>
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2.5 no-underline cursor-pointer group">
         <img src="/logo.png" alt="Hamroun Meuble & Electro" className="w-12 h-12 flex-shrink-0" />
@@ -34,20 +34,20 @@ export function Navbar() {
       </Link>
 
       {/* Desktop Links */}
-      <div className="hidden md:flex items-center gap-1 list-none">
-        <Link href="/" className="no-underline text-gray-600 text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-300 hover:text-green-700 hover:bg-green-50">Accueil</Link>
-        <Link href="/products" className="no-underline text-gray-600 text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-300 hover:text-green-700 hover:bg-green-50">Produits</Link>
-        <Link href="/about" className="no-underline text-gray-600 text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-300 hover:text-green-700 hover:bg-green-50">À propos</Link>
-        <Link href="/contact" className="no-underline text-gray-600 text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-300 hover:text-green-700 hover:bg-green-50">Contact</Link>
+      <div className="hidden md:flex items-center gap-2 list-none">
+        <Link href="/" className="no-underline text-gray-700 text-sm font-medium px-4 py-2 rounded-lg transition-all duration-300 hover:text-indigo-600 hover:bg-indigo-50">Accueil</Link>
+        <Link href="/products" className="no-underline text-gray-700 text-sm font-medium px-4 py-2 rounded-lg transition-all duration-300 hover:text-indigo-600 hover:bg-indigo-50">Produits</Link>
+        <Link href="/about" className="no-underline text-gray-700 text-sm font-medium px-4 py-2 rounded-lg transition-all duration-300 hover:text-indigo-600 hover:bg-indigo-50">À propos</Link>
+        <Link href="/contact" className="no-underline text-gray-700 text-sm font-medium px-4 py-2 rounded-lg transition-all duration-300 hover:text-indigo-600 hover:bg-indigo-50">Contact</Link>
       </div>
 
       {/* Actions */}
       <div className="flex items-center gap-2.5">
         {user && (
-          <Link href="/cart" className="relative bg-none border-none cursor-pointer p-2 rounded-[10px] text-gray-600 transition-all duration-300 hover:bg-green-50 hover:text-green-700 flex items-center" style={{ fontSize: '20px' }}>
+          <Link href="/cart" className="relative bg-none border-none cursor-pointer p-2.5 rounded-lg text-gray-700 transition-all duration-300 hover:bg-indigo-50 hover:text-indigo-600 flex items-center" style={{ fontSize: '20px' }}>
             <ShoppingCart size={20} />
             {cartItems.length > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs font-bold">
+              <span className="absolute -top-1 -right-1 bg-indigo-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
                 {cartItems.length}
               </span>
             )}
@@ -65,12 +65,12 @@ export function Navbar() {
           </>
         ) : (
           <>
-            <Link href="/account" className="hidden md:flex items-center gap-2 bg-none border-none cursor-pointer p-2 rounded-[10px] text-gray-600 transition-all duration-300 hover:bg-green-50 hover:text-green-700">
+            <Link href="/account" className="hidden md:flex items-center gap-2 bg-none border-none cursor-pointer p-2.5 rounded-lg text-gray-700 transition-all duration-300 hover:bg-indigo-50 hover:text-indigo-600">
               <User size={20} />
             </Link>
             <button
               onClick={handleSignOut}
-              className="hidden md:flex items-center gap-2 bg-none border-none cursor-pointer p-2 rounded-[10px] text-gray-600 transition-all duration-300 hover:bg-red-50 hover:text-red-700"
+              className="hidden md:flex items-center gap-2 bg-none border-none cursor-pointer p-2.5 rounded-lg text-gray-700 transition-all duration-300 hover:bg-red-50 hover:text-red-600"
             >
               <LogOut size={20} />
             </button>

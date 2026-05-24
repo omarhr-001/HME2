@@ -40,27 +40,27 @@ export function ProductsSection() {
     : products.slice(0, 8)
 
   return (
-    <section className="px-[5%] py-16">
+    <section className="px-6 py-20 bg-white">
       {/* Section Header */}
-      <div className="flex items-center justify-between mb-7">
+      <div className="max-w-7xl mx-auto flex items-center justify-between mb-10">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-1">Produits à la une</h2>
-          <p className="text-sm text-gray-500">Découvrez notre sélection exclusive</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Produits à la une</h2>
+          <p className="text-sm text-gray-600">Découvrez notre sélection exclusive de meubles et électroménagers</p>
         </div>
-        <Link href="/products" className="text-sm font-semibold text-green-700 hover:gap-2 flex items-center gap-1 transition-all duration-300 no-underline">
+        <Link href="/products" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-2 transition-all duration-300 no-underline">
           Voir tous
           <ArrowRight size={16} />
         </Link>
       </div>
 
       {/* Category Tabs - Dynamic from Database */}
-      <div className="flex gap-0 overflow-x-auto mb-8 pb-4 border-b border-gray-200 -mx-[5%] px-[5%]">
+      <div className="max-w-7xl mx-auto flex gap-0 overflow-x-auto mb-10 pb-4 border-b border-gray-200">
         <button
           onClick={() => setSelectedCategory(null)}
-          className={`px-5 py-3.5 text-xs font-medium whitespace-nowrap transition-all duration-300 border-b-[2.5px] ${
+          className={`px-5 py-3 text-sm font-medium whitespace-nowrap transition-all duration-300 border-b-2 ${
             selectedCategory === null
-              ? 'text-green-700 border-green-500 font-semibold'
-              : 'text-gray-500 border-transparent hover:text-green-600'
+              ? 'text-indigo-600 border-indigo-600 font-semibold'
+              : 'text-gray-600 border-transparent hover:text-indigo-600'
           }`}
         >
           Toutes les catégories
@@ -69,10 +69,10 @@ export function ProductsSection() {
           <button
             key={cat.id}
             onClick={() => setSelectedCategory(cat.id)}
-            className={`px-5 py-3.5 text-xs font-medium whitespace-nowrap transition-all duration-300 border-b-[2.5px] flex items-center gap-2 ${
+            className={`px-5 py-3 text-sm font-medium whitespace-nowrap transition-all duration-300 border-b-2 flex items-center gap-2 ${
               selectedCategory === cat.id
-                ? 'text-green-700 border-green-500 font-semibold'
-                : 'text-gray-500 border-transparent hover:text-green-600'
+                ? 'text-indigo-600 border-indigo-600 font-semibold'
+                : 'text-gray-600 border-transparent hover:text-indigo-600'
             }`}
           >
             <span className="text-base">{cat.emoji || '📦'}</span>
@@ -82,24 +82,26 @@ export function ProductsSection() {
       </div>
 
       {/* Products Grid */}
-      {loading ? (
-        <div className="text-center py-8">
-          <p className="text-gray-500">Chargement des produits...</p>
-        </div>
-      ) : displayedProducts.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-gray-500">Aucun produit trouvé</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {displayedProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              {...product}
-            />
-          ))}
-        </div>
-      )}
+      <div className="max-w-7xl mx-auto">
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600">Chargement des produits...</p>
+          </div>
+        ) : displayedProducts.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600">Aucun produit trouvé</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {displayedProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                {...product}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   )
 }

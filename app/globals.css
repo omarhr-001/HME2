@@ -4,25 +4,25 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.985 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: oklch(0.98 0 0);
+  --foreground: oklch(0.12 0 0);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.12 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.62 0.18 145);
+  --popover-foreground: oklch(0.12 0 0);
+  --primary: oklch(0.58 0.22 263);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.96 0.04 145);
-  --accent-foreground: oklch(0.22 0.08 145);
+  --secondary: oklch(0.95 0.02 0);
+  --secondary-foreground: oklch(0.12 0 0);
+  --muted: oklch(0.94 0 0);
+  --muted-foreground: oklch(0.5 0 0);
+  --accent: oklch(0.58 0.22 263);
+  --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.62 0.18 145);
+  --border: oklch(0.91 0 0);
+  --input: oklch(0.91 0 0);
+  --ring: oklch(0.58 0.22 263);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -38,10 +38,10 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.62 0.18 145);
 
-  --green: #22c55e;
-  --green-dark: #16a34a;
-  --green-light: #bbf7d0;
-  --green-glow: rgba(34, 197, 94, 0.18);
+  --green: #6366f1;
+  --green-dark: #4f46e5;
+  --green-light: #e0e7ff;
+  --green-glow: rgba(99, 102, 241, 0.15);
   --dark: #181f1c;
   --dark2: #1e2923;
   --dark3: #232e28;
@@ -154,20 +154,20 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center px-6 py-3 rounded-full bg-green-500 text-white font-semibold cursor-pointer transition-all duration-300 hover:bg-green-600 hover:-translate-y-0.5;
-    box-shadow: 0 4px 24px rgba(34, 197, 94, 0.3);
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold cursor-pointer transition-all duration-300 hover:bg-indigo-700 hover:-translate-y-0.5;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
   }
 
   .btn-primary:hover {
-    box-shadow: 0 8px 32px rgba(34, 197, 94, 0.4);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center px-5 py-2 rounded-full border-2 border-gray-800 bg-transparent text-gray-800 font-medium cursor-pointer transition-all duration-300 hover:bg-gray-800 hover:text-white;
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-lg border-2 border-gray-700 bg-transparent text-gray-700 font-medium cursor-pointer transition-all duration-300 hover:bg-gray-700 hover:text-white;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center px-7 py-3.5 rounded-full border-2 border-white bg-transparent text-white font-medium cursor-pointer transition-all duration-300 hover:bg-white/10;
+    @apply inline-flex items-center justify-center px-7 py-3.5 rounded-lg border-2 border-white bg-transparent text-white font-medium cursor-pointer transition-all duration-300 hover:bg-white/10;
   }
 }
 
