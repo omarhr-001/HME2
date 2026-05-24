@@ -66,7 +66,7 @@ export function Navbar() {
           
           {/* Dropdown Menu */}
           {isHovering && !loadingCategories && categories.length > 0 && (
-            <div className="absolute top-full left-0 mt-0 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[200px] z-40">
+            <div className="absolute top-full left-0 mt-0 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[200px] z-40 max-h-96 overflow-y-auto">
               {categories.map((category) => (
                 <Link
                   key={category.id}
