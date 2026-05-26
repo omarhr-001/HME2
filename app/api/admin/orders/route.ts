@@ -9,6 +9,8 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams
     const status = searchParams.get('status')
     const search = searchParams.get('search')?.trim().toLowerCase()
+    const dateFrom = searchParams.get('dateFrom')
+    const dateTo = searchParams.get('dateTo')
     const format = searchParams.get('format')
 
     let query = auth.context.supabase
@@ -17,6 +19,17 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (status && status !== 'all') query = query.eq('status', status)
+
+    // Apply date filters
+    if (dateFrom) {
+      query = query.gte('created_at', new Date(dateFrom).toISOString())
+    }
+    if (dateTo) {
+      // Add one day to include the entire day
+      const endDate = new Date(dateTo)
+      endDate.setDate(endDate.getDate() + 1)
+      query = query.lt('created_at', endDate.toISOString())
+    }
 
     const [{ data, error }, profilesResult] = await Promise.all([
       query,

@@ -79,8 +79,10 @@ export function OrdersPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
   const [page, setPage] = useState(1)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const { data = [], mutate, isLoading } = useSWR<AdminOrder[]>(
-    `/api/admin/orders?status=${status}&search=${encodeURIComponent(search)}`,
+    `/api/admin/orders?status=${status}&search=${encodeURIComponent(search)}&dateFrom=${dateFrom}&dateTo=${dateTo}`,
     adminFetch,
   )
   const pageSize = 8
@@ -111,7 +113,27 @@ export function OrdersPage() {
         search={search}
         setSearch={setSearch}
         right={
-          <>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="date-from" className="text-sm">From:</Label>
+              <Input
+                id="date-from"
+                type="date"
+                value={dateFrom}
+                onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
+                className="w-40"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="date-to" className="text-sm">To:</Label>
+              <Input
+                id="date-to"
+                type="date"
+                value={dateTo}
+                onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
+                className="w-40"
+              />
+            </div>
             <Select value={status} onValueChange={(value) => { setStatus(value); setPage(1) }}>
               <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -119,10 +141,10 @@ export function OrdersPage() {
                 {statuses.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={() => downloadAdminFile(`/api/admin/orders?status=${status}&search=${search}&format=csv`, 'orders.csv')}>
+            <Button variant="outline" onClick={() => downloadAdminFile(`/api/admin/orders?status=${status}&search=${search}&dateFrom=${dateFrom}&dateTo=${dateTo}&format=csv`, 'orders.csv')}>
               <Download className="mr-2 h-4 w-4" /> Export CSV
             </Button>
-          </>
+          </div>
         }
       />
 
