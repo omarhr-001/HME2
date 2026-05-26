@@ -519,15 +519,15 @@ export function SettingsPage() {
 
 function Toolbar({ search, setSearch, right }: { search: string; setSearch: (value: string) => void; right?: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex w-full max-w-md items-center gap-2 rounded-lg border px-3 py-2">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <input className="w-full bg-transparent text-sm outline-none" placeholder="Search..." value={search} onChange={(event) => setSearch(event.target.value)} />
-      </div>
-      <div className="flex flex-wrap gap-2">{right}</div>
-    </div>
+  <div className="flex flex-col gap-4 rounded-lg border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+  <div className="flex w-full max-w-2xl items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+  <Search className="h-5 w-5 text-primary" />
+  <input className="w-full bg-transparent text-base outline-none placeholder:text-muted-foreground" placeholder="Search by order ID, order number, or customer name..." value={search} onChange={(event) => setSearch(event.target.value)} />
+  </div>
+  <div className="flex flex-wrap gap-2">{right}</div>
+  </div>
   )
-}
+  }
 
 function ProductDialog({
   product,
