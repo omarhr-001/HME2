@@ -24,6 +24,7 @@ export function ProductCard({
   originalPrice,
   image,
   image_url,
+  product_images,
   description,
   specs,
   inStock,
@@ -32,6 +33,7 @@ export function ProductCard({
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
+  const [activeImageIndex, setActiveImageIndex] = useState(0)
   const router = useRouter()
   const { user } = useAuth()
   const { addToCart } = useCart()
@@ -46,10 +48,23 @@ export function ProductCard({
   }, [id, likedProductIds, isInitialized])
 
   const displayOriginalPrice = originalPrice ?? price
-  const displayImage = image || image_url || '/placeholder.jpg'
+  const galleryImages = [
+    ...new Set(
+      [
+        ...[...(product_images || [])]
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((item) => item.image_url),
+        image,
+        image_url,
+      ].filter(Boolean) as string[],
+    ),
+  ]
+  const displayImage = galleryImages[activeImageIndex] || galleryImages[0] || '/placeholder.jpg'
   const displaySpecs = specs ?? {}
   const isAvailable = inStock ?? true
   const displayCategory = category || 'Produit'
+  const displayBrandName = brand?.name || displaySpecs.brand || displaySpecs.marque || ''
+  const hasRealDiscount = Number.isFinite(displayOriginalPrice) && displayOriginalPrice > price
 
   const product: Product = {
     id,
@@ -59,13 +74,14 @@ export function ProductCard({
     originalPrice: displayOriginalPrice,
     image: displayImage,
     image_url,
-    brand,
+    product_images,
+    brand: brand || (displayBrandName ? { id: 'spec-brand', name: displayBrandName, slug: displayBrandName.toLowerCase().replace(/[^a-z0-9]+/g, '-') } : undefined),
     description,
     specs: displaySpecs,
     inStock: isAvailable,
   }
 
-  const discount = displayOriginalPrice > price
+  const discount = hasRealDiscount
     ? Math.round(((displayOriginalPrice - price) / displayOriginalPrice) * 100)
     : 0
 
@@ -113,22 +129,56 @@ export function ProductCard({
 
       <div
         onClick={() => setIsModalOpen(true)}
-        className="bg-white rounded-3xl overflow-hidden border border-gray-200 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:border-green-300"
+        onMouseLeave={() => setActiveImageIndex(0)}
+        className="group bg-white rounded-3xl overflow-hidden border border-gray-200 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:border-green-300"
       >
-        <div className="relative w-full h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
+        <div className="relative w-full h-56 bg-gray-100 flex items-center justify-center overflow-hidden">
           <Image
             src={displayImage}
             alt={name}
             width={280}
             height={200}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition duration-500 group-hover:scale-[1.04]"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/4" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/8 via-transparent to-black/46" />
 
           {discount > 0 && (
-            <span className="absolute top-3 left-3 bg-red-500 text-white px-2.5 py-0.5 rounded-full text-xs font-bold">
+            <span className="absolute top-3 left-3 rounded-full bg-red-500 px-2.5 py-1 text-xs font-bold text-white shadow-sm">
               -{discount}%
             </span>
+          )}
+
+          {displayBrandName && (
+            <span className={`absolute left-3 max-w-[70%] truncate rounded-full bg-white/92 px-2.5 py-1 text-xs font-semibold text-gray-800 shadow-sm ${discount > 0 ? 'top-12' : 'top-3'}`}>
+              {displayBrandName}
+            </span>
+          )}
+
+          {galleryImages.length > 1 && (
+            <>
+              <span className="absolute right-3 top-3 rounded-full bg-black/55 px-2.5 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur">
+                {activeImageIndex + 1}/{galleryImages.length}
+              </span>
+              <div className="absolute inset-x-3 bottom-3 flex gap-2 overflow-x-auto rounded-2xl bg-white/20 p-2 shadow-lg backdrop-blur-md">
+                {galleryImages.map((imageUrl, index) => (
+                  <button
+                    key={imageUrl}
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setActiveImageIndex(index)
+                    }}
+                    onMouseEnter={() => setActiveImageIndex(index)}
+                    className={`relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border bg-white/30 shadow-sm transition ${
+                      activeImageIndex === index ? 'border-white ring-2 ring-white/60' : 'border-white/50 opacity-85 hover:opacity-100'
+                    }`}
+                    aria-label={`Voir image ${index + 1}`}
+                  >
+                    <Image src={imageUrl} alt={`${name} image ${index + 1}`} fill className="object-cover" sizes="36px" />
+                  </button>
+                ))}
+              </div>
+            </>
           )}
 
           {!isAvailable && (
@@ -163,16 +213,19 @@ export function ProductCard({
         </div>
 
         <div className="p-4">
-          <p className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1">{displayCategory}</p>
-          {brand && (
-            <p className="text-xs text-gray-500 font-medium mb-1">Marque: {brand.name}</p>
-          )}
+          <div className="mb-1.5 flex items-center gap-2">
+            <p className="min-w-0 flex-1 truncate text-xs font-bold uppercase tracking-wider text-green-700">{displayCategory}</p>
+            {displayBrandName && <p className="max-w-[45%] truncate text-xs font-semibold text-gray-500">{displayBrandName}</p>}
+          </div>
           <p className="font-semibold text-sm text-gray-800 mb-1.5 line-clamp-2">{name}</p>
+          {description && (
+            <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-gray-500">{description}</p>
+          )}
 
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
               <span className="font-bold text-lg text-gray-800">{price.toFixed(2)} DT</span>
-              {displayOriginalPrice > price && (
+              {hasRealDiscount && (
                 <span className="text-xs text-gray-400 line-through">{displayOriginalPrice.toFixed(2)} DT</span>
               )}
             </div>

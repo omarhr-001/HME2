@@ -24,6 +24,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   const [loading, setLoading] = useState(true)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
+  const [activeImageIndex, setActiveImageIndex] = useState(0)
   const { trigger: addToCart, isMutating } = useAddToCart()
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         const data = await getProductByIdFromSupabase(params.id)
         if (data) {
           setProduct(data)
+          setActiveImageIndex(0)
         }
       } catch (error) {
         console.error('Error loading product:', error)
@@ -94,6 +96,20 @@ export default function ProductPage({ params }: ProductPageProps) {
     }
   }
 
+  const productImages = [
+    ...new Set(
+      [
+        ...[...(product.product_images || [])]
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((item) => item.image_url),
+        product.image,
+        product.image_url,
+      ].filter(Boolean) as string[],
+    ),
+  ]
+  const activeImage = productImages[activeImageIndex] || productImages[0] || '/placeholder.jpg'
+  const brandName = product.brand?.name
+
   return (
     <>
       <Navbar />
@@ -114,23 +130,57 @@ export default function ProductPage({ params }: ProductPageProps) {
         {/* Product Section */}
         <div className="px-[5%] py-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Product Image */}
-            <div className="flex items-center justify-center">
+            {/* Product Gallery */}
+            <div className="space-y-4">
               <div className="relative w-full aspect-square bg-white rounded-3xl overflow-hidden border border-gray-200 shadow-sm">
                 <Image
-                  src={product.image || product.image_url || '/placeholder.jpg'}
+                  src={activeImage}
                   alt={product.name}
                   fill
                   className="w-full h-full object-cover"
                   priority
                 />
+                {brandName && (
+                  <div className="absolute left-4 top-4 max-w-[70%] truncate rounded-full bg-white/92 px-3 py-1.5 text-sm font-bold text-gray-800 shadow-sm">
+                    {brandName}
+                  </div>
+                )}
+                {productImages.length > 1 && (
+                  <div className="absolute bottom-4 right-4 rounded-full bg-black/55 px-3 py-1.5 text-sm font-semibold text-white">
+                    {activeImageIndex + 1}/{productImages.length}
+                  </div>
+                )}
               </div>
+              {productImages.length > 1 && (
+                <div className="grid grid-cols-5 gap-3 sm:grid-cols-6">
+                  {productImages.slice(0, 12).map((imageUrl, index) => (
+                    <button
+                      key={imageUrl}
+                      type="button"
+                      onClick={() => setActiveImageIndex(index)}
+                      className={`relative aspect-square overflow-hidden rounded-2xl border bg-white transition-all ${
+                        activeImageIndex === index ? 'border-green-500 ring-2 ring-green-500/20' : 'border-gray-200 hover:border-green-300'
+                      }`}
+                      aria-label={`Afficher image ${index + 1}`}
+                    >
+                      <Image src={imageUrl} alt={`${product.name} image ${index + 1}`} fill className="object-cover" sizes="96px" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Product Info */}
             <div>
               <div className="mb-6">
-                <p className="text-sm font-bold text-green-600 uppercase mb-2">{product.category || 'Produit'}</p>
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-bold uppercase text-green-600">{product.category || 'Produit'}</p>
+                  {brandName && (
+                    <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-gray-200">
+                      {brandName}
+                    </span>
+                  )}
+                </div>
                 <h1 className="text-3xl font-bold text-gray-800 mb-3">{product.name}</h1>
                 <p className="text-gray-600">{product.description || 'Pas de description disponible'}</p>
               </div>
@@ -191,8 +241,8 @@ export default function ProductPage({ params }: ProductPageProps) {
                 <div className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-200">
                   <Truck size={24} className="text-green-600 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-gray-800">Livraison gratuite</p>
-                    <p className="text-sm text-gray-500">Pour les commandes de 100+ DT</p>
+                    <p className="font-semibold text-gray-800">Livraison depuis Hammamet</p>
+                    <p className="text-sm text-gray-500">Gratuite a Hammamet ou des 500 DT</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-200">

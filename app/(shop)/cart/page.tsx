@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import useSWR from 'swr'
 import { useAuth } from '@/lib/auth-context'
 import { useCart, useRemoveFromCart } from '@/lib/hooks'
 import { useToast } from '@/hooks/use-toast'
@@ -10,6 +11,13 @@ import { Footer } from '@/components/footer'
 import { Trash2, ShoppingCart } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { CartItemWithProduct } from '@/lib/types'
+import { DEFAULT_SHIPPING_SETTINGS, type ShippingSettings } from '@/lib/shipping'
+
+const fetcher = async (url: string) => {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error('Failed to load shipping settings')
+  return response.json()
+}
 
 export default function CartPage() {
   const { user, loading: authLoading } = useAuth()
@@ -18,6 +26,11 @@ export default function CartPage() {
   const { toast } = useToast()
   const [mounted, setMounted] = useState(false)
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set())
+  const { data: shippingSettings = DEFAULT_SHIPPING_SETTINGS } = useSWR<ShippingSettings>(
+    '/api/shipping-settings',
+    fetcher,
+    { revalidateOnFocus: false },
+  )
 
   useEffect(() => {
     setMounted(true)
@@ -56,7 +69,7 @@ export default function CartPage() {
     }
   }
 
-  const shipping = cartTotal > 500 ? 0 : 15
+  const shipping = cartTotal >= shippingSettings.freeThreshold ? 0 : shippingSettings.otherFee
   const total = cartTotal + shipping
 
   if (!mounted || authLoading || isLoading) {
@@ -175,9 +188,9 @@ export default function CartPage() {
                   <span className="text-2xl font-bold text-green-600">{total.toLocaleString('fr-TN')} DT</span>
                 </div>
 
-                {cartTotal < 500 && (
+                {cartTotal < shippingSettings.freeThreshold && (
                   <p className="text-xs text-gray-500 mb-4 p-3 bg-blue-50 rounded-lg">
-                    Ajoutez {(500 - cartTotal).toLocaleString('fr-TN')} DT pour bénéficier de la livraison gratuite
+                    Ajoutez {(shippingSettings.freeThreshold - cartTotal).toLocaleString('fr-TN')} DT pour bénéficier de la livraison gratuite
                   </p>
                 )}
 

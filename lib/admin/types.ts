@@ -47,6 +47,7 @@ export type AdminProduct = {
   is_active: boolean
   created_at: string
   categories?: AdminCategory | null
+  brands?: { id: string; name: string; slug?: string | null; logo_url?: string | null } | null
   product_images?: AdminProductImage[] | null
 }
 
@@ -62,6 +63,7 @@ export type AdminOrder = {
   order_number: string | null
   user_id: string
   total_amount: number
+  shipping_fee?: number | null
   status: OrderStatus
   payment_method: PaymentMethod | null
   payment_status: PaymentStatus | null
@@ -84,6 +86,13 @@ export type AdminDashboardData = {
     paidOrders: number
     avgOrderValue: number
     revenueGrowth: number
+    orderGrowth: number
+    productGrowth: number
+    customerGrowthRate: number
+    avgOrderGrowth: number
+    deliveryRate: number
+    paidRate: number
+    stockAlertRate: number
   }
   revenueSeries: Array<{ label: string; revenue: number }>
   weeklyRevenue: Array<{ label: string; revenue: number }>

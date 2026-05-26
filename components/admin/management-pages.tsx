@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import useSWR from 'swr'
 import { useEffect, useMemo, useState } from 'react'
-import { Download, Eye, FileSpreadsheet, Pencil, Plus, Save, Search, Trash2, Upload } from 'lucide-react'
+import { Bell, Download, Eye, FileSpreadsheet, Pencil, Plus, Save, Search, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -43,6 +43,7 @@ import type { Brand } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
+import { DEFAULT_SHIPPING_SETTINGS, type ShippingSettings } from '@/lib/shipping'
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 const statuses: OrderStatus[] = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
@@ -75,12 +76,78 @@ const defaultProductForm = {
   brand_id: null,
 }
 
+const notificationOptions = [
+  { key: 'newOrders', label: 'New orders' },
+  { key: 'lowStockAlerts', label: 'Low stock alerts' },
+  { key: 'customerSignups', label: 'Customer signups' },
+  { key: 'weeklyReports', label: 'Weekly reports' },
+] as const
+
+type NotificationKey = (typeof notificationOptions)[number]['key']
+
+const defaultNotificationSettings: Record<NotificationKey, boolean> = {
+  newOrders: true,
+  lowStockAlerts: true,
+  customerSignups: true,
+  weeklyReports: true,
+}
+
+function productFormInitialValue(product?: AdminProduct) {
+  if (!product) return { ...defaultProductForm, image_url: '', image_urls: [] }
+
+  const imageUrls = [
+    ...new Set(
+      [
+        ...[...(product.product_images || [])]
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((image) => image.image_url),
+        product.image_url,
+      ].filter(Boolean) as string[],
+    ),
+  ]
+
+  return {
+    ...product,
+    image_url: imageUrls[0] || '',
+    image_urls: imageUrls,
+  }
+}
+
+function productImages(product: Pick<AdminProduct, 'image_url' | 'product_images'>) {
+  return [
+    ...new Set(
+      [
+        ...[...(product.product_images || [])]
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((image) => image.image_url),
+        product.image_url,
+      ].filter(Boolean) as string[],
+    ),
+  ]
+}
+
+function productBrandName(product: AdminProduct, brands: Brand[]) {
+  return product.brands?.name || brands.find((brand) => brand.id === product.brand_id)?.name || null
+}
+
 export function OrdersPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
+
+  const orderQuery = useMemo(() => {
+    const params = new URLSearchParams()
+    params.set('status', status)
+    if (search) params.set('search', search)
+    if (dateFrom) params.set('dateFrom', dateFrom)
+    if (dateTo) params.set('dateTo', dateTo)
+    return params.toString()
+  }, [dateFrom, dateTo, search, status])
+
   const { data = [], mutate, isLoading } = useSWR<AdminOrder[]>(
-    `/api/admin/orders?status=${status}&search=${encodeURIComponent(search)}`,
+    `/api/admin/orders?${orderQuery}`,
     adminFetch,
   )
   const pageSize = 8
@@ -105,11 +172,14 @@ export function OrdersPage() {
     mutate()
   }
 
+  const exportQuery = new URLSearchParams(orderQuery)
+  exportQuery.set('format', 'csv')
+
   return (
     <div className="space-y-5">
       <Toolbar
         search={search}
-        setSearch={setSearch}
+        setSearch={(value) => { setSearch(value); setPage(1) }}
         right={
           <>
             <Select value={status} onValueChange={(value) => { setStatus(value); setPage(1) }}>
@@ -119,7 +189,41 @@ export function OrdersPage() {
                 {statuses.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={() => downloadAdminFile(`/api/admin/orders?status=${status}&search=${search}&format=csv`, 'orders.csv')}>
+            <div className="flex flex-wrap gap-2">
+              <div>
+                <Label htmlFor="orders-date-from" className="sr-only">From date</Label>
+                <Input
+                  id="orders-date-from"
+                  type="date"
+                  value={dateFrom}
+                  onChange={(event) => { setDateFrom(event.target.value); setPage(1) }}
+                  className="h-10 w-40"
+                />
+              </div>
+              <div>
+                <Label htmlFor="orders-date-to" className="sr-only">To date</Label>
+                <Input
+                  id="orders-date-to"
+                  type="date"
+                  value={dateTo}
+                  onChange={(event) => { setDateTo(event.target.value); setPage(1) }}
+                  className="h-10 w-40"
+                />
+              </div>
+              {(dateFrom || dateTo) && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setDateFrom('')
+                    setDateTo('')
+                    setPage(1)
+                  }}
+                >
+                  Clear dates
+                </Button>
+              )}
+            </div>
+            <Button variant="outline" onClick={() => downloadAdminFile(`/api/admin/orders?${exportQuery.toString()}`, 'orders.csv')}>
               <Download className="mr-2 h-4 w-4" /> Export CSV
             </Button>
           </>
@@ -133,6 +237,7 @@ export function OrdersPage() {
               <TableHead>Order ID</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Products</TableHead>
+              <TableHead>Shipping</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Payment</TableHead>
@@ -146,6 +251,7 @@ export function OrdersPage() {
                 <TableCell className="font-medium">{order.order_number || order.id.slice(0, 8)}</TableCell>
                 <TableCell>{customerName(order.profiles)}</TableCell>
                 <TableCell>{order.order_items?.length || 0}</TableCell>
+                <TableCell>{money.format(Number(order.shipping_fee || 0))}</TableCell>
                 <TableCell>{money.format(Number(order.total_amount))}</TableCell>
                 <TableCell>
                   <Select value={order.status} onValueChange={(value) => updateStatus(order.id, value as OrderStatus)}>
@@ -217,34 +323,59 @@ export function ProductsPage() {
         }
       />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {products.map((product) => (
-          <Card key={product.id} className="overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg">
-            <div className="relative aspect-[16/10] bg-muted">
-              {product.image_url ? (
-                <Image src={product.image_url} alt={product.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 33vw" />
-              ) : (
-                <div className="grid h-full place-items-center text-muted-foreground"><PackageIcon /></div>
-              )}
-              <div className="absolute right-3 top-3 flex gap-2">
-                <Badge variant={product.is_active ? 'default' : 'secondary'}>{product.is_active ? 'Active' : 'Inactive'}</Badge>
-                <Badge variant={product.stock_quantity > 0 ? 'secondary' : 'destructive'}>{product.stock_quantity > 0 ? `${product.stock_quantity} stock` : 'Out'}</Badge>
-              </div>
-            </div>
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 className="truncate text-base font-semibold">{product.name}</h3>
-                  <p className="text-sm text-muted-foreground">{product.categories?.name || product.category || 'Uncategorized'}</p>
+        {products.map((product) => {
+          const images = productImages(product)
+          const brandName = productBrandName(product, brands)
+
+          return (
+            <Card key={product.id} className="overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg">
+              <div className="relative aspect-[16/10] bg-muted">
+                {images[0] ? (
+                  <Image src={images[0]} alt={product.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 33vw" />
+                ) : (
+                  <div className="grid h-full place-items-center text-muted-foreground"><PackageIcon /></div>
+                )}
+                <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/65 to-transparent" />
+                <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+                  {brandName && <Badge className="bg-white/92 text-gray-900 hover:bg-white">{brandName}</Badge>}
+                  {images.length > 1 && <Badge variant="secondary">{images.length} images</Badge>}
                 </div>
-                <p className="font-semibold">{money.format(Number(product.price))}</p>
+                <div className="absolute right-3 top-3 flex gap-2">
+                  <Badge variant={product.is_active ? 'default' : 'secondary'}>{product.is_active ? 'Active' : 'Inactive'}</Badge>
+                  <Badge variant={product.stock_quantity > 0 ? 'secondary' : 'destructive'}>{product.stock_quantity > 0 ? `${product.stock_quantity} stock` : 'Out'}</Badge>
+                </div>
+                {images.length > 1 && (
+                  <div className="absolute bottom-3 left-3 flex max-w-[calc(100%-1.5rem)] gap-2 overflow-hidden">
+                    {images.slice(0, 5).map((imageUrl, index) => (
+                      <div key={imageUrl} className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border border-white/70 bg-white/20 shadow-sm">
+                        <Image src={imageUrl} alt={`${product.name} image ${index + 1}`} fill className="object-cover" sizes="48px" />
+                      </div>
+                    ))}
+                    {images.length > 5 && (
+                      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-md border border-white/70 bg-black/45 text-xs font-semibold text-white shadow-sm">
+                        +{images.length - 5}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="mt-4 flex items-center justify-end gap-1">
-                <ProductDialog product={product} brands={brands} categories={categories} onSave={saveProduct} onBrandCreated={mutateBrands} />
-                <ConfirmDelete onConfirm={() => deleteProduct(product.id)} />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-base font-semibold">{product.name}</h3>
+                    <p className="text-sm text-muted-foreground">{product.categories?.name || product.category || 'Uncategorized'}</p>
+                    {brandName && <p className="mt-1 text-xs font-medium text-primary">{brandName}</p>}
+                  </div>
+                  <p className="font-semibold">{money.format(Number(product.price))}</p>
+                </div>
+                <div className="mt-4 flex items-center justify-end gap-1">
+                  <ProductDialog product={product} brands={brands} categories={categories} onSave={saveProduct} onBrandCreated={mutateBrands} />
+                  <ConfirmDelete onConfirm={() => deleteProduct(product.id)} />
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
     </div>
   )
@@ -354,29 +485,67 @@ export function CategoriesPage() {
 }
 
 export function InventoryPage() {
+  const [sortMode, setSortMode] = useState('stock-asc')
   const { data = [] } = useSWR<AdminProduct[]>('/api/admin/products', adminFetch)
-  const low = data.filter((product) => product.stock_quantity > 0 && product.stock_quantity <= 5)
+  const available = data.filter((product) => product.in_stock && product.stock_quantity > 5)
+  const low = data.filter((product) => product.in_stock && product.stock_quantity > 0 && product.stock_quantity <= 5)
   const out = data.filter((product) => product.stock_quantity === 0 || !product.in_stock)
+  const sortedProducts = useMemo(() => {
+    return [...data].sort((a, b) => {
+      if (sortMode === 'stock-desc') return b.stock_quantity - a.stock_quantity
+      if (sortMode === 'name') return a.name.localeCompare(b.name)
+
+      const aRank = !a.in_stock || a.stock_quantity === 0 ? 0 : a.stock_quantity <= 5 ? 1 : 2
+      const bRank = !b.in_stock || b.stock_quantity === 0 ? 0 : b.stock_quantity <= 5 ? 1 : 2
+
+      if (aRank !== bRank) return aRank - bRank
+      return a.stock_quantity - b.stock_quantity
+    })
+  }, [data, sortMode])
 
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-3">
-        <MiniMetric title="In stock" value={data.filter((product) => product.stock_quantity > 5).length} />
+        <MiniMetric title="In stock" value={available.length} />
         <MiniMetric title="Low stock" value={low.length} tone="amber" />
         <MiniMetric title="Out of stock" value={out.length} tone="red" />
       </div>
       <Card>
-        <CardHeader><CardTitle>Stock Monitoring</CardTitle></CardHeader>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle>Stock Monitoring</CardTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {low.length} low stock product{low.length === 1 ? '' : 's'}.
+            </p>
+          </div>
+          <Select value={sortMode} onValueChange={setSortMode}>
+            <SelectTrigger className="w-full sm:w-52"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="stock-asc">Critical first</SelectItem>
+              <SelectItem value="stock-desc">Highest stock first</SelectItem>
+              <SelectItem value="name">Name A-Z</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardHeader>
         <CardContent className="space-y-4">
-          {data.map((product) => (
+          {sortedProducts.map((product, index) => (
             <div key={product.id} className="rounded-lg border p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="font-medium">{product.name}</p>
+                <div className="flex items-start gap-3">
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border bg-muted text-sm font-semibold">
+                    {index + 1}
+                  </div>
+                  <div>
+                    <p className="font-medium">{product.name}</p>
                   <p className="text-sm text-muted-foreground">{product.sku || product.categories?.name || 'No SKU'}</p>
+                  </div>
                 </div>
-                <Badge variant={product.stock_quantity === 0 ? 'destructive' : product.stock_quantity <= 5 ? 'secondary' : 'outline'}>
-                  {product.stock_quantity === 0 ? 'Out of stock' : product.stock_quantity <= 5 ? 'Low stock' : `${product.stock_quantity} units`}
+                <Badge variant={!product.in_stock || product.stock_quantity === 0 ? 'destructive' : product.stock_quantity <= 5 ? 'secondary' : 'outline'}>
+                  {!product.in_stock || product.stock_quantity === 0
+                    ? 'Out of stock'
+                    : product.stock_quantity <= 5
+                      ? `Low stock: ${product.stock_quantity} unit${product.stock_quantity === 1 ? '' : 's'}`
+                      : `${product.stock_quantity} units`}
                 </Badge>
               </div>
               <Progress className="mt-3" value={Math.min(product.stock_quantity * 5, 100)} />
@@ -394,6 +563,34 @@ export function SettingsPage() {
   const [passwordForm, setPasswordForm] = useState({ password: '', confirmPassword: '' })
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
+  const [savingShipping, setSavingShipping] = useState(false)
+  const [notificationSettings, setNotificationSettings] = useState(defaultNotificationSettings)
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default')
+  const [shippingForm, setShippingForm] = useState<ShippingSettings>(DEFAULT_SHIPPING_SETTINGS)
+  const { data: shippingSettings, mutate: mutateShippingSettings } = useSWR<ShippingSettings>(
+    '/api/admin/shipping-settings',
+    adminFetch,
+  )
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem('hme-admin-notification-settings')
+
+      if (stored) {
+        setNotificationSettings({ ...defaultNotificationSettings, ...JSON.parse(stored) })
+      }
+    } catch {
+      window.localStorage.removeItem('hme-admin-notification-settings')
+    }
+
+    if ('Notification' in window) {
+      setNotificationPermission(Notification.permission)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (shippingSettings) setShippingForm(shippingSettings)
+  }, [shippingSettings])
 
   async function saveProfile() {
     setSavingProfile(true)
@@ -434,11 +631,80 @@ export function SettingsPage() {
     }
   }
 
+  async function setNotificationEnabled(key: NotificationKey, checked: boolean) {
+    if (checked && !('Notification' in window)) {
+      toast.error('Browser notifications are not supported here')
+      return
+    }
+
+    if (checked && Notification.permission !== 'granted') {
+      const permission = await Notification.requestPermission()
+      setNotificationPermission(permission)
+
+      if (permission !== 'granted') {
+        toast.error('Allow notifications in your browser first')
+        return
+      }
+    }
+
+    const nextSettings = { ...notificationSettings, [key]: checked }
+    setNotificationSettings(nextSettings)
+    window.localStorage.setItem('hme-admin-notification-settings', JSON.stringify(nextSettings))
+    toast.success(checked ? 'Notification enabled' : 'Notification disabled')
+  }
+
+  async function testNotification(label: string) {
+    if (!('Notification' in window)) {
+      toast.error('Browser notifications are not supported here')
+      return
+    }
+
+    if (Notification.permission !== 'granted') {
+      const permission = await Notification.requestPermission()
+      setNotificationPermission(permission)
+
+      if (permission !== 'granted') {
+        toast.error('Allow notifications in your browser first')
+        return
+      }
+    }
+
+    new Notification('HME Admin', {
+      body: `${label} notifications are working.`,
+    })
+    toast.success('Test notification sent')
+  }
+
+  async function saveShipping() {
+    setSavingShipping(true)
+    try {
+      const saved = await adminFetch<ShippingSettings>('/api/admin/shipping-settings', {
+        method: 'PATCH',
+        body: JSON.stringify(shippingForm),
+      })
+      setShippingForm(saved)
+      mutateShippingSettings(saved, false)
+      toast.success('Shipping fees updated')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to update shipping fees')
+    } finally {
+      setSavingShipping(false)
+    }
+  }
+
+  function updateShippingField(key: keyof ShippingSettings, value: string) {
+    setShippingForm((current) => ({
+      ...current,
+      [key]: Math.max(0, Number(value) || 0),
+    }))
+  }
+
   return (
     <Tabs defaultValue="profile" className="space-y-5">
       <TabsList>
         <TabsTrigger value="profile">Profile</TabsTrigger>
         <TabsTrigger value="security">Security</TabsTrigger>
+        <TabsTrigger value="shipping">Livraison</TabsTrigger>
         <TabsTrigger value="notifications">Notifications</TabsTrigger>
       </TabsList>
       <TabsContent value="profile">
@@ -477,14 +743,97 @@ export function SettingsPage() {
           </CardContent>
         </Card>
       </TabsContent>
+      <TabsContent value="shipping">
+        <Card>
+          <CardHeader>
+            <CardTitle>Frais de livraison</CardTitle>
+          </CardHeader>
+          <CardContent className="grid max-w-3xl gap-5">
+            <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+              Ces montants sont utilises dans le checkout et sauvegardes dans la commande. La facture affiche le frais reel de la commande.
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="shipping-free-threshold">Livraison gratuite des</Label>
+                <Input
+                  id="shipping-free-threshold"
+                  type="number"
+                  min="0"
+                  value={shippingForm.freeThreshold}
+                  onChange={(event) => updateShippingField('freeThreshold', event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="shipping-hammamet">Hammamet</Label>
+                <Input
+                  id="shipping-hammamet"
+                  type="number"
+                  min="0"
+                  value={shippingForm.hammametFee}
+                  onChange={(event) => updateShippingField('hammametFee', event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="shipping-nabeul">Zone Nabeul</Label>
+                <Input
+                  id="shipping-nabeul"
+                  type="number"
+                  min="0"
+                  value={shippingForm.nabeulFee}
+                  onChange={(event) => updateShippingField('nabeulFee', event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="shipping-coastal">Grand Tunis / villes cotieres</Label>
+                <Input
+                  id="shipping-coastal"
+                  type="number"
+                  min="0"
+                  value={shippingForm.coastalFee}
+                  onChange={(event) => updateShippingField('coastalFee', event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="shipping-other">Autres regions</Label>
+                <Input
+                  id="shipping-other"
+                  type="number"
+                  min="0"
+                  value={shippingForm.otherFee}
+                  onChange={(event) => updateShippingField('otherFee', event.target.value)}
+                />
+              </div>
+            </div>
+            <Button className="w-fit" onClick={saveShipping} disabled={savingShipping}>
+              <Save className="mr-2 h-4 w-4" /> {savingShipping ? 'Saving...' : 'Save shipping fees'}
+            </Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
       <TabsContent value="notifications">
         <Card>
           <CardHeader><CardTitle>Notification Settings</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            {['New orders', 'Low stock alerts', 'Customer signups', 'Weekly reports'].map((item) => (
-              <div key={item} className="flex items-center justify-between rounded-lg border p-4">
-                <span className="font-medium">{item}</span>
-                <Switch defaultChecked />
+            <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+              Browser permission: <span className="font-medium text-foreground">{notificationPermission}</span>
+            </div>
+            {notificationOptions.map((item) => (
+              <div key={item.key} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
+                <span className="font-medium">{item.label}</span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => testNotification(item.label)}
+                    disabled={!notificationSettings[item.key]}
+                  >
+                    <Bell className="mr-2 h-4 w-4" /> Test
+                  </Button>
+                  <Switch
+                    checked={notificationSettings[item.key]}
+                    onCheckedChange={(checked) => setNotificationEnabled(item.key, checked)}
+                  />
+                </div>
               </div>
             ))}
             <Button variant="destructive" onClick={signOut}>Logout</Button>
@@ -521,22 +870,67 @@ function ProductDialog({
   onBrandCreated?: () => Promise<Brand[] | void | undefined>
 }) {
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState<any>(product || defaultProductForm)
+  const [form, setForm] = useState<any>(productFormInitialValue(product))
+  const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = useState<Array<{ name: string; url: string }>>([])
   const [newBrandName, setNewBrandName] = useState('')
   const [showBrandCreator, setShowBrandCreator] = useState(false)
   const [creatingBrand, setCreatingBrand] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!open) return
 
-    setForm(product || defaultProductForm)
+    setForm(productFormInitialValue(product))
+    setImageFiles([])
     setNewBrandName('')
     setShowBrandCreator(false)
   }, [open, product])
 
+  useEffect(() => {
+    const previews = imageFiles.map((file) => ({ name: file.name, url: URL.createObjectURL(file) }))
+    setImagePreviews(previews)
+
+    return () => {
+      previews.forEach((preview) => URL.revokeObjectURL(preview.url))
+    }
+  }, [imageFiles])
+
   async function submit() {
-    await onSave(form, product?.id)
-    setOpen(false)
+    setSaving(true)
+    try {
+      let uploadedUrls: string[] = []
+
+      if (imageFiles.length > 0) {
+        const body = new FormData()
+        imageFiles.forEach((file) => body.append('files', file))
+        const response = await adminUpload<{ urls: string[] }>('/api/admin/products/images', body)
+        uploadedUrls = response.urls
+      }
+
+      const imageUrls = [
+        ...new Set([...(form.image_urls || []), ...uploadedUrls].map((url: string) => url.trim()).filter(Boolean)),
+      ]
+
+      await onSave({ ...form, image_url: imageUrls[0] || '', image_urls: imageUrls }, product?.id)
+      setOpen(false)
+      setImageFiles([])
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to save product')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function updatePrimaryImageUrl(value: string) {
+    const currentUrls = (form.image_urls || []).filter((url: string) => url !== form.image_url)
+    const imageUrls = value ? [value, ...currentUrls] : currentUrls
+    setForm({ ...form, image_url: value, image_urls: imageUrls })
+  }
+
+  function removeImageUrl(url: string) {
+    const imageUrls = (form.image_urls || []).filter((item: string) => item !== url)
+    setForm({ ...form, image_url: imageUrls[0] || '', image_urls: imageUrls })
   }
 
   async function createBrand() {
@@ -633,7 +1027,48 @@ function ProductDialog({
               </div>
             )}
           </div>
-          <div className="sm:col-span-2"><Field label="Image URL" value={form.image_url || ''} onChange={(value) => setForm({ ...form, image_url: value })} icon={<Upload className="h-4 w-4" />} /></div>
+          <div className="sm:col-span-2">
+            <Field label="Main image URL" value={form.image_url || ''} onChange={updatePrimaryImageUrl} icon={<Upload className="h-4 w-4" />} />
+          </div>
+          <div className="grid gap-3 sm:col-span-2">
+            <Label htmlFor={product ? `product-images-${product.id}` : 'product-images-new'}>Upload images from PC</Label>
+            <Input
+              id={product ? `product-images-${product.id}` : 'product-images-new'}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(event) => setImageFiles(Array.from(event.target.files || []))}
+            />
+            {((form.image_urls || []).length > 0 || imagePreviews.length > 0) && (
+              <div className="grid gap-3 rounded-lg border p-3 sm:grid-cols-2">
+                {(form.image_urls || []).map((url: string, index: number) => (
+                  <div key={url} className="flex items-center gap-3 rounded-lg border p-2">
+                    <div className="relative h-14 w-14 overflow-hidden rounded-md bg-muted">
+                      <Image src={url} alt={`Product image ${index + 1}`} fill className="object-cover" sizes="56px" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{index === 0 ? 'Main image' : `Image ${index + 1}`}</p>
+                      <p className="truncate text-xs text-muted-foreground">{url}</p>
+                    </div>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeImageUrl(url)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                {imagePreviews.map((preview, index) => (
+                  <div key={`${preview.name}-${preview.url}`} className="flex items-center gap-3 rounded-lg border border-dashed p-2">
+                    <div className="relative h-14 w-14 overflow-hidden rounded-md bg-muted">
+                      <Image src={preview.url} alt={preview.name} fill className="object-cover" sizes="56px" unoptimized />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">New image {index + 1}</p>
+                      <p className="truncate text-xs text-muted-foreground">{preview.name}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="grid gap-2 sm:col-span-2">
             <Label>Description</Label>
             <Textarea value={form.description || ''} onChange={(event) => setForm({ ...form, description: event.target.value })} />
@@ -641,7 +1076,7 @@ function ProductDialog({
           <ToggleRow label="Active product" checked={!!form.is_active} onCheckedChange={(value) => setForm({ ...form, is_active: value })} />
           <ToggleRow label="In stock" checked={!!form.in_stock} onCheckedChange={(value) => setForm({ ...form, in_stock: value })} />
         </div>
-        <DialogFooter><Button onClick={submit}>Save product</Button></DialogFooter>
+        <DialogFooter><Button onClick={submit} disabled={saving}>{saving ? 'Saving...' : 'Save product'}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -783,6 +1218,14 @@ function OrderDetails({
             <div>
               <p className="text-muted-foreground">Payment status</p>
               <PaymentStatusBadge status={order.payment_status || 'pending'} />
+            </div>
+            <div>
+              <p className="text-muted-foreground">Shipping fee</p>
+              <p className="font-medium">{money.format(Number(order.shipping_fee || 0))}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Order total</p>
+              <p className="font-medium">{money.format(Number(order.total_amount))}</p>
             </div>
           </div>
           {(order.order_items || []).map((item) => (

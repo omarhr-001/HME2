@@ -36,24 +36,32 @@ export async function syncMainProductImage(
   productId: number | string,
   imageUrl: string | null,
 ) {
+  await syncProductImages(supabase, productId, imageUrl ? [imageUrl] : [])
+}
+
+export async function syncProductImages(
+  supabase: SupabaseClient,
+  productId: number | string,
+  imageUrls: string[],
+) {
   const { error: deleteError } = await supabase
     .from('product_images')
     .delete()
     .eq('product_id', productId)
-    .eq('is_main', true)
 
   if (deleteError) throw deleteError
 
-  if (!imageUrl) return
+  const cleanedUrls = [...new Set(imageUrls.map((url) => url.trim()).filter(Boolean))]
+  if (cleanedUrls.length === 0) return
 
   const { error: insertError } = await supabase
     .from('product_images')
-    .insert({
+    .insert(cleanedUrls.map((imageUrl, index) => ({
       product_id: productId,
       image_url: imageUrl,
-      is_main: true,
-      sort_order: 0,
-    })
+      is_main: index === 0,
+      sort_order: index,
+    })))
 
   if (insertError) throw insertError
 }

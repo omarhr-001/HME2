@@ -6,8 +6,8 @@ const FAQS = [
     category: 'Commandes & Livraison',
     items: [
       { q: 'Comment passer une commande?', a: 'Naviguez dans nos produits, ajoutez-les à votre panier, et procédez au paiement. C\'est simple et sécurisé!' },
-      { q: 'Quel est le délai de livraison?', a: 'Nous livrons sous 3-5 jours à Tunis et 5-7 jours dans le reste de la Tunisie.' },
-      { q: 'Livrez-vous l\'installation?', a: 'Oui, installation gratuite pour la plupart des appareils à Tunis. Consultez nos conditions.' },
+      { q: 'Quel est le délai de livraison?', a: 'Nous livrons depuis Hammamet: 24-48h à Hammamet, 1-3 jours dans la zone Nabeul et 3-7 jours dans le reste de la Tunisie.' },
+      { q: 'Livrez-vous l\'installation?', a: 'Oui, installation disponible à Hammamet et dans la zone Nabeul selon le produit et le planning.' },
       { q: 'Puis-je suivre ma commande?', a: 'Oui, vous recevrez un numéro de suivi par email après l\'expédition.' },
     ]
   },

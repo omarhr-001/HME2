@@ -97,6 +97,7 @@ export interface Order {
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   payment_method?: 'cash_on_delivery' | 'bank_transfer';
   payment_status?: 'pending' | 'paid' | 'failed' | 'refunded';
+  shipping_fee?: number;
   shipping_address?: Record<string, unknown>;
   billing_address?: Record<string, unknown>;
   notes?: string;

@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js'
-import { subDays, format, isAfter, startOfMonth, subMonths } from 'date-fns'
+import { subDays, format, startOfMonth, subMonths } from 'date-fns'
 import type { AdminDashboardData, AdminOrder, AdminProduct, OrderStatus, PaymentStatus } from './types'
 import { toNumber } from './auth'
 import { normalizeProductImages } from './product-images'
@@ -17,6 +17,11 @@ const paymentStatusColors: Record<PaymentStatus, string> = {
   paid: '#22c55e',
   failed: '#ef4444',
   refunded: '#64748b',
+}
+
+function percentChange(current: number, previous: number) {
+  if (previous === 0) return current > 0 ? 100 : 0
+  return ((current - previous) / previous) * 100
 }
 
 export async function getDashboardData(supabase: SupabaseClient): Promise<AdminDashboardData> {
@@ -49,21 +54,45 @@ export async function getDashboardData(supabase: SupabaseClient): Promise<AdminD
 
   const deliveredOrders = orders.filter((order) => order.status === 'delivered')
   const revenueOrders = orders.filter((order) => order.status !== 'cancelled')
+  const thisMonthOrders = orders.filter((order) => new Date(order.created_at) >= monthStart)
+  const previousMonthOrders = orders.filter((order) => {
+    const date = new Date(order.created_at)
+    return date >= previousMonthStart && date < monthStart
+  })
   const totalRevenue = revenueOrders.reduce((sum, order) => sum + toNumber(order.total_amount), 0)
   const thisMonthRevenue = revenueOrders
-    .filter((order) => isAfter(new Date(order.created_at), monthStart))
+    .filter((order) => new Date(order.created_at) >= monthStart)
     .reduce((sum, order) => sum + toNumber(order.total_amount), 0)
   const previousMonthRevenue = revenueOrders
     .filter((order) => {
       const date = new Date(order.created_at)
-      return isAfter(date, previousMonthStart) && !isAfter(date, monthStart)
+      return date >= previousMonthStart && date < monthStart
     })
     .reduce((sum, order) => sum + toNumber(order.total_amount), 0)
-  const revenueGrowth = previousMonthRevenue
-    ? ((thisMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100
-    : thisMonthRevenue > 0
-      ? 100
-      : 0
+  const thisMonthProducts = products.filter((product) => new Date(product.created_at) >= monthStart)
+  const previousMonthProducts = products.filter((product) => {
+    const date = new Date(product.created_at)
+    return date >= previousMonthStart && date < monthStart
+  })
+  const customers = profiles.filter((profile: any) => (profile.role || 'client') === 'client')
+  const thisMonthCustomers = customers.filter((customer: any) => new Date(customer.created_at) >= monthStart)
+  const previousMonthCustomers = customers.filter((customer: any) => {
+    const date = new Date(customer.created_at)
+    return date >= previousMonthStart && date < monthStart
+  })
+  const thisMonthRevenueOrders = thisMonthOrders.filter((order) => order.status !== 'cancelled')
+  const previousMonthRevenueOrders = previousMonthOrders.filter((order) => order.status !== 'cancelled')
+  const thisMonthAvgOrder = thisMonthRevenueOrders.length
+    ? thisMonthRevenueOrders.reduce((sum, order) => sum + toNumber(order.total_amount), 0) / thisMonthRevenueOrders.length
+    : 0
+  const previousMonthAvgOrder = previousMonthRevenueOrders.length
+    ? previousMonthRevenueOrders.reduce((sum, order) => sum + toNumber(order.total_amount), 0) / previousMonthRevenueOrders.length
+    : 0
+  const revenueGrowth = percentChange(thisMonthRevenue, previousMonthRevenue)
+  const orderGrowth = percentChange(thisMonthOrders.length, previousMonthOrders.length)
+  const productGrowth = percentChange(thisMonthProducts.length, previousMonthProducts.length)
+  const customerGrowthRate = percentChange(thisMonthCustomers.length, previousMonthCustomers.length)
+  const avgOrderGrowth = percentChange(thisMonthAvgOrder, previousMonthAvgOrder)
 
   const revenueSeries = makeRevenueDaySeries(orders, 14)
   const ordersSeries = makeOrdersDaySeries(orders, 14)
@@ -91,7 +120,6 @@ export async function getDashboardData(supabase: SupabaseClient): Promise<AdminD
     }
   }
 
-  const customers = profiles.filter((profile: any) => (profile.role || 'client') === 'client')
   const topCustomers = Object.values(
     orders.reduce<Record<string, { id: string; name: string; email: string | null; total: number; orders: number }>>(
       (acc, order) => {
@@ -109,9 +137,10 @@ export async function getDashboardData(supabase: SupabaseClient): Promise<AdminD
     .sort((a, b) => b.total - a.total)
     .slice(0, 5)
 
-  const lowStockProducts = products.filter((product) => product.stock_quantity > 0 && product.stock_quantity <= 5)
+  const lowStockProducts = products.filter((product) => product.in_stock && product.stock_quantity > 0 && product.stock_quantity <= 5)
   const outOfStockProducts = products.filter((product) => product.stock_quantity === 0 || !product.in_stock)
   const bestCategory = topCategory(orders, categories)
+  const stockAlertCount = lowStockProducts.length + outOfStockProducts.length
 
   return {
     stats: {
@@ -125,6 +154,13 @@ export async function getDashboardData(supabase: SupabaseClient): Promise<AdminD
       paidOrders: orders.filter((order) => order.payment_status === 'paid').length,
       avgOrderValue: revenueOrders.length ? totalRevenue / revenueOrders.length : 0,
       revenueGrowth,
+      orderGrowth,
+      productGrowth,
+      customerGrowthRate,
+      avgOrderGrowth,
+      deliveryRate: orders.length ? (deliveredOrders.length / orders.length) * 100 : 0,
+      paidRate: orders.length ? (orders.filter((order) => order.payment_status === 'paid').length / orders.length) * 100 : 0,
+      stockAlertRate: products.length ? (stockAlertCount / products.length) * 100 : 0,
     },
     revenueSeries,
     weeklyRevenue,

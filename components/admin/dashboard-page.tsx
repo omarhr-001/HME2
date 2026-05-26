@@ -47,6 +47,12 @@ const chartConfig = {
   quantity: { label: 'Quantity', color: '#22c55e' },
 }
 
+function formatTrend(value: number) {
+  const rounded = Math.round(value)
+  if (rounded > 0) return `+${rounded}%`
+  return `${rounded}%`
+}
+
 export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boolean }) {
   const { data, isLoading, error } = useSWR<AdminDashboardData>('/api/admin/dashboard', adminFetch)
 
@@ -64,16 +70,16 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
       {!analyticsOnly && (
         <>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard title="Total Revenue" value={money.format(data.stats.totalRevenue)} icon={CircleDollarSign} trend={`${data.stats.revenueGrowth.toFixed(0)}%`} />
-            <StatCard title="Total Orders" value={data.stats.totalOrders.toLocaleString()} icon={ShoppingCart} trend="+orders" />
-            <StatCard title="Total Products" value={data.stats.totalProducts.toLocaleString()} icon={Package} trend="catalog" />
-            <StatCard title="Total Customers" value={data.stats.totalCustomers.toLocaleString()} icon={Users} trend="profiles" />
-            <StatCard title="Pending Orders" value={data.stats.pendingOrders.toLocaleString()} icon={Activity} trend="needs attention" />
-            <StatCard title="Processing" value={data.stats.processingOrders.toLocaleString()} icon={ShoppingCart} trend="active orders" />
-            <StatCard title="Delivered Orders" value={data.stats.deliveredOrders.toLocaleString()} icon={CheckCircle2} trend="fulfilled" />
-            <StatCard title="Paid Orders" value={data.stats.paidOrders.toLocaleString()} icon={CreditCard} trend="payment status" />
-            <StatCard title="Avg. Order" value={money.format(data.stats.avgOrderValue)} icon={TrendingUp} trend="basket value" />
-            <StatCard title="Stock Alerts" value={(data.lowStockProducts.length + data.outOfStockProducts.length).toString()} icon={AlertTriangle} trend="inventory" />
+            <StatCard title="Total Revenue" value={money.format(data.stats.totalRevenue)} icon={CircleDollarSign} trend={`${formatTrend(data.stats.revenueGrowth)} this month`} />
+            <StatCard title="Total Orders" value={data.stats.totalOrders.toLocaleString()} icon={ShoppingCart} trend={`${formatTrend(data.stats.orderGrowth)} this month`} />
+            <StatCard title="Total Products" value={data.stats.totalProducts.toLocaleString()} icon={Package} trend={`${formatTrend(data.stats.productGrowth)} this month`} />
+            <StatCard title="Total Customers" value={data.stats.totalCustomers.toLocaleString()} icon={Users} trend={`${formatTrend(data.stats.customerGrowthRate)} this month`} />
+            <StatCard title="Pending Orders" value={data.stats.pendingOrders.toLocaleString()} icon={Activity} trend={`${data.stats.pendingOrders.toLocaleString()} pending`} />
+            <StatCard title="Processing" value={data.stats.processingOrders.toLocaleString()} icon={ShoppingCart} trend={`${data.stats.processingOrders.toLocaleString()} active`} />
+            <StatCard title="Delivered Orders" value={data.stats.deliveredOrders.toLocaleString()} icon={CheckCircle2} trend={`${Math.round(data.stats.deliveryRate)}% delivery rate`} />
+            <StatCard title="Paid Orders" value={data.stats.paidOrders.toLocaleString()} icon={CreditCard} trend={`${Math.round(data.stats.paidRate)}% paid`} />
+            <StatCard title="Avg. Order" value={money.format(data.stats.avgOrderValue)} icon={TrendingUp} trend={`${formatTrend(data.stats.avgOrderGrowth)} this month`} />
+            <StatCard title="Stock Alerts" value={(data.lowStockProducts.length + data.outOfStockProducts.length).toString()} icon={AlertTriangle} trend={`${Math.round(data.stats.stockAlertRate)}% of catalog`} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-4">

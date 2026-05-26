@@ -10,10 +10,10 @@ export function LikedProductsCard() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        <div className="space-y-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:col-span-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-lg" />
+            <Skeleton key={i} className="h-96 rounded-3xl" />
           ))}
         </div>
       </div>
@@ -23,7 +23,7 @@ export function LikedProductsCard() {
   const products = likedProducts.map((liked: any) => liked.products || liked).filter(Boolean)
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md hover:border-green-200 transition-all duration-300 h-full">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md hover:border-green-200 transition-all duration-300 h-full md:col-span-2">
       <div className="flex items-start justify-between mb-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -41,17 +41,9 @@ export function LikedProductsCard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.slice(0, 6).map((product: any) => (
+          {products.map((product: any) => (
             <ProductCard key={product.id} {...product} />
           ))}
-        </div>
-      )}
-
-      {products.length > 6 && (
-        <div className="text-center mt-6">
-          <p className="text-sm text-gray-600">
-            Affichage de 6 produits sur {products.length}
-          </p>
         </div>
       )}
     </div>

@@ -21,47 +21,6 @@ export default function WarrantyPage() {
               </div>
             </div>
 
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Durées de Garantie par Catégorie</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="px-6 py-3 text-left font-bold">Catégorie</th>
-                      <th className="px-6 py-3 text-left font-bold">Durée Standard</th>
-                      <th className="px-6 py-3 text-left font-bold">Couverture</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    <tr>
-                      <td className="px-6 py-4 font-medium">Réfrigérateurs</td>
-                      <td className="px-6 py-4">3 ans</td>
-                      <td className="px-6 py-4">Défauts de fabrication</td>
-                    </tr>
-                    <tr className="bg-gray-50">
-                      <td className="px-6 py-4 font-medium">Lave-linge</td>
-                      <td className="px-6 py-4">3 ans</td>
-                      <td className="px-6 py-4">Défauts de fabrication</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 font-medium">Cuisinières</td>
-                      <td className="px-6 py-4">2 ans</td>
-                      <td className="px-6 py-4">Défauts de fabrication</td>
-                    </tr>
-                    <tr className="bg-gray-50">
-                      <td className="px-6 py-4 font-medium">Climatiseurs</td>
-                      <td className="px-6 py-4">2 ans</td>
-                      <td className="px-6 py-4">Défauts de fabrication</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 font-medium">Fours & Micro-ondes</td>
-                      <td className="px-6 py-4">1-2 ans</td>
-                      <td className="px-6 py-4">Défauts de fabrication</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </section>
 
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Ce que Couvre la Garantie</h2>
@@ -141,15 +100,7 @@ export default function WarrantyPage() {
               </div>
             </section>
 
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Service d'Assistance Technique</h2>
-              <p className="text-gray-700 mb-4">Avez-vous besoin d'aide pour votre produit?</p>
-              <div className="flex gap-4">
-                <a href="/contact" className="btn-primary">Contacter le Support</a>
-                <a href="tel:+21695776655
-" className="btn-outline">Appeler: +216 98 123 456</a>
-              </div>
-            </section>
+
           </div>
         </div>
       </div>

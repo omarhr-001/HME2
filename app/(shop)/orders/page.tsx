@@ -44,10 +44,10 @@ export default function OrdersPage() {
   const { user, loading: authLoading } = useAuth()
   const [filterStatus, setFilterStatus] = useState('all')
 
-  const { data: orders = [], isLoading, error } = useSWR(
+  const { data: orders = [], isLoading, error, mutate } = useSWR(
     user ? '/api/orders' : null,
     authenticatedFetcher,
-    { revalidateOnFocus: false, dedupingInterval: 5000 }
+    { revalidateOnFocus: true, dedupingInterval: 5000 }
   )
 
   useEffect(() => {
@@ -55,6 +55,28 @@ export default function OrdersPage() {
       router.push('/auth/login')
     }
   }, [user, authLoading, router])
+
+  useEffect(() => {
+    if (!user?.id) return
+
+    const channel = supabase
+      .channel(`account-orders-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => mutate(),
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [mutate, user?.id])
 
   const statusColors = {
     pending: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-800', label: 'En attente' },
@@ -186,7 +208,7 @@ export default function OrdersPage() {
             ) : (
               <div className="space-y-4">
                 {filteredOrders.map((order: Order) => {
-                  const colors = statusColors[order.status]
+                  const colors = statusColors[order.status] || statusColors.pending
                   const itemCount = order.order_items?.length || 0
                   return (
                     <div
@@ -238,24 +260,26 @@ export default function OrdersPage() {
                       </div>
 
                       <div className="flex gap-3 pt-4">
-                        <Link href={`/orders/${order.id}`} className="flex-1">
-                          <Button
-                            variant="outline"
-                            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg border border-gray-300 hover:bg-gray-50"
-                          >
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="flex-1 w-full items-center justify-center gap-2 py-3 rounded-lg border border-gray-300 hover:bg-gray-50"
+                        >
+                          <Link href={`/orders/${order.id}`}>
                             <Eye className="w-4 h-4" />
-                            Voir les détails
-                          </Button>
-                        </Link>
-                        <Link href={`/orders/${order.id}/invoice`} className="flex-1">
-                          <Button
-                            variant="outline"
-                            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg border border-gray-300 hover:bg-gray-50"
-                          >
+                            Voir les details
+                          </Link>
+                        </Button>
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="flex-1 w-full items-center justify-center gap-2 py-3 rounded-lg border border-gray-300 hover:bg-gray-50"
+                        >
+                          <Link href={`/orders/${order.id}/invoice`}>
                             <Download className="w-4 h-4" />
                             Facture
-                          </Button>
-                        </Link>
+                          </Link>
+                        </Button>
                       </div>
                     </div>
                   )

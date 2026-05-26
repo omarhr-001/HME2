@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminRequest, jsonError } from '@/lib/admin/auth'
 import { sanitizeProduct } from '@/lib/admin/forms'
-import { normalizeProductImages, syncMainProductImage } from '@/lib/admin/product-images'
+import { normalizeProductImages, syncProductImages } from '@/lib/admin/product-images'
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdminRequest(req)
@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     const search = req.nextUrl.searchParams.get('search')?.trim().toLowerCase()
     const { data, error } = await auth.context.supabase
       .from('products')
-      .select('*, categories(*), product_images(*)')
+      .select('*, categories(*), brands(*), product_images(*)')
       .order('created_at', { ascending: false })
     if (error) throw error
 
@@ -33,6 +33,11 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const payload = sanitizeProduct(body)
+    const imageUrls = Array.isArray(body.image_urls)
+      ? body.image_urls.map((url: unknown) => String(url).trim()).filter(Boolean)
+      : []
+    if (imageUrls.length > 0) payload.image_url = imageUrls[0]
+
     const { data: createdProduct, error } = await auth.context.supabase
       .from('products')
       .insert(payload)
@@ -40,11 +45,11 @@ export async function POST(req: NextRequest) {
       .single()
     if (error) throw error
 
-    await syncMainProductImage(auth.context.supabase, createdProduct.id, payload.image_url)
+    await syncProductImages(auth.context.supabase, createdProduct.id, imageUrls.length > 0 ? imageUrls : payload.image_url ? [payload.image_url] : [])
 
     const { data, error: fetchError } = await auth.context.supabase
       .from('products')
-      .select('*, categories(*), product_images(*)')
+      .select('*, categories(*), brands(*), product_images(*)')
       .eq('id', createdProduct.id)
       .single()
     if (fetchError) throw fetchError

@@ -19,11 +19,11 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useAuth } from '@/lib/auth-context'
 import { adminFetch } from '@/lib/admin/client'
 import { cn } from '@/lib/utils'
@@ -40,6 +40,57 @@ const nav = [
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
+type AdminNotificationKey = 'newOrders' | 'lowStockAlerts' | 'customerSignups' | 'weeklyReports'
+type TopbarNotification = {
+  id: string
+  title: string
+  description: string
+  href: string
+  time?: string
+}
+
+const defaultNotificationSettings: Record<AdminNotificationKey, boolean> = {
+  newOrders: true,
+  lowStockAlerts: true,
+  customerSignups: true,
+  weeklyReports: true,
+}
+
+function getNotificationSettings() {
+  try {
+    const stored = window.localStorage.getItem('hme-admin-notification-settings')
+    return stored ? { ...defaultNotificationSettings, ...JSON.parse(stored) } : defaultNotificationSettings
+  } catch {
+    return defaultNotificationSettings
+  }
+}
+
+function sendAdminNotification(key: AdminNotificationKey, title: string, body: string) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return
+  if (!getNotificationSettings()[key]) return
+
+  new Notification(title, { body })
+}
+
+function formatNotificationTime(value?: string) {
+  if (!value) return ''
+
+  return new Date(value).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function getDismissedNotificationIds() {
+  try {
+    return new Set(JSON.parse(window.localStorage.getItem('hme-admin-dismissed-notifications') || '[]') as string[])
+  } catch {
+    return new Set<string>()
+  }
+}
+
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -47,12 +98,30 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   const [checkingAdmin, setCheckingAdmin] = useState(true)
   const [accessError, setAccessError] = useState('')
+  const [topbarNotifications, setTopbarNotifications] = useState<TopbarNotification[]>([])
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState<Set<string>>(new Set())
+  const notificationSnapshot = useRef({
+    initialized: false,
+    latestOrderDate: '',
+    latestCustomerDate: '',
+    lowStockIds: new Set<number>(),
+  })
 
   const activeLabel = nav.find((item) => item.href === pathname)?.label || 'Dashboard'
 
   async function logout() {
     await signOut()
     router.push('/')
+  }
+
+  function openNotification(notification: TopbarNotification) {
+    const nextDismissedIds = new Set(dismissedNotificationIds)
+    nextDismissedIds.add(notification.id)
+
+    setDismissedNotificationIds(nextDismissedIds)
+    setTopbarNotifications((current) => current.filter((item) => item.id !== notification.id))
+    window.localStorage.setItem('hme-admin-dismissed-notifications', JSON.stringify([...nextDismissedIds]))
+    router.push(notification.href)
   }
 
   useEffect(() => {
@@ -79,6 +148,105 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     checkAdminRole()
   }, [loading, router, user])
 
+  useEffect(() => {
+    setDismissedNotificationIds(getDismissedNotificationIds())
+  }, [])
+
+  useEffect(() => {
+    if (loading || checkingAdmin || accessError) return
+
+    let cancelled = false
+
+    async function pollAdminNotifications() {
+      const settings = getNotificationSettings()
+      if (!settings.newOrders && !settings.lowStockAlerts && !settings.customerSignups) return
+
+      try {
+        const [orders, products, customers] = await Promise.all([
+          settings.newOrders ? adminFetch<any[]>('/api/admin/orders?status=all') : Promise.resolve([]),
+          settings.lowStockAlerts ? adminFetch<any[]>('/api/admin/products') : Promise.resolve([]),
+          settings.customerSignups ? adminFetch<any[]>('/api/admin/customers') : Promise.resolve([]),
+        ])
+
+        if (cancelled) return
+
+        const snapshot = notificationSnapshot.current
+        const latestOrderDate = orders[0]?.created_at || snapshot.latestOrderDate
+        const latestCustomerDate = customers[0]?.created_at || snapshot.latestCustomerDate
+        const lowStockIds = new Set(
+          products
+            .filter((product) => product.stock_quantity > 0 && product.stock_quantity <= 5)
+            .map((product) => product.id as number),
+        )
+        const notifications: TopbarNotification[] = []
+
+        if (orders[0]) {
+          notifications.push({
+            id: `order-${orders[0].id}`,
+            title: 'New order',
+            description: `Order ${orders[0].order_number || String(orders[0].id).slice(0, 8)} was received.`,
+            href: '/admin/orders',
+            time: orders[0].created_at,
+          })
+        }
+
+        if (customers[0]) {
+          const customerName = [customers[0].first_name, customers[0].last_name].filter(Boolean).join(' ')
+          notifications.push({
+            id: `customer-${customers[0].id}`,
+            title: 'New customer',
+            description: customerName || customers[0].email || 'A customer account was created.',
+            href: '/admin/customers',
+            time: customers[0].created_at,
+          })
+        }
+
+        if (lowStockIds.size > 0) {
+          notifications.push({
+            id: 'low-stock',
+            title: 'Low stock alert',
+            description: `${lowStockIds.size} product(s) need attention.`,
+            href: '/admin/inventory',
+          })
+        }
+
+        setTopbarNotifications(notifications.filter((notification) => !dismissedNotificationIds.has(notification.id)))
+
+        if (snapshot.initialized) {
+          if (latestOrderDate && latestOrderDate > snapshot.latestOrderDate) {
+            sendAdminNotification('newOrders', 'New order received', 'A new customer order was placed.')
+          }
+
+          if (latestCustomerDate && latestCustomerDate > snapshot.latestCustomerDate) {
+            sendAdminNotification('customerSignups', 'New customer signup', 'A new customer account was created.')
+          }
+
+          const newLowStockCount = [...lowStockIds].filter((id) => !snapshot.lowStockIds.has(id)).length
+          if (newLowStockCount > 0) {
+            sendAdminNotification('lowStockAlerts', 'Low stock alert', `${newLowStockCount} product(s) are low in stock.`)
+          }
+        }
+
+        notificationSnapshot.current = {
+          initialized: true,
+          latestOrderDate,
+          latestCustomerDate,
+          lowStockIds,
+        }
+      } catch {
+        // Notification polling is best-effort and should not interrupt admin work.
+      }
+    }
+
+    pollAdminNotifications()
+    const interval = window.setInterval(pollAdminNotifications, 60000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+    }
+  }, [accessError, checkingAdmin, dismissedNotificationIds, loading])
+
   if (loading || checkingAdmin) {
     return (
       <div className="grid min-h-screen place-items-center bg-gray-50 text-gray-900">
@@ -103,7 +271,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <TooltipProvider delayDuration={150}>
+    <>
       <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.10),transparent_34rem),linear-gradient(180deg,hsl(var(--background)),hsl(var(--background)))] text-foreground">
         <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r bg-background/80 backdrop-blur-xl lg:block">
           <Sidebar pathname={pathname} onLogout={logout} />
@@ -119,6 +287,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-72 p-0">
+                  <SheetHeader className="sr-only">
+                    <SheetTitle>Admin navigation</SheetTitle>
+                    <SheetDescription>Mobile navigation menu for the admin dashboard.</SheetDescription>
+                  </SheetHeader>
                   <Sidebar pathname={pathname} onNavigate={() => setOpen(false)} onLogout={logout} />
                 </SheetContent>
               </Sheet>
@@ -138,14 +310,53 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 />
               </div>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" aria-label="Notifications">
+              <HoverCard openDelay={100} closeDelay={150}>
+                <HoverCardTrigger asChild>
+                  <Button variant="outline" size="icon" aria-label="Notifications" className="relative">
                     <Bell className="h-4 w-4" />
+                    {topbarNotifications.length > 0 && (
+                      <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                        {topbarNotifications.length}
+                      </span>
+                    )}
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent>Dashboard notifications</TooltipContent>
-              </Tooltip>
+                </HoverCardTrigger>
+                <HoverCardContent align="end" className="w-80 p-0">
+                  <div className="border-b px-4 py-3">
+                    <p className="text-sm font-semibold">Notifications</p>
+                    <p className="text-xs text-muted-foreground">Recent admin activity</p>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto p-2">
+                    {topbarNotifications.length === 0 ? (
+                      <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                        No notifications right now.
+                      </div>
+                    ) : (
+                      topbarNotifications.map((notification) => (
+                        <button
+                          key={notification.id}
+                          type="button"
+                          className="w-full rounded-md px-3 py-2 text-left transition-colors hover:bg-accent"
+                          onClick={() => openNotification(notification)}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <p className="text-sm font-medium">{notification.title}</p>
+                            {notification.time && (
+                              <span className="shrink-0 text-[11px] text-muted-foreground">
+                                {formatNotificationTime(notification.time)}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">{notification.description}</p>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                  <div className="border-t px-4 py-2 text-xs text-muted-foreground">
+                    Manage notification types in Settings.
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
 
               <Avatar className="h-9 w-9 border">
                 <AvatarFallback>{user?.email?.slice(0, 2).toUpperCase() || 'AD'}</AvatarFallback>
@@ -156,7 +367,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">{children}</main>
         </div>
       </div>
-    </TooltipProvider>
+    </>
   )
 }
 

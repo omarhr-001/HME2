@@ -1,5 +1,6 @@
-import { createUserScopedClient, createServiceClient } from '@/lib/server-supabase'
+import { createServiceClient } from '@/lib/server-supabase'
 import { NextRequest, NextResponse } from 'next/server'
+import { mapProduct } from '@/lib/products'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -22,14 +23,20 @@ export async function GET(request: NextRequest) {
         user_id,
         product_id,
         created_at,
-        products(*)
+        products(*, categories(*), brands(*), product_images(*))
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
     if (error) throw error
 
-    return NextResponse.json(data || [])
+    const likedProducts = (data || []).map((liked) => ({
+      ...liked,
+      product_id: liked.product_id?.toString(),
+      products: liked.products ? mapProduct(liked.products) : null,
+    }))
+
+    return NextResponse.json(likedProducts)
   } catch (error) {
     console.error('[v0] Error fetching liked products:', error)
     return NextResponse.json(

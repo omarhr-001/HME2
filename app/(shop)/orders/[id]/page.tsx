@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { use, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -55,13 +55,14 @@ const paymentStatusLabels = {
   refunded: 'Remboursée',
 }
 
-export default function OrderDetailsPage({ params }: { params: { id: string } }) {
+export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
-  const { data: order, isLoading, error } = useSWR<Order>(
-    user ? `/api/orders/${params.id}` : null,
+  const { data: order, isLoading, error, mutate } = useSWR<Order>(
+    user ? `/api/orders/${id}` : null,
     authenticatedFetcher,
-    { revalidateOnFocus: false },
+    { revalidateOnFocus: true },
   )
 
   useEffect(() => {
@@ -69,6 +70,30 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
       router.push('/auth/login')
     }
   }, [authLoading, router, user])
+
+  useEffect(() => {
+    if (!user?.id || !id) return
+
+    const channel = supabase
+      .channel(`account-order-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${id}`,
+        },
+        (payload) => {
+          if ((payload.new as { user_id?: string } | null)?.user_id === user.id) mutate()
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [id, mutate, user?.id])
 
   if (authLoading || isLoading) {
     return (
@@ -101,7 +126,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
 
   const shippingAddress = order.shipping_address as Record<string, string> | undefined
   const itemSubtotal = (order.order_items || []).reduce((sum, item) => sum + Number(item.price) * item.quantity, 0)
-  const shippingFee = Number(order.total_amount) - itemSubtotal
+  const shippingFee = order.shipping_fee ?? Number(order.total_amount) - itemSubtotal
 
   return (
     <>
@@ -123,8 +148,8 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Badge className={`border px-3 py-1 capitalize ${statusClasses[order.status]}`}>
-                  {statusLabels[order.status]}
+                <Badge className={`border px-3 py-1 capitalize ${statusClasses[order.status] || statusClasses.pending}`}>
+                  {statusLabels[order.status] || statusLabels.pending}
                 </Badge>
                 <Button asChild variant="outline">
                   <Link href={`/orders/${order.id}/invoice`}>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { use, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
@@ -22,6 +22,14 @@ const paymentStatusLabels = {
   refunded: 'Remboursée',
 }
 
+const statusLabels = {
+  pending: 'En attente',
+  processing: 'En cours',
+  shipped: 'Expediee',
+  delivered: 'Livree',
+  cancelled: 'Annulee',
+}
+
 const authenticatedFetcher = async (url: string) => {
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
@@ -35,18 +43,43 @@ const authenticatedFetcher = async (url: string) => {
   return res.json()
 }
 
-export default function InvoicePage({ params }: { params: { id: string } }) {
+export default function InvoicePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const { user, loading } = useAuth()
-  const { data: order, isLoading } = useSWR<Order>(
-    user ? `/api/orders/${params.id}` : null,
+  const { data: order, isLoading, mutate } = useSWR<Order>(
+    user ? `/api/orders/${id}` : null,
     authenticatedFetcher,
-    { revalidateOnFocus: false },
+    { revalidateOnFocus: true },
   )
 
   useEffect(() => {
     if (!loading && !user) router.push('/auth/login')
   }, [loading, router, user])
+
+  useEffect(() => {
+    if (!user?.id || !id) return
+
+    const channel = supabase
+      .channel(`account-order-invoice-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${id}`,
+        },
+        (payload) => {
+          if ((payload.new as { user_id?: string } | null)?.user_id === user.id) mutate()
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [id, mutate, user?.id])
 
   if (loading || isLoading || !order) {
     return <main className="min-h-screen bg-white p-10 text-gray-600">Chargement de la facture...</main>
@@ -54,7 +87,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
 
   const address = order.shipping_address as Record<string, string> | undefined
   const subtotal = (order.order_items || []).reduce((sum, item) => sum + Number(item.price) * item.quantity, 0)
-  const shipping = Number(order.total_amount) - subtotal
+  const shipping = order.shipping_fee ?? Number(order.total_amount) - subtotal
 
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-8 text-gray-900 print:bg-white print:p-0">
@@ -102,7 +135,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
           </div>
           <div>
             <h2 className="mb-3 font-bold">Statut</h2>
-            <p className="text-sm capitalize text-gray-600">{order.status}</p>
+            <p className="text-sm text-gray-600">{statusLabels[order.status] || statusLabels.pending}</p>
             <h2 className="mb-3 mt-5 font-bold">Paiement</h2>
             <div className="space-y-1 text-sm text-gray-600">
               <p>{paymentMethodLabels[order.payment_method || 'cash_on_delivery']}</p>

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ProductCard } from '@/components/product-card'
-import { Search, X, ChevronDown } from 'lucide-react'
+import { ArrowDownAZ, ArrowDownUp, BadgePercent, Search, X } from 'lucide-react'
 import { getProductsFromSupabase, getCategoriesFromSupabase, type Category } from '@/lib/products'
 import { getBrandsByCategoryFromSupabase } from '@/lib/brands'
 import { getCurrentUser } from '@/lib/auth'
@@ -25,6 +25,13 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState('newest')
   const [priceRange, setPriceRange] = useState([0, 2000])
   const [showFilters, setShowFilters] = useState(false)
+  const sortOptions = [
+    { value: 'newest', label: 'Récents', icon: ArrowDownUp },
+    { value: 'price-low', label: 'Prix bas', icon: ArrowDownUp },
+    { value: 'price-high', label: 'Prix haut', icon: ArrowDownUp },
+    { value: 'discount', label: 'Promos', icon: BadgePercent },
+    { value: 'name', label: 'A-Z', icon: ArrowDownAZ },
+  ]
 
   // Fetch products and categories on mount
   useEffect(() => {
@@ -115,6 +122,16 @@ export default function ProductsPage() {
       case 'price-high':
         filtered.sort((a, b) => b.price - a.price)
         break
+      case 'discount':
+        filtered.sort((a, b) => {
+          const discountA = (a.originalPrice || a.price) - a.price
+          const discountB = (b.originalPrice || b.price) - b.price
+          return discountB - discountA
+        })
+        break
+      case 'name':
+        filtered.sort((a, b) => a.name.localeCompare(b.name))
+        break
       case 'newest':
       default:
         break
@@ -143,6 +160,7 @@ export default function ProductsPage() {
       <main className="min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-[5%] py-16">
+
           <h1 className="text-4xl font-bold mb-2">Tous les produits</h1>
           <p className="text-green-50">Trouvez le produit parfait pour vos besoins</p>
         </div>
@@ -359,15 +377,27 @@ export default function ProductsPage() {
                     <p className="text-sm text-gray-600">
                       <strong>{filteredProducts.length}</strong> produit{filteredProducts.length !== 1 ? 's' : ''}
                     </p>
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none bg-white hover:border-gray-400 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
-                    >
-                      <option value="newest">Plus récents</option>
-                      <option value="price-low">Prix: Bas à Haut</option>
-                      <option value="price-high">Prix: Haut à Bas</option>
-                    </select>
+                    <div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
+                      {sortOptions.map((option) => {
+                        const Icon = option.icon
+                        const active = sortBy === option.value
+
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setSortBy(option.value)}
+                            className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all ${active
+                              ? 'bg-green-600 text-white shadow-sm'
+                              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                              }`}
+                          >
+                            <Icon size={14} />
+                            {option.label}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
 

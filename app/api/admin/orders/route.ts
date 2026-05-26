@@ -9,6 +9,8 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams
     const status = searchParams.get('status')
     const search = searchParams.get('search')?.trim().toLowerCase()
+    const dateFrom = searchParams.get('dateFrom')
+    const dateTo = searchParams.get('dateTo')
     const format = searchParams.get('format')
 
     let query = auth.context.supabase
@@ -17,6 +19,12 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (status && status !== 'all') query = query.eq('status', status)
+    if (dateFrom) query = query.gte('created_at', `${dateFrom}T00:00:00.000Z`)
+    if (dateTo) {
+      const endDate = new Date(`${dateTo}T00:00:00.000Z`)
+      endDate.setUTCDate(endDate.getUTCDate() + 1)
+      query = query.lt('created_at', endDate.toISOString())
+    }
 
     const [{ data, error }, profilesResult] = await Promise.all([
       query,
@@ -41,13 +49,14 @@ export async function GET(req: NextRequest) {
 
     if (format === 'csv') {
       const csv = [
-        'Order ID,Customer,Products Count,Total Amount,Status,Payment Method,Payment Status,Date',
+        'Order ID,Customer,Products Count,Shipping Fee,Total Amount,Status,Payment Method,Payment Status,Date',
         ...orders.map((order: any) => {
           const customer = [order.profiles?.first_name, order.profiles?.last_name].filter(Boolean).join(' ') || order.profiles?.email || 'Customer'
           return [
             order.order_number || order.id,
             customer,
             order.order_items?.length || 0,
+            order.shipping_fee || 0,
             order.total_amount,
             order.status,
             order.payment_method || 'cash_on_delivery',

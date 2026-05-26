@@ -41,7 +41,7 @@ export function useLikedProducts() {
 
   useEffect(() => {
     if (!isLoading && user) {
-      const ids = new Set<string>(likedProducts.map((p: LikedProduct) => p.product_id))
+      const ids = new Set<string>(likedProducts.map((p: LikedProduct) => p.product_id?.toString()))
       setLikedProductIds(ids)
       setIsInitialized(true)
     }

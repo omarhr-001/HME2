@@ -45,10 +45,16 @@ export interface Brand {
 // Supabase functions for fetching products from database
 export async function getProductsFromSupabase(): Promise<Product[]> {
   try {
+    if (typeof window !== 'undefined') {
+      const response = await fetch('/api/products', { cache: 'no-store' })
+      if (!response.ok) return []
+      return response.json()
+    }
+
     const { supabase } = await import('./supabase')
     const { data, error } = await supabase
       .from('products')
-      .select('*, product_images(*)')
+      .select('*, categories(*), brands(*), product_images(*)')
 
     if (error) {
       console.error('Error fetching products from Supabase:', error)
@@ -68,10 +74,16 @@ export async function getProductsFromSupabase(): Promise<Product[]> {
 
 export async function getProductByIdFromSupabase(id: string): Promise<Product | undefined> {
   try {
+    if (typeof window !== 'undefined') {
+      const response = await fetch(`/api/products/${id}`, { cache: 'no-store' })
+      if (!response.ok) return undefined
+      return response.json()
+    }
+
     const { supabase } = await import('./supabase')
     const { data, error } = await supabase
       .from('products')
-      .select('*, product_images(*)')
+      .select('*, categories(*), brands(*), product_images(*)')
       .eq('id', parseInt(id))
       .single()
 
@@ -94,7 +106,7 @@ export async function getProductByIdFromSupabase(id: string): Promise<Product | 
   }
 }
 
-function mapProduct(item: any): Product {
+export function mapProduct(item: any): Product {
   const image = getMainImage(item)
   const price = toNumber(item.price)
   const originalPrice = item.original_price === null || item.original_price === undefined
@@ -104,7 +116,7 @@ function mapProduct(item: any): Product {
   return {
     id: item.id.toString(),
     name: item.name,
-    category: item.category,
+    category: item.categories?.name || item.category || 'Produit',
     category_id: item.category_id,
     brand_id: item.brand_id,
     brand: normalizeBrand(item.brands),
@@ -123,9 +135,10 @@ function mapProduct(item: any): Product {
 }
 
 function normalizeBrand(value: unknown): Brand | undefined {
-  if (!value || typeof value !== 'object') return undefined
+  const brandValue = Array.isArray(value) ? value[0] : value
+  if (!brandValue || typeof brandValue !== 'object') return undefined
 
-  const brand = value as Partial<Brand>
+  const brand = brandValue as Partial<Brand>
   if (!brand.id || !brand.name) return undefined
 
   return {

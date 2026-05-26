@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminRequest, jsonError } from '@/lib/admin/auth'
 import { sanitizeProduct } from '@/lib/admin/forms'
-import { normalizeProductImages, syncMainProductImage } from '@/lib/admin/product-images'
+import { normalizeProductImages, syncProductImages } from '@/lib/admin/product-images'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdminRequest(req)
@@ -11,17 +11,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params
     const body = await req.json()
     const payload = sanitizeProduct(body)
+    const imageUrls = Array.isArray(body.image_urls)
+      ? body.image_urls.map((url: unknown) => String(url).trim()).filter(Boolean)
+      : []
+    if (imageUrls.length > 0) payload.image_url = imageUrls[0]
+
     const { error } = await auth.context.supabase
       .from('products')
       .update({ ...payload, updated_at: new Date().toISOString() })
       .eq('id', id)
     if (error) throw error
 
-    await syncMainProductImage(auth.context.supabase, id, payload.image_url)
+    await syncProductImages(auth.context.supabase, id, imageUrls.length > 0 ? imageUrls : payload.image_url ? [payload.image_url] : [])
 
     const { data, error: fetchError } = await auth.context.supabase
       .from('products')
-      .select('*, categories(*), product_images(*)')
+      .select('*, categories(*), brands(*), product_images(*)')
       .eq('id', id)
       .single()
     if (fetchError) throw fetchError

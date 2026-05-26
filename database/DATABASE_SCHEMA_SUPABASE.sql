@@ -79,6 +79,7 @@ create table if not exists public.orders (
   user_id uuid not null references auth.users(id) on delete cascade,
   order_number text unique,
   total_amount numeric(12, 2) not null check (total_amount >= 0),
+  shipping_fee numeric(12, 2) not null default 0 check (shipping_fee >= 0),
   status text not null default 'pending'
     check (status in ('pending', 'processing', 'shipped', 'delivered', 'cancelled')),
   shipping_address jsonb,
@@ -100,6 +101,9 @@ add column if not exists payment_method text not null default 'cash_on_delivery'
 
 alter table public.orders
 add column if not exists payment_status text not null default 'pending';
+
+alter table public.orders
+add column if not exists shipping_fee numeric(12, 2) not null default 0;
 
 create index if not exists idx_orders_payment_status on public.orders(payment_status);
 
@@ -145,6 +149,28 @@ create table if not exists public.order_items (
 create index if not exists idx_order_items_order_id on public.order_items(order_id);
 create index if not exists idx_order_items_product_id on public.order_items(product_id);
 
+-- Small key/value store for admin-managed runtime settings.
+create table if not exists public.app_settings (
+  key text primary key,
+  value jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.app_settings enable row level security;
+
+drop trigger if exists set_app_settings_updated_at on public.app_settings;
+create trigger set_app_settings_updated_at
+before update on public.app_settings
+for each row execute function public.set_updated_at();
+
+insert into public.app_settings (key, value)
+values (
+  'shipping',
+  '{"freeThreshold":500,"hammametFee":0,"nabeulFee":10,"coastalFee":20,"otherFee":30}'::jsonb
+)
+on conflict (key) do nothing;
+
 -- Transactional order creation from cart rows.
 drop function if exists public.create_order_from_cart(uuid, uuid[], jsonb, jsonb, text, text);
 
@@ -167,6 +193,7 @@ declare
   v_order public.orders%rowtype;
   v_subtotal numeric(12, 2);
   v_shipping_fee numeric(12, 2);
+  v_shipping_settings jsonb;
   v_unavailable_products text;
   v_low_stock_products text;
 begin
@@ -256,12 +283,47 @@ begin
   into v_subtotal
   from selected_order_cart_items;
 
-  v_shipping_fee := case when v_subtotal > 500 then 0 else 15 end;
+  select coalesce(value, '{"freeThreshold":500,"hammametFee":0,"nabeulFee":10,"coastalFee":20,"otherFee":30}'::jsonb)
+  into v_shipping_settings
+  from public.app_settings
+  where key = 'shipping';
+
+  v_shipping_settings := coalesce(
+    v_shipping_settings,
+    '{"freeThreshold":500,"hammametFee":0,"nabeulFee":10,"coastalFee":20,"otherFee":30}'::jsonb
+  );
+
+  v_shipping_fee := case
+    when v_subtotal >= coalesce((v_shipping_settings->>'freeThreshold')::numeric, 500) then 0
+    when lower(coalesce(p_shipping_address->>'city', '')) like '%hammamet%' then coalesce((v_shipping_settings->>'hammametFee')::numeric, 0)
+    when lower(coalesce(p_shipping_address->>'city', '')) in (
+      'nabeul',
+      'dar chaabane',
+      'beni khiar',
+      'mrezga',
+      'bir bouregba',
+      'bouficha',
+      'korba',
+      'kelibia',
+      'soliman'
+    ) then coalesce((v_shipping_settings->>'nabeulFee')::numeric, 10)
+    when lower(coalesce(p_shipping_address->>'city', '')) in (
+      'tunis',
+      'ariana',
+      'ben arous',
+      'manouba',
+      'sousse',
+      'monastir',
+      'sfax'
+    ) then coalesce((v_shipping_settings->>'coastalFee')::numeric, 20)
+    else coalesce((v_shipping_settings->>'otherFee')::numeric, 30)
+  end;
 
   insert into public.orders (
     user_id,
     order_number,
     total_amount,
+    shipping_fee,
     status,
     shipping_address,
     billing_address,
@@ -273,6 +335,7 @@ begin
     p_user_id,
     'HME-' || to_char(now(), 'YYYYMMDD') || '-' || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6)),
     v_subtotal + v_shipping_fee,
+    v_shipping_fee,
     p_status,
     p_shipping_address,
     coalesce(p_billing_address, p_shipping_address),

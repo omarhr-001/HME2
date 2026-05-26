@@ -5,7 +5,7 @@ export function TrustBar() {
     {
       icon: <Truck size={20} />,
       title: 'Livraison gratuite',
-      desc: 'Pour les commandes > 500DT'
+      desc: 'Hammamet ou commandes > 500DT'
     },
     {
       icon: <Shield size={20} />,
@@ -15,7 +15,7 @@ export function TrustBar() {
     {
       icon: <Clock size={20} />,
       title: 'Livraison rapide',
-      desc: 'En 2-3 jours ouvrables'
+      desc: 'Depuis Hammamet'
     },
     {
       icon: <HeadphonesIcon size={20} />,

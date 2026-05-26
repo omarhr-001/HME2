@@ -27,7 +27,7 @@ export default function AddressesPage() {
     {
       id: 1,
       street: '123 Rue de la Paix',
-      city: 'Tunis',
+      city: 'Hammamet',
       postal: '1000',
       country: 'Tunisie',
       isDefault: true,
@@ -146,7 +146,7 @@ export default function AddressesPage() {
                         type="text"
                         value={formData.city}
                         onChange={handleChange}
-                        placeholder="Tunis"
+                        placeholder="Hammamet"
                         required
                         className="py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                       />

@@ -184,7 +184,7 @@ export default function ContactPage() {
               {[
                 {
                   q: 'Quel est votre délai de livraison?',
-                  a: 'Nous livrons généralement dans les 3-5 jours ouvrables à Tunis et les 5-7 jours dans le reste de la Tunisie.'
+                  a: 'Nous livrons depuis Hammamet: 24-48h à Hammamet, 1-3 jours dans la zone Nabeul et 3-7 jours dans le reste de la Tunisie.'
                 },
                 {
                   q: 'Acceptez-vous les retours?',
@@ -196,7 +196,7 @@ export default function ContactPage() {
                 },
                 {
                   q: 'Livrez-vous l\'installation?',
-                  a: 'Oui, l\'installation gratuite est disponible pour la plupart des appareils à Tunis.'
+                  a: 'Oui, l\'installation est disponible à Hammamet et dans la zone Nabeul selon le produit et le planning.'
                 }
               ].map((faq, i) => (
                 <div key={i} className="bg-white p-6 rounded-lg">

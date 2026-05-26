@@ -341,26 +341,6 @@ export function PromotionsPage() {
                     )}
                 </CardContent>
             </Card>
-
-            <div className="flex items-center justify-end gap-2">
-                <Button
-                    variant="outline"
-                    disabled={page === 1}
-                    onClick={() => setPage(page - 1)}
-                >
-                    Previous
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                    Page {page} of {pageCount || 1}
-                </span>
-                <Button
-                    variant="outline"
-                    disabled={page === pageCount}
-                    onClick={() => setPage(page + 1)}
-                >
-                    Next
-                </Button>
-            </div>
         </div>
     )
 }

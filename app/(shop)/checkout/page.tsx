@@ -3,20 +3,32 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import useSWR from 'swr'
 import { useAuth } from '@/lib/auth-context'
 import { useCart, useCreateOrder } from '@/lib/hooks'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Banknote, ChevronRight, Landmark } from 'lucide-react'
 import type { CartItemWithProduct, Order } from '@/lib/types'
+import { DEFAULT_SHIPPING_SETTINGS, calculateShippingFee, getShippingZoneLabel, type ShippingSettings } from '@/lib/shipping'
 
 const WHATSAPP_NUMBER = '21695776655'
+const fetcher = async (url: string) => {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error('Failed to load shipping settings')
+  return response.json()
+}
 
 export default function CheckoutPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   const { cartItems, cartTotal, isLoading: cartLoading } = useCart()
   const { trigger: createOrder, isMutating: isCreating, error: createOrderError } = useCreateOrder()
+  const { data: shippingSettings = DEFAULT_SHIPPING_SETTINGS } = useSWR<ShippingSettings>(
+    '/api/shipping-settings',
+    fetcher,
+    { revalidateOnFocus: false },
+  )
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -119,8 +131,9 @@ export default function CheckoutPage() {
     }
   }
 
-  const shipping = cartTotal > 500 ? 0 : 15
+  const shipping = calculateShippingFee(cartTotal, formData.city, shippingSettings)
   const total = cartTotal + shipping
+  const shippingZone = getShippingZoneLabel(formData.city)
 
   const createWhatsAppOrderUrl = (order: Order) => {
     const orderRef = order.order_number || order.id
@@ -129,6 +142,8 @@ export default function CheckoutPage() {
       `Nom: ${formData.firstName} ${formData.lastName}`,
       `Telephone: ${formData.phone}`,
       `Adresse: ${formData.address}, ${formData.city}, ${formData.postalCode}`,
+      `Zone livraison: ${shippingZone}`,
+      `Livraison: ${shipping === 0 ? 'Gratuite' : `${shipping.toFixed(2)} DT`}`,
       `Total: ${total.toFixed(2)} DT`,
       `Paiement: ${paymentMethod === 'cash_on_delivery' ? 'Paiement a la livraison' : 'Virement bancaire'}`,
       '',
@@ -259,7 +274,7 @@ export default function CheckoutPage() {
                       name="city"
                       value={formData.city}
                       onChange={handleInputChange}
-                      placeholder="Tunis"
+                      placeholder="Hammamet"
                       className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.city ? 'border-red-500' : 'border-gray-300'
                         }`}
                     />
@@ -366,8 +381,11 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between text-gray-700">
                   <span>Livraison</span>
-                  <span className={shipping === 0 ? 'text-green-600 font-semibold' : ''}>
+                  <span className={`text-right ${shipping === 0 ? 'text-green-600 font-semibold' : ''}`}>
                     {shipping === 0 ? 'Gratuite' : `${shipping.toFixed(2)} DT`}
+                    <span className="block text-xs font-normal text-gray-500">
+                      {shippingZone} - gratuit des {shippingSettings.freeThreshold} DT
+                    </span>
                   </span>
                 </div>
               </div>

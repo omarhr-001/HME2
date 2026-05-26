@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth-middleware'
 import { createServiceClient } from '@/lib/server-supabase'
 import type { CheckoutAddress } from '@/lib/types'
+import { calculateShippingFee } from '@/lib/shipping'
+import { getShippingSettings } from '@/lib/server-shipping-settings'
 
 const VALID_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'] as const
 const VALID_PAYMENT_METHODS = ['cash_on_delivery', 'bank_transfer'] as const
@@ -45,7 +47,7 @@ export async function POST(req: NextRequest) {
         billingAddress,
         paymentMethod = 'cash_on_delivery',
         notes,
-        status = 'processing',
+        status = 'pending',
       } = await req.json()
 
       if (!VALID_STATUSES.includes(status)) {
@@ -79,41 +81,17 @@ export async function POST(req: NextRequest) {
         ? normalizeAddress(billingAddress)
         : normalizedShippingAddress
 
-      const { data: orderData, error: orderError } = await supabase.rpc('create_order_from_cart', {
-        p_user_id: user.id,
-        p_cart_item_ids: requestedCartItemIds?.size ? Array.from(requestedCartItemIds) : null,
-        p_shipping_address: normalizedShippingAddress,
-        p_billing_address: normalizedBillingAddress,
-        p_payment_method: paymentMethod,
-        p_payment_status: 'pending',
-        p_notes: typeof notes === 'string' ? notes : null,
-        p_status: status,
+      const orderData = await createOrderWithApplicationFlow({
+        supabase,
+        userId: user.id,
+        requestedCartItemIds,
+        shippingAddress: normalizedShippingAddress,
+        billingAddress: normalizedBillingAddress,
+        paymentMethod,
+        paymentStatus: 'pending',
+        notes,
+        status,
       })
-
-      if (orderError) {
-        console.error('[v0] create_order_from_cart RPC error:', orderError)
-
-        if (isMissingRpcError(orderError.message)) {
-          const fallbackOrder = await createOrderWithApplicationFlow({
-            supabase,
-            userId: user.id,
-            requestedCartItemIds,
-            shippingAddress: normalizedShippingAddress,
-            billingAddress: normalizedBillingAddress,
-            paymentMethod,
-            paymentStatus: 'pending',
-            notes,
-            status,
-          })
-
-          return NextResponse.json(fallbackOrder)
-        }
-
-        return NextResponse.json(
-          { error: orderError.message || 'Failed to create order' },
-          { status: getCreateOrderErrorStatus(orderError.message) }
-        )
-      }
 
       return NextResponse.json(orderData)
     } catch (error) {
@@ -218,23 +196,38 @@ async function createOrderWithApplicationFlow({
     const product = Array.isArray(item.products) ? item.products[0] : item.products
     return sum + Number(product.price || 0) * Number(item.quantity || 0)
   }, 0)
-  const shippingFee = subtotal > 500 ? 0 : 15
+  const shippingSettings = await getShippingSettings()
+  const shippingFee = calculateShippingFee(subtotal, shippingAddress.city, shippingSettings)
 
-  const { data: orderData, error: orderError } = await supabase
+  const orderPayload = {
+    user_id: userId,
+    order_number: createOrderNumber(),
+    total_amount: subtotal + shippingFee,
+    shipping_fee: shippingFee,
+    status,
+    shipping_address: shippingAddress,
+    billing_address: billingAddress,
+    payment_method: paymentMethod,
+    payment_status: paymentStatus,
+    notes: typeof notes === 'string' ? notes.trim() || null : null,
+  }
+
+  let { data: orderData, error: orderError } = await supabase
     .from('orders')
-    .insert([{
-      user_id: userId,
-      order_number: createOrderNumber(),
-      total_amount: subtotal + shippingFee,
-      status,
-      shipping_address: shippingAddress,
-      billing_address: billingAddress,
-      payment_method: paymentMethod,
-      payment_status: paymentStatus,
-      notes: typeof notes === 'string' ? notes.trim() || null : null,
-    }])
+    .insert([orderPayload])
     .select()
     .single()
+
+  if (orderError && orderError.message?.includes('shipping_fee')) {
+    const { shipping_fee: _shippingFee, ...fallbackPayload } = orderPayload
+    const fallback = await supabase
+      .from('orders')
+      .insert([fallbackPayload])
+      .select()
+      .single()
+    orderData = fallback.data
+    orderError = fallback.error
+  }
 
   if (orderError) throw orderError
   if (!orderData?.id) throw new Error('Order was not created')
@@ -286,15 +279,6 @@ function createOrderNumber() {
   const yyyymmdd = date.toISOString().slice(0, 10).replace(/-/g, '')
   const suffix = Math.random().toString(36).slice(2, 8).toUpperCase()
   return `HME-${yyyymmdd}-${suffix}`
-}
-
-function isMissingRpcError(message?: string) {
-  if (!message) return false
-  return message.includes('create_order_from_cart') && (
-    message.includes('Could not find the function') ||
-    message.includes('function') ||
-    message.includes('schema cache')
-  )
 }
 
 function getCreateOrderErrorStatus(message?: string) {
