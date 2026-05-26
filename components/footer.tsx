@@ -13,7 +13,6 @@ export function Footer() {
     const fetchCategories = async () => {
       try {
         const cats = await getCategoriesFromSupabase()
-        // Limit to first 4 categories in footer
         setCategories(cats.slice(0, 4))
       } catch (error) {
         console.error('Error fetching categories:', error)
@@ -27,28 +26,27 @@ export function Footer() {
 
   return (
     <footer className="bg-gray-900 text-white">
-      {/* Main Footer */}
       <div className="px-[5%] py-16">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-12">
-          {/* Brand */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           <div className="md:col-span-1">
             <img src="/logo.png" alt="Hamroun Meuble & Electro" className="w-16 h-16 mb-4" />
-            <p className="text-sm text-gray-400 mb-4">Votre destination pour les meilleurs meubles et électroménagers de qualité.</p>
+            <p className="text-sm text-gray-400 mb-4">
+              Votre destination pour les meilleurs meubles et electromenagers de qualite.
+            </p>
           </div>
 
-          {/* Products - Categories */}
           <div>
-            <h4 className="font-bold text-white mb-4 text-base">Catégories</h4>
+            <h4 className="font-bold text-white mb-4 text-base">Categories</h4>
             <ul className="text-sm text-gray-400 space-y-3">
               {!loading && categories.length > 0 ? (
                 <>
-                  {categories.map(category => (
+                  {categories.map((category) => (
                     <li key={category.id}>
                       <Link
                         href={`/products?category=${encodeURIComponent(category.slug || category.name)}`}
                         className="hover:text-green-500 transition flex items-center gap-2 group"
                       >
-                        <span className="text-lg">{category.emoji || '📦'}</span>
+                        <span className="text-lg">{category.emoji || '*'}</span>
                         <span className="group-hover:translate-x-1 transition-transform">{category.name}</span>
                       </Link>
                     </li>
@@ -61,12 +59,11 @@ export function Footer() {
                   </li>
                 </>
               ) : (
-                <li><a href="#" className="text-gray-500">Chargement des catégories...</a></li>
+                <li><span className="text-gray-500">Chargement des categories...</span></li>
               )}
             </ul>
           </div>
 
-          {/* Support */}
           <div>
             <h4 className="font-bold text-white mb-4 text-base">Support</h4>
             <ul className="text-sm text-gray-400 space-y-3">
@@ -78,25 +75,12 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Company */}
-          <div>
-            <h4 className="font-bold text-white mb-4 text-base">Entreprise</h4>
-            <ul className="text-sm text-gray-400 space-y-3">
-              <li><Link href="/about" className="hover:text-green-500 transition">À propos</Link></li>
-              <li><Link href="/blog" className="hover:text-green-500 transition">Blog</Link></li>
-              <li><Link href="/careers" className="hover:text-green-500 transition">Carrières</Link></li>
-              <li><Link href="/press" className="hover:text-green-500 transition">Presse</Link></li>
-            </ul>
-          </div>
-
-          {/* Contact Info */}
           <div>
             <h4 className="font-bold text-white mb-4 text-base">Nous Contacter</h4>
             <ul className="text-sm text-gray-400 space-y-4">
               <li className="flex gap-3 items-start">
                 <Phone size={16} className="mt-0.5 flex-shrink-0 text-green-500" />
-                <span>+216 97 100 700
-                </span>
+                <span>+216 97 100 700</span>
               </li>
               <li className="flex gap-3 items-start">
                 <Mail size={16} className="mt-0.5 flex-shrink-0 text-green-500" />
@@ -104,28 +88,25 @@ export function Footer() {
               </li>
               <li className="flex gap-3 items-start">
                 <MapPin size={16} className="mt-0.5 flex-shrink-0 text-green-500" />
-                <span>Rue du Koweit Hammamet - Tunisia, Hammamet, Tunisia, 8050
-                </span>
+                <span>Rue du Koweit Hammamet - Tunisia, Hammamet, Tunisia, 8050</span>
               </li>
             </ul>
           </div>
         </div>
 
-        {/* Divider */}
         <div className="border-t border-gray-800 pt-8 mt-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             <div className="text-sm text-gray-400">
-              © 2024 Hamroun Meuble & Electro. Tous droits réservés.
+              (c) 2024 Hamroun Meuble & Electro. Tous droits reserves.
             </div>
             <div className="flex gap-6 md:justify-center text-sm text-gray-400">
-              <Link href="/privacy" className="hover:text-green-500 transition">Confidentialité</Link>
+              <Link href="/privacy" className="hover:text-green-500 transition">Confidentialite</Link>
               <Link href="/terms" className="hover:text-green-500 transition">Conditions</Link>
               <Link href="/cookies" className="hover:text-green-500 transition">Cookies</Link>
             </div>
             <div className="flex gap-4 md:justify-end">
               <a href="https://www.facebook.com/hamrounmeubleetelectro" className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center hover:bg-green-500 transition">f</a>
               <a href="https://www.instagram.com/hamrounmeuble" className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center hover:bg-green-500 transition">IG</a>
-
             </div>
           </div>
         </div>

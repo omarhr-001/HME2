@@ -316,16 +316,19 @@ export default function CheckoutPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod('bank_transfer')}
-                    className={`flex min-h-24 items-start gap-3 rounded-lg border p-4 text-left transition ${paymentMethod === 'bank_transfer'
-                      ? 'border-green-500 bg-green-50'
-                      : 'border-gray-200 bg-white hover:border-gray-300'
-                      }`}
+                    disabled
+                    className="flex min-h-24 cursor-not-allowed items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 text-left opacity-70"
+                    aria-disabled="true"
                   >
-                    <Landmark className="mt-1 h-5 w-5 text-green-600" />
+                    <Landmark className="mt-1 h-5 w-5 text-gray-400" />
                     <span>
-                      <span className="block font-semibold text-gray-900">Virement bancaire</span>
-                      <span className="mt-1 block text-sm text-gray-600">Envoyez la preuve ou les details dans la conversation WhatsApp.</span>
+                      <span className="flex flex-wrap items-center gap-2 font-semibold text-gray-500">
+                        Virement bancaire
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700">
+                          En cours de reglage
+                        </span>
+                      </span>
+                      <span className="mt-1 block text-sm text-gray-500">Cette option sera active apres integration de l API bancaire.</span>
                     </span>
                   </button>
                 </div>
