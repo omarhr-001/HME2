@@ -2,7 +2,7 @@
 
 import useSWR from 'swr'
 import { useState } from 'react'
-import { Calendar, Pencil, Plus, Trash2, Search, Filter } from 'lucide-react'
+import { Calendar, Pencil, Plus, Trash2, Filter } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -274,18 +274,6 @@ export function PromotionsPage() {
     return (
         <div className="space-y-5">
             <div className="flex gap-3">
-                <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search promotions..."
-                        value={search}
-                        onChange={(e) => {
-                            setSearch(e.target.value)
-                            setPage(1)
-                        }}
-                        className="pl-10"
-                    />
-                </div>
                 <PromotionDialog products={products} onSave={savePromotion} />
             </div>
 

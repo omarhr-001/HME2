@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   Package,
+  Search,
   Settings,
   ShoppingCart,
   Users,
@@ -127,6 +128,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   Admin <ChevronRight className="h-3 w-3" /> {activeLabel}
                 </div>
                 <h1 className="truncate text-lg font-semibold tracking-normal">{activeLabel}</h1>
+              </div>
+
+              <div className="hidden w-full max-w-md items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm md:flex">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <input
+                  className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  placeholder="Search orders, products, customers..."
+                />
               </div>
 
               <Tooltip>
