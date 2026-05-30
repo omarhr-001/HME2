@@ -7,7 +7,7 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ProductCard } from '@/components/product-card'
 import { ArrowDownAZ, ArrowDownUp, BadgePercent, Search, X } from 'lucide-react'
-import { getProductsFromSupabase, getCategoriesFromSupabase, type Category } from '@/lib/products'
+import { getProductsFromSupabase, getCategoriesWithProductsFromSupabase, type Category } from '@/lib/products'
 import { getBrandsByCategoryFromSupabase } from '@/lib/brands'
 import { getCurrentUser } from '@/lib/auth'
 import type { Product, Brand } from '@/lib/types'
@@ -39,7 +39,7 @@ export default function ProductsPage() {
       try {
         const [productsData, categoriesData] = await Promise.all([
           getProductsFromSupabase(),
-          getCategoriesFromSupabase()
+          getCategoriesWithProductsFromSupabase()
         ])
         setProducts(productsData)
         setCategories(categoriesData)

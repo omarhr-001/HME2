@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { useCart } from '@/lib/hooks'
-import { getCategoriesFromSupabase } from '@/lib/products'
+import { getCategoriesWithProductsFromSupabase } from '@/lib/products'
 import type { Category } from '@/lib/products'
 
 export function Navbar() {
@@ -20,7 +20,7 @@ export function Navbar() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const data = await getCategoriesFromSupabase()
+        const data = await getCategoriesWithProductsFromSupabase()
         setCategories(data)
       } catch (error) {
         console.error('Error loading categories:', error)

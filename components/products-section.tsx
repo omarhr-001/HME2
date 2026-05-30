@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ProductCard } from './product-card'
-import { getProductsFromSupabase, getCategoriesFromSupabase, type Category } from '@/lib/products'
+import { getProductsFromSupabase, getCategoriesWithProductsFromSupabase, type Category } from '@/lib/products'
 import { ArrowRight } from 'lucide-react'
 import type { Product } from '@/lib/types'
 
@@ -19,7 +19,7 @@ export function ProductsSection() {
       try {
         const [productsData, categoriesData] = await Promise.all([
           getProductsFromSupabase(),
-          getCategoriesFromSupabase()
+          getCategoriesWithProductsFromSupabase()
         ])
         setProducts(productsData)
         setCategories(categoriesData)

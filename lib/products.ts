@@ -221,3 +221,28 @@ export async function getCategoryNamesFromSupabase(): Promise<string[]> {
     return []
   }
 }
+
+/**
+ * Fetch only categories that have at least one product
+ */
+export async function getCategoriesWithProductsFromSupabase(): Promise<Category[]> {
+  try {
+    const [categories, products] = await Promise.all([
+      getCategoriesFromSupabase(),
+      getProductsFromSupabase()
+    ])
+
+    // Get unique category IDs from products
+    const categoriesWithProducts = new Set(
+      products
+        .filter(p => p.category_id)
+        .map(p => p.category_id)
+    )
+
+    // Return only categories that have products
+    return categories.filter(cat => categoriesWithProducts.has(cat.id))
+  } catch (error) {
+    console.error('Error fetching categories with products:', error)
+    return []
+  }
+}
