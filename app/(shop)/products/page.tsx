@@ -2,21 +2,18 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ProductCard } from '@/components/product-card'
 import { ArrowDownAZ, ArrowDownUp, BadgePercent, Search, X } from 'lucide-react'
 import { getProductsFromSupabase, getCategoriesWithProductsFromSupabase, type Category } from '@/lib/products'
-import { getBrandsByCategoryFromSupabase } from '@/lib/brands'
-import { getCurrentUser } from '@/lib/auth'
 import type { Product, Brand } from '@/lib/types'
 
 export default function ProductsPage() {
-  const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [brands, setBrands] = useState<Brand[]>([])
+  const [brandsLoading, setBrandsLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
@@ -66,23 +63,45 @@ export default function ProductsPage() {
 
   // Load brands when category is selected
   useEffect(() => {
+    const controller = new AbortController()
+
     const loadBrands = async () => {
       if (selectedCategory) {
+        setBrandsLoading(true)
+        setSelectedBrand(null) // Reset brand selection when category changes
+
         try {
-          const brandsData = await getBrandsByCategoryFromSupabase(selectedCategory)
+          const response = await fetch(`/api/brands/category/${encodeURIComponent(selectedCategory)}`, {
+            cache: 'no-store',
+            signal: controller.signal,
+          })
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch brands')
+          }
+
+          const brandsData = await response.json()
           setBrands(brandsData)
-          setSelectedBrand(null) // Reset brand selection when category changes
         } catch (err) {
-          console.error('Error fetching brands:', err)
-          setBrands([])
+          if (!controller.signal.aborted) {
+            console.error('Error fetching brands:', err)
+            setBrands([])
+          }
+        } finally {
+          if (!controller.signal.aborted) {
+            setBrandsLoading(false)
+          }
         }
       } else {
         setBrands([])
         setSelectedBrand(null)
+        setBrandsLoading(false)
       }
     }
 
     loadBrands()
+
+    return () => controller.abort()
   }, [selectedCategory])
 
   // Parse search parameters
@@ -163,6 +182,27 @@ export default function ProductsPage() {
   }
 
   const selectedCategoryData = selectedCategory ? categories.find(c => c.id === selectedCategory) : null
+  const visibleBrands = useMemo(() => {
+    const byId = new Map<string, Brand>()
+
+    brands.forEach((brand) => {
+      if (brand?.id) byId.set(brand.id, brand)
+    })
+
+    products.forEach((product) => {
+      if (selectedCategory && product.category_id !== selectedCategory) return
+      if (!product.brand_id || !product.brand?.name) return
+
+      byId.set(product.brand_id, {
+        id: product.brand_id,
+        name: product.brand.name,
+        slug: product.brand.slug || product.brand.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        logo_url: product.brand.logo_url,
+      })
+    })
+
+    return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name))
+  }, [brands, products, selectedCategory])
 
   return (
     <>
@@ -276,7 +316,7 @@ export default function ProductsPage() {
                   </div>
 
                   {/* Brands Filter - Only show when category is selected */}
-                  {selectedCategory && brands.length > 0 && (
+                  {selectedCategory && (
                     <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border-2 border-amber-200 shadow-sm hover:shadow-lg transition-all duration-300 animate-in fade-in slide-in-from-top-2">
                       <div className="flex items-center gap-2 mb-4">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-sm">
@@ -284,9 +324,14 @@ export default function ProductsPage() {
                         </div>
                         <h3 className="font-bold text-gray-800 text-base">Marques</h3>
                         <span className="ml-auto text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-medium">
-                          {brands.length}
+                          {visibleBrands.length}
                         </span>
                       </div>
+                      {brandsLoading && (
+                        <p className="mb-2 rounded-lg bg-white/70 px-4 py-3 text-sm font-medium text-amber-800">
+                          Chargement des marques...
+                        </p>
+                      )}
                       <div className="space-y-2">
                         <button
                           onClick={() => setSelectedBrand(null)}
@@ -298,7 +343,7 @@ export default function ProductsPage() {
                           <span className={`transition-transform ${selectedBrand === null ? 'scale-110' : 'group-hover:scale-105'}`}>✓</span>
                           Toutes les marques
                         </button>
-                        {brands.map(brand => (
+                        {visibleBrands.map(brand => (
                           <button
                             key={brand.id}
                             onClick={() => setSelectedBrand(brand.id)}

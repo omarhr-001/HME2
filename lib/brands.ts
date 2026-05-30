@@ -9,7 +9,7 @@ import type { Brand, CategoryBrand } from './types'
 export async function getBrandsFromSupabase(): Promise<Brand[]> {
   try {
     const supabase = createServiceClient()
-    
+
     const { data, error } = await supabase
       .from('brands')
       .select('*')
@@ -33,12 +33,12 @@ export async function getBrandsFromSupabase(): Promise<Brand[]> {
 export async function getBrandsByCategoryFromSupabase(categoryId: string): Promise<Brand[]> {
   try {
     const supabase = createServiceClient()
-    
+
     const { data, error } = await supabase
       .from('category_brands')
       .select('brand_id, brands(*)')
       .eq('category_id', categoryId)
-
+    console.log('Fetched category brands:', data, error)
     if (error) {
       console.error('[v0] Error fetching category brands:', error)
       return []
@@ -57,7 +57,7 @@ export async function getBrandsByCategoryFromSupabase(categoryId: string): Promi
 export async function getProductsByBrandFromSupabase(brandId: string, limit = 50) {
   try {
     const supabase = createServiceClient()
-    
+
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -83,7 +83,7 @@ export async function getProductsByBrandFromSupabase(brandId: string, limit = 50
 export async function addBrandToCategory(categoryId: string, brandId: string): Promise<boolean> {
   try {
     const supabase = createServiceClient()
-    
+
     const { error } = await supabase
       .from('category_brands')
       .insert({ category_id: categoryId, brand_id: brandId })
@@ -106,7 +106,7 @@ export async function addBrandToCategory(categoryId: string, brandId: string): P
 export async function createBrand(name: string, slug: string, description?: string, logo_url?: string): Promise<Brand | null> {
   try {
     const supabase = createServiceClient()
-    
+
     const { data, error } = await supabase
       .from('brands')
       .insert({
