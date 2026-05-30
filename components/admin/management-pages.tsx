@@ -972,12 +972,12 @@ function ProductDialog({
           {product ? <Pencil className="h-4 w-4" /> : <><Plus className="mr-2 h-4 w-4" /> Add product</>}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{product ? 'Edit product' : 'Add product'}</DialogTitle>
           <DialogDescription>Manage pricing, inventory, imagery, and category placement.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 overflow-y-auto pr-4">
           <Field label="Name" value={form.name || ''} onChange={(value) => setForm({ ...form, name: value })} />
           <Field label="SKU" value={form.sku || ''} onChange={(value) => setForm({ ...form, sku: value })} />
           <Field label="Price" type="number" value={form.price || ''} onChange={(value) => setForm({ ...form, price: value })} />

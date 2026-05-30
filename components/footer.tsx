@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Phone, Mail, MapPin, ArrowRight } from 'lucide-react'
-import { getCategoriesFromSupabase, type Category } from '@/lib/products'
+import { getCategoriesWithProductsFromSupabase, type Category } from '@/lib/products'
 
 export function Footer() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -12,7 +12,7 @@ export function Footer() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const cats = await getCategoriesFromSupabase()
+        const cats = await getCategoriesWithProductsFromSupabase()
         setCategories(cats.slice(0, 4))
       } catch (error) {
         console.error('Error fetching categories:', error)
