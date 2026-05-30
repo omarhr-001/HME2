@@ -56,3 +56,29 @@ export async function getCurrentUser() {
     return null
   }
 }
+
+export async function resetPasswordForEmail(email: string) {
+  const resetUrl = `${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/auth/reset-password`
+  
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: resetUrl,
+  })
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  return { success: true, data }
+}
+
+export async function updatePassword(newPassword: string) {
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword,
+  })
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  return { success: true, data }
+}
