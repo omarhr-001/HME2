@@ -8,6 +8,7 @@ import { Footer } from '@/components/footer'
 import { ProductCard } from '@/components/product-card'
 import { ArrowDownAZ, ArrowDownUp, BadgePercent, Search, X } from 'lucide-react'
 import { getProductsFromSupabase, getCategoriesWithProductsFromSupabase, type Category } from '@/lib/products'
+import { getBrandsByCategoryFromSupabase } from '@/lib/brands'
 import { getCurrentUser } from '@/lib/auth'
 import type { Product, Brand } from '@/lib/types'
 
@@ -41,13 +42,13 @@ export default function ProductsPage() {
           getProductsFromSupabase(),
           getCategoriesWithProductsFromSupabase()
         ])
-        
+
         // Calculate max price from all products
         const max = productsData.reduce((acc, product) => {
           const price = product.price || 0
           return price > acc ? price : acc
         }, 2000)
-        
+
         setMaxPrice(max)
         setPriceRange([0, max])
         setProducts(productsData)
@@ -68,21 +69,11 @@ export default function ProductsPage() {
     const loadBrands = async () => {
       if (selectedCategory) {
         try {
-          // Get products in this category
-          const categoryProducts = products.filter(p => p.category_id === selectedCategory)
-          
-          // Extract unique brands from these products
-          const uniqueBrands = new Map<string, Brand>()
-          categoryProducts.forEach(product => {
-            if (product.brand_id && product.brand) {
-              uniqueBrands.set(product.brand_id, product.brand)
-            }
-          })
-          
-          setBrands(Array.from(uniqueBrands.values()))
+          const brandsData = await getBrandsByCategoryFromSupabase(selectedCategory)
+          setBrands(brandsData)
           setSelectedBrand(null) // Reset brand selection when category changes
         } catch (err) {
-          console.error('Error extracting brands:', err)
+          console.error('Error fetching brands:', err)
           setBrands([])
         }
       } else {
@@ -92,7 +83,7 @@ export default function ProductsPage() {
     }
 
     loadBrands()
-  }, [selectedCategory, products])
+  }, [selectedCategory])
 
   // Parse search parameters
   useEffect(() => {
@@ -178,10 +169,25 @@ export default function ProductsPage() {
       <Navbar />
       <main className="min-h-screen bg-gray-50">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-[5%] py-16">
+        <div
+          className="relative overflow-hidden text-white px-[10%] py-20 min-h-[400px] flex items-end"
+          style={{
+            backgroundImage: "url('/tousproduits.png')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          <div className="absolute inset-0 bg-black/50" />
 
-          <h1 className="text-4xl font-bold mb-2">Tous les produits</h1>
-          <p className="text-green-50">Trouvez le produit parfait pour vos besoins</p>
+          <div className="relative z-10 max-w-3xl">
+            <h1 className="text-5xl font-extrabold mb-3 drop-shadow-lg">
+              Tous les produits
+            </h1>
+
+            <p className="text-green-100 text-lg max-w-2xl">
+              Trouvez le produit parfait pour vos besoins
+            </p>
+          </div>
         </div>
 
         {loading && (
