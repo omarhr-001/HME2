@@ -23,6 +23,7 @@ export default function ProductsPage() {
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('newest')
+  const [maxPrice, setMaxPrice] = useState(2000)
   const [priceRange, setPriceRange] = useState([0, 2000])
   const [showFilters, setShowFilters] = useState(false)
   const sortOptions = [
@@ -41,6 +42,15 @@ export default function ProductsPage() {
           getProductsFromSupabase(),
           getCategoriesWithProductsFromSupabase()
         ])
+        
+        // Calculate max price from all products
+        const max = productsData.reduce((acc, product) => {
+          const price = product.price || 0
+          return price > acc ? price : acc
+        }, 2000)
+        
+        setMaxPrice(max)
+        setPriceRange([0, max])
         setProducts(productsData)
         setCategories(categoriesData)
       } catch (err) {
@@ -148,7 +158,7 @@ export default function ProductsPage() {
     setSelectedCategory(null)
     setSelectedBrand(null)
     setSearchTerm('')
-    setPriceRange([0, 2000])
+    setPriceRange([0, maxPrice])
     setSortBy('newest')
   }
 
@@ -317,7 +327,7 @@ export default function ProductsPage() {
                         <input
                           type="range"
                           min="0"
-                          max="2000"
+                          max={maxPrice}
                           value={priceRange[0]}
                           onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
                           className="w-full h-2 bg-gradient-to-r from-blue-200 to-cyan-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
@@ -331,7 +341,7 @@ export default function ProductsPage() {
                         <input
                           type="range"
                           min="0"
-                          max="2000"
+                          max={maxPrice}
                           value={priceRange[1]}
                           onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
                           className="w-full h-2 bg-gradient-to-r from-blue-200 to-cyan-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
