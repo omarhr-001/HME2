@@ -8,7 +8,6 @@ import { Footer } from '@/components/footer'
 import { ProductCard } from '@/components/product-card'
 import { ArrowDownAZ, ArrowDownUp, BadgePercent, Search, X } from 'lucide-react'
 import { getProductsFromSupabase, getCategoriesWithProductsFromSupabase, type Category } from '@/lib/products'
-import { getBrandsByCategoryFromSupabase } from '@/lib/brands'
 import { getCurrentUser } from '@/lib/auth'
 import type { Product, Brand } from '@/lib/types'
 
@@ -69,11 +68,21 @@ export default function ProductsPage() {
     const loadBrands = async () => {
       if (selectedCategory) {
         try {
-          const brandsData = await getBrandsByCategoryFromSupabase(selectedCategory)
-          setBrands(brandsData)
+          // Get products in this category
+          const categoryProducts = products.filter(p => p.category_id === selectedCategory)
+          
+          // Extract unique brands from these products
+          const uniqueBrands = new Map<string, Brand>()
+          categoryProducts.forEach(product => {
+            if (product.brand_id && product.brand) {
+              uniqueBrands.set(product.brand_id, product.brand)
+            }
+          })
+          
+          setBrands(Array.from(uniqueBrands.values()))
           setSelectedBrand(null) // Reset brand selection when category changes
         } catch (err) {
-          console.error('Error fetching brands:', err)
+          console.error('Error extracting brands:', err)
           setBrands([])
         }
       } else {
@@ -83,7 +92,7 @@ export default function ProductsPage() {
     }
 
     loadBrands()
-  }, [selectedCategory])
+  }, [selectedCategory, products])
 
   // Parse search parameters
   useEffect(() => {
