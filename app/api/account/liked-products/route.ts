@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const supabase = createServiceClient()
-    
+
     const { data, error } = await supabase
       .from('liked_products')
       .select(`
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createServiceClient()
-    
+
     // Convert product_id to integer if it's a string
     const productIdNum = typeof product_id === 'string' ? parseInt(product_id, 10) : product_id
 
@@ -108,7 +108,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const supabase = createServiceClient()
-    
+
     // Convert product_id to integer if it's a string
     const productIdNum = typeof product_id === 'string' ? parseInt(product_id, 10) : product_id
 
