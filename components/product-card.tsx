@@ -19,6 +19,7 @@ export function ProductCard({
   id,
   name,
   category,
+  category_image_url,
   brand,
   price,
   originalPrice,
@@ -63,13 +64,16 @@ export function ProductCard({
   const displaySpecs = specs ?? {}
   const isAvailable = inStock ?? true
   const displayCategory = category || 'Produit'
+  const categoryImageUrl = category_image_url
   const displayBrandName = brand?.name || displaySpecs.brand || displaySpecs.marque || ''
+  const brandLogoUrl = brand?.logo_url
   const hasRealDiscount = Number.isFinite(displayOriginalPrice) && displayOriginalPrice > price
 
   const product: Product = {
     id,
     name,
     category: displayCategory,
+    category_image_url,
     price,
     originalPrice: displayOriginalPrice,
     image: displayImage,
@@ -128,9 +132,18 @@ export function ProductCard({
       />
 
       <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsModalOpen(true)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            setIsModalOpen(true)
+          }
+        }}
         onMouseLeave={() => setActiveImageIndex(0)}
-        className="group bg-white rounded-3xl overflow-hidden border border-gray-200 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:border-green-300"
+        className="group bg-white rounded-3xl overflow-hidden border border-gray-200 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:border-green-300 focus:outline-none focus:ring-2 focus:ring-green-300"
+        aria-label={`Voir les détails de ${name}`}
       >
         <div className="relative w-full h-56 bg-gray-100 flex items-center justify-center overflow-hidden">
           <Image
@@ -169,9 +182,8 @@ export function ProductCard({
                       setActiveImageIndex(index)
                     }}
                     onMouseEnter={() => setActiveImageIndex(index)}
-                    className={`relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border bg-white/30 shadow-sm transition ${
-                      activeImageIndex === index ? 'border-white ring-2 ring-white/60' : 'border-white/50 opacity-85 hover:opacity-100'
-                    }`}
+                    className={`relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border bg-white/30 shadow-sm transition ${activeImageIndex === index ? 'border-white ring-2 ring-white/60' : 'border-white/50 opacity-85 hover:opacity-100'
+                      }`}
                     aria-label={`Voir image ${index + 1}`}
                   >
                     <Image src={imageUrl} alt={`${name} image ${index + 1}`} fill className="object-cover" sizes="36px" />
@@ -213,9 +225,38 @@ export function ProductCard({
         </div>
 
         <div className="p-4">
-          <div className="mb-1.5 flex items-center gap-2">
-            <p className="min-w-0 flex-1 truncate text-xs font-bold uppercase tracking-wider text-green-700">{displayCategory}</p>
-            {displayBrandName && <p className="max-w-[45%] truncate text-xs font-semibold text-gray-500">{displayBrandName}</p>}
+          <div className="mb-2 flex flex-wrap gap-2">
+            <div className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-white/90 px-2.5 py-1">
+              {categoryImageUrl && (
+                <div className="h-6 w-6 overflow-hidden rounded-full border border-gray-200 bg-white">
+                  <Image
+                    src={categoryImageUrl}
+                    alt={`${displayCategory} icon`}
+                    width={24}
+                    height={24}
+                    className="object-cover"
+                  />
+                </div>
+              )}
+              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-green-700">{displayCategory}</span>
+            </div>
+
+            {displayBrandName && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-100/95 px-2.5 py-1">
+                {brandLogoUrl && (
+                  <div className="h-6 w-6 overflow-hidden rounded-full border border-gray-200 bg-white">
+                    <Image
+                      src={brandLogoUrl}
+                      alt={`${displayBrandName} logo`}
+                      width={24}
+                      height={24}
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+                <span className="max-w-[120px] truncate text-[10px] font-semibold text-gray-600">{displayBrandName}</span>
+              </div>
+            )}
           </div>
           <p className="font-semibold text-sm text-gray-800 mb-1.5 line-clamp-2">{name}</p>
           {description && (

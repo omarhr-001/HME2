@@ -3,6 +3,7 @@ export interface Product {
   name: string
   category: string
   category_id?: string
+  category_image_url?: string
   brand_id?: string
   brand?: Brand
   price: number
@@ -32,6 +33,7 @@ export interface Category {
   name: string
   slug: string
   emoji?: string
+  image_url?: string
   createdAt: string
 }
 
@@ -118,6 +120,7 @@ export function mapProduct(item: any): Product {
     name: item.name,
     category: item.categories?.name || item.category || 'Produit',
     category_id: item.category_id,
+    category_image_url: item.categories?.image_url || undefined,
     brand_id: item.brand_id,
     brand: normalizeBrand(item.brands),
     price,
@@ -185,7 +188,7 @@ export async function getCategoriesFromSupabase(): Promise<Category[]> {
     const { supabase } = await import('./supabase')
     const { data, error } = await supabase
       .from('categories')
-      .select('id, name, slug, emoji, created_at')
+      .select('id, name, slug, emoji, image_url, created_at')
       .order('name', { ascending: true })
 
     if (error) {
@@ -201,6 +204,7 @@ export async function getCategoriesFromSupabase(): Promise<Category[]> {
       name: item.name,
       slug: item.slug,
       emoji: item.emoji,
+      image_url: item.image_url || undefined,
       createdAt: item.created_at
     }))
   } catch (error) {

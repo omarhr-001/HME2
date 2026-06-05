@@ -35,8 +35,8 @@ export function ProductsSection() {
 
   const displayedProducts = selectedCategory
     ? products
-        .filter(p => p.category_id === selectedCategory)
-        .slice(0, 8)
+      .filter(p => p.category_id === selectedCategory)
+      .slice(0, 8)
     : products.slice(0, 8)
 
   return (
@@ -57,11 +57,10 @@ export function ProductsSection() {
       <div className="flex gap-0 overflow-x-auto mb-8 pb-4 border-b border-gray-200 -mx-[5%] px-[5%]">
         <button
           onClick={() => setSelectedCategory(null)}
-          className={`px-5 py-3.5 text-xs font-medium whitespace-nowrap transition-all duration-300 border-b-[2.5px] ${
-            selectedCategory === null
+          className={`px-5 py-3.5 text-xs font-medium whitespace-nowrap transition-all duration-300 border-b-[2.5px] ${selectedCategory === null
               ? 'text-green-700 border-green-500 font-semibold'
               : 'text-gray-500 border-transparent hover:text-green-600'
-          }`}
+            }`}
         >
           Toutes les catégories
         </button>
@@ -69,13 +68,20 @@ export function ProductsSection() {
           <button
             key={cat.id}
             onClick={() => setSelectedCategory(cat.id)}
-            className={`px-5 py-3.5 text-xs font-medium whitespace-nowrap transition-all duration-300 border-b-[2.5px] flex items-center gap-2 ${
-              selectedCategory === cat.id
+            className={`px-5 py-3.5 text-xs font-medium whitespace-nowrap transition-all duration-300 border-b-[2.5px] flex items-center gap-2 ${selectedCategory === cat.id
                 ? 'text-green-700 border-green-500 font-semibold'
                 : 'text-gray-500 border-transparent hover:text-green-600'
-            }`}
+              }`}
           >
-            <span className="text-base">{cat.emoji || '📦'}</span>
+            <span className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-white">
+              {cat.image_url ? (
+                <img src={cat.image_url} alt={cat.name} className="h-full w-full object-cover" />
+              ) : cat.emoji ? (
+                <span className="text-base">{cat.emoji}</span>
+              ) : (
+                <span className="text-base">📦</span>
+              )}
+            </span>
             {cat.name}
           </button>
         ))}

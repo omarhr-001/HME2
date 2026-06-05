@@ -334,6 +334,7 @@ export function ProductsPage() {
         right={
           <>
             <ProductImportDialog onImported={() => mutate()} />
+            <BrandManagerDialog brands={brands} onUpdated={mutateBrands} />
             <ProductDialog brands={brands} categories={categories} onSave={saveProduct} onBrandCreated={mutateBrands} />
           </>
         }
@@ -483,8 +484,12 @@ export function CategoriesPage() {
         {data.map((category, index) => (
           <Card key={category.id} className="overflow-hidden">
             <CardContent className="p-5">
-              <div className={cn('mb-5 grid h-14 w-14 place-items-center rounded-lg text-2xl', index % 2 ? 'bg-blue-500/10' : 'bg-primary/10')}>
-                {category.emoji || '•'}
+              <div className={cn('mb-5 grid h-14 w-14 place-items-center overflow-hidden rounded-lg bg-white', index % 2 ? 'bg-blue-500/10' : 'bg-primary/10')}>
+                {category.image_url ? (
+                  <img src={category.image_url} alt={category.name} className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-2xl">{category.emoji || '•'}</span>
+                )}
               </div>
               <h3 className="text-lg font-semibold">{category.name}</h3>
               <p className="text-sm text-muted-foreground">/{category.slug}</p>
@@ -1000,6 +1005,37 @@ function ProductDialog({
     setForm({ ...form, image_url: imageUrls[0] || '', image_urls: imageUrls })
   }
 
+  const [newBrandLogoUrl, setNewBrandLogoUrl] = useState('')
+  const [newBrandLogoFile, setNewBrandLogoFile] = useState<File | null>(null)
+  const [uploadingBrandLogo, setUploadingBrandLogo] = useState(false)
+
+  async function uploadBrandLogo() {
+    if (!newBrandLogoFile) {
+      toast.error('Sélectionnez d’abord un logo')
+      return
+    }
+
+    try {
+      setUploadingBrandLogo(true)
+      const body = new FormData()
+      body.append('files', newBrandLogoFile)
+      body.append('folder', 'brands')
+
+      const response = await adminUpload<{ urls: string[] }>('/api/admin/images', body)
+      if (!response.urls?.[0]) {
+        throw new Error('Aucune URL de retour')
+      }
+
+      setNewBrandLogoUrl(response.urls[0])
+      setNewBrandLogoFile(null)
+      toast.success('Logo de marque téléversé')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Impossible de téléverser le logo')
+    } finally {
+      setUploadingBrandLogo(false)
+    }
+  }
+
   async function createBrand() {
     const name = newBrandName.trim()
 
@@ -1012,7 +1048,7 @@ function ProductDialog({
       setCreatingBrand(true)
       const createdBrand = await adminFetch<Brand>('/api/admin/brands', {
         method: 'POST',
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, logo_url: newBrandLogoUrl || null }),
       })
 
       if (onBrandCreated) {
@@ -1022,6 +1058,8 @@ function ProductDialog({
       setForm((current: any) => ({ ...current, brand_id: createdBrand.id }))
       setShowBrandCreator(false)
       setNewBrandName('')
+      setNewBrandLogoUrl('')
+      setNewBrandLogoFile(null)
       toast.success(`Marque ${createdBrand.name} créée`)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Impossible de créer la marque')
@@ -1094,18 +1132,43 @@ function ProductDialog({
               </SelectContent>
             </Select>
             {showBrandCreator && (
-              <div className="rounded-lg border border-dashed p-3">
+              <div className="rounded-lg border border-dashed p-3 space-y-3">
                 <p className="text-sm font-medium text-muted-foreground">Créer une nouvelle marque dans Supabase</p>
-                <div className="mt-2 flex gap-2">
+                <div className="grid gap-2">
                   <Input
                     value={newBrandName}
                     onChange={(event) => setNewBrandName(event.target.value)}
                     placeholder="Nom de la marque"
                   />
-                  <Button type="button" onClick={createBrand} disabled={creatingBrand}>
-                    {creatingBrand ? 'Enregistrement...' : 'Enregistrer la marque'}
-                  </Button>
+                  <Field
+                    label="URL du logo"
+                    value={newBrandLogoUrl}
+                    onChange={(value) => setNewBrandLogoUrl(value)}
+                    placeholder="https://..."
+                  />
+                  <div className="grid gap-2">
+                    <Label>Uploader un logo</Label>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => setNewBrandLogoFile(event.target.files?.[0] || null)}
+                      />
+                      <Button type="button" onClick={uploadBrandLogo} disabled={!newBrandLogoFile || uploadingBrandLogo}>
+                        {uploadingBrandLogo ? 'Téléversement...' : 'Téléverser le logo'}
+                      </Button>
+                    </div>
+                    {newBrandLogoUrl && (
+                      <div className="flex items-center gap-3">
+                        <img src={newBrandLogoUrl} alt={newBrandName || 'Logo de marque'} className="h-14 w-14 rounded-md object-cover border" />
+                        <span className="truncate text-sm text-muted-foreground">{newBrandLogoUrl}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
+                <Button type="button" onClick={createBrand} disabled={creatingBrand}>
+                  {creatingBrand ? 'Enregistrement...' : 'Enregistrer la marque'}
+                </Button>
               </div>
             )}
           </div>
@@ -1255,9 +1318,187 @@ function ProductImportDialog({ onImported }: { onImported: () => void }) {
   )
 }
 
+function BrandManagerDialog({ brands, onUpdated }: { brands: Brand[]; onUpdated: () => Promise<Brand[] | void> }) {
+  const [open, setOpen] = useState(false)
+  const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
+  const [form, setForm] = useState<any>(null)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    setSelectedBrand(null)
+    setForm(null)
+    setLogoFile(null)
+  }, [open])
+
+  function startEditBrand(brand: Brand) {
+    setSelectedBrand(brand)
+    setForm({ ...brand })
+  }
+
+  async function uploadBrandLogo() {
+    if (!logoFile) {
+      toast.error('Sélectionnez d’abord un logo')
+      return
+    }
+
+    try {
+      setUploadingLogo(true)
+      const body = new FormData()
+      body.append('files', logoFile)
+      body.append('folder', 'brands')
+
+      const response = await adminUpload<{ urls: string[] }>('/api/admin/images', body)
+      if (!response.urls?.[0]) {
+        throw new Error('Aucune URL de retour')
+      }
+
+      setForm((current: any) => ({ ...current, logo_url: response.urls[0] }))
+      setLogoFile(null)
+      toast.success('Logo téléversé')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Impossible de téléverser le logo')
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  async function saveBrand() {
+    if (!selectedBrand) return
+    try {
+      setSaving(true)
+      await adminFetch(`/api/admin/brands/${selectedBrand.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          name: form.name,
+          slug: form.slug || null,
+          description: form.description || null,
+          logo_url: form.logo_url || null,
+        }),
+      })
+      toast.success('Marque mise à jour')
+      await onUpdated()
+      setSelectedBrand(null)
+      setForm(null)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Impossible de mettre à jour la marque')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">Gérer les marques</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>Gestion des marques</DialogTitle>
+          <DialogDescription>Modifier le logo des marques existantes ou mettre à jour leurs informations.</DialogDescription>
+        </DialogHeader>
+
+        {selectedBrand ? (
+          <div className="grid gap-4">
+            <Field label="Nom" value={form.name || ''} onChange={(value) => setForm({ ...form, name: value })} />
+            <Field label="Slug" value={form.slug || ''} onChange={(value) => setForm({ ...form, slug: value })} />
+            <Field label="URL du logo" value={form.logo_url || ''} onChange={(value) => setForm({ ...form, logo_url: value })} placeholder="https://..." />
+            <div className="grid gap-2">
+              <Label>Uploader un nouveau logo</Label>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => setLogoFile(event.target.files?.[0] || null)}
+                />
+                <Button type="button" onClick={uploadBrandLogo} disabled={!logoFile || uploadingLogo}>
+                  {uploadingLogo ? 'Téléversement...' : 'Téléverser le logo'}
+                </Button>
+              </div>
+              {form.logo_url && (
+                <div className="flex min-w-0 items-center gap-3">
+                  <img src={form.logo_url} alt={form.name || 'Brand logo'} className="h-14 w-14 rounded-md object-cover border" />
+                  <div className="min-w-0 overflow-hidden">
+                    <span className="truncate block text-sm text-muted-foreground">{form.logo_url}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {brands.map((brand) => (
+                <button
+                  type="button"
+                  key={brand.id}
+                  onClick={() => startEditBrand(brand)}
+                  className="group flex items-center gap-3 rounded-xl border p-3 text-left transition-all hover:border-green-500 hover:bg-green-50"
+                >
+                  <span className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-muted">
+                    {brand.logo_url ? (
+                      <img src={brand.logo_url} alt={brand.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-lg">🏷️</span>
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1 overflow-hidden text-sm font-medium text-gray-900 truncate">{brand.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <DialogFooter className="gap-2">
+          {selectedBrand ? (
+            <>
+              <Button variant="outline" onClick={() => setSelectedBrand(null)}>Retour à la liste</Button>
+              <Button onClick={saveBrand} disabled={saving || !form?.name}>Enregistrer la marque</Button>
+            </>
+          ) : (
+            <Button onClick={() => setOpen(false)}>Fermer</Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function CategoryDialog({ category, onSave }: { category?: AdminCategory; onSave: (payload: any, id?: string) => Promise<void> }) {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState<any>(category || {})
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+
+  async function uploadCategoryImage() {
+    if (!imageFile) {
+      toast.error('Sélectionnez d’abord une image')
+      return
+    }
+
+    try {
+      setUploadingImage(true)
+      const body = new FormData()
+      body.append('files', imageFile)
+      body.append('folder', 'categories')
+
+      const response = await adminUpload<{ urls: string[] }>('/api/admin/images', body)
+      if (!response.urls?.[0]) {
+        throw new Error('Aucune URL de retour')
+      }
+
+      setForm({ ...form, image_url: response.urls[0] })
+      setImageFile(null)
+      toast.success('Image de catégorie téléversée')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Impossible de téléverser l’image')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -1270,7 +1511,25 @@ function CategoryDialog({ category, onSave }: { category?: AdminCategory; onSave
         <div className="grid gap-4">
           <Field label="Nom" value={form.name || ''} onChange={(value) => setForm({ ...form, name: value })} />
           <Field label="Slug" value={form.slug || ''} onChange={(value) => setForm({ ...form, slug: value })} />
-          <Field label="Emoji" value={form.emoji || ''} onChange={(value) => setForm({ ...form, emoji: value })} />
+          <Field label="URL de l’image" value={form.image_url || ''} onChange={(value) => setForm({ ...form, image_url: value })} placeholder="https://..." />
+          <div className="grid gap-2">
+            <Label>Uploader une image</Label>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Input type="file" accept="image/*" onChange={(event) => setImageFile(event.target.files?.[0] || null)} />
+              <Button type="button" onClick={uploadCategoryImage} disabled={!imageFile || uploadingImage}>
+                {uploadingImage ? 'Téléversement...' : 'Téléverser'}
+              </Button>
+            </div>
+            {form.image_url && (
+              <div className="flex min-w-0 items-center gap-3">
+                <img src={form.image_url} alt={form.name || 'Category'} className="h-14 w-14 rounded-md object-cover border" />
+                <div className="min-w-0 overflow-hidden">
+                  <span className="truncate block text-sm text-muted-foreground">{form.image_url}</span>
+                </div>
+              </div>
+            )}
+          </div>
+          <Field label="Emoji" value={form.emoji || ''} onChange={(value) => setForm({ ...form, emoji: value })} placeholder="Ex. 🎯" />
         </div>
         <DialogFooter><Button onClick={async () => { await onSave(form, category?.id); setOpen(false) }}>Enregistrer la catégorie</Button></DialogFooter>
       </DialogContent>

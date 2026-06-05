@@ -40,9 +40,9 @@ export function Navbar() {
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 h-17 flex items-center justify-between px-4 md:px-[5%] transition-all duration-300 ${scrolled
-        ? 'bg-white/100 shadow-lg'
-        : 'bg-white/97 shadow-sm'
-      }`} style={{ backdropFilter: 'blur(16px)' }}>
+      ? 'bg-white/100 shadow-lg'
+      : 'bg-white/97 shadow-sm'
+    }`} style={{ backdropFilter: 'blur(16px)' }}>
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2 md:gap-2.5 no-underline cursor-pointer group flex-shrink-0">
         <img src="/logo.png" alt="Hamroun Meuble & Electro" className="w-10 h-10 md:w-12 md:h-12 flex-shrink-0" />
@@ -55,7 +55,7 @@ export function Navbar() {
       {/* Desktop Links */}
       <div className="hidden md:flex items-center gap-1 list-none relative">
         <Link href="/" className="no-underline text-gray-600 text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-300 hover:text-green-700 hover:bg-green-50">Accueil</Link>
-        
+
         {/* Produits with Dropdown */}
         <div
           className="relative group"
@@ -63,7 +63,7 @@ export function Navbar() {
           onMouseLeave={() => setIsHovering(false)}
         >
           <Link href="/products" className="no-underline text-gray-600 text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-300 hover:text-green-700 hover:bg-green-50 block">Produits</Link>
-          
+
           {/* Dropdown Menu */}
           {isHovering && !loadingCategories && categories.length > 0 && (
             <div className="absolute top-full left-0 mt-0 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[200px] z-40 max-h-96 overflow-y-auto">
@@ -71,10 +71,20 @@ export function Navbar() {
                 <Link
                   key={category.id}
                   href={`/products?category=${encodeURIComponent(category.slug)}`}
-                  className="no-underline text-gray-600 text-sm px-4 py-2 block hover:text-green-700 hover:bg-green-50 transition-all duration-200"
+                  className="no-underline text-gray-600 text-sm px-4 py-2 flex items-center gap-2 hover:text-green-700 hover:bg-green-50 transition-all duration-200"
                 >
-                  {category.emoji && <span className="mr-2">{category.emoji}</span>}
-                  {category.name}
+                  {category.image_url ? (
+                    <span className="inline-flex h-5 w-5 overflow-hidden rounded-full border border-gray-200 bg-gray-50">
+                      <img src={category.image_url} alt={category.name} className="h-full w-full object-cover" />
+                    </span>
+                  ) : category.emoji ? (
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-sm">
+                      {category.emoji}
+                    </span>
+                  ) : (
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-sm">📦</span>
+                  )}
+                  <span>{category.name}</span>
                 </Link>
               ))}
             </div>

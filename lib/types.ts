@@ -31,6 +31,7 @@ export interface Product {
   stock_quantity?: number;
   category?: string;
   category_id?: string;
+  category_image_url?: string;
   brand_id?: string;
   brand?: Brand;
   image?: string;

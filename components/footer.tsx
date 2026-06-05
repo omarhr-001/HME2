@@ -46,7 +46,15 @@ export function Footer() {
                         href={`/products?category=${encodeURIComponent(category.slug || category.name)}`}
                         className="hover:text-green-500 transition flex items-center gap-2 group"
                       >
-                        <span className="text-lg">{category.emoji || '*'}</span>
+                        <span className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-gray-700 bg-white">
+                          {category.image_url ? (
+                            <img src={category.image_url} alt={category.name} className="h-full w-full object-cover" />
+                          ) : category.emoji ? (
+                            <span className="text-sm">{category.emoji}</span>
+                          ) : (
+                            <span className="text-sm">*</span>
+                          )}
+                        </span>
                         <span className="group-hover:translate-x-1 transition-transform">{category.name}</span>
                       </Link>
                     </li>

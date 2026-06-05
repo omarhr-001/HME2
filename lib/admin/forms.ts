@@ -22,6 +22,7 @@ const categorySchema = z.object({
   name: z.string().trim().min(1, 'Category name is required'),
   slug: z.string().trim().optional(),
   emoji: z.string().trim().max(12).optional().nullable(),
+  image_url: z.string().trim().optional().nullable(),
 })
 
 export const customerRoleSchema = z.object({
@@ -59,6 +60,7 @@ export function sanitizeCategory(body: any) {
     name: category.name,
     slug: category.slug || slugify(category.name),
     emoji: category.emoji || null,
+    image_url: category.image_url || null,
   }
 }
 

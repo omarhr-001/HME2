@@ -311,8 +311,14 @@ export default function ProductsPage() {
                             : 'text-gray-700 hover:bg-gray-100 border border-transparent'
                             }`}
                         >
-                          <span className={`text-lg transition-transform ${selectedCategory === cat.id ? 'scale-110' : 'group-hover:scale-105'}`}>
-                            {cat.emoji || '📦'}
+                          <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-white transition-transform ${selectedCategory === cat.id ? 'scale-110' : 'group-hover:scale-105'}`}>
+                            {cat.image_url ? (
+                              <img src={cat.image_url} alt={cat.name} className="h-full w-full object-cover" />
+                            ) : cat.emoji ? (
+                              <span className="text-base">{cat.emoji}</span>
+                            ) : (
+                              <span className="text-base">📦</span>
+                            )}
                           </span>
                           <span className="flex-1">{cat.name}</span>
                           <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
@@ -436,7 +442,13 @@ export default function ProductsPage() {
                   {/* Category Display */}
                   {selectedCategoryData && (
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">{selectedCategoryData.emoji || '📦'}</span>
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden bg-white shadow-sm">
+                        {selectedCategoryData.image_url ? (
+                          <Image src={selectedCategoryData.image_url} alt={selectedCategoryData.name} width={40} height={40} className="object-cover" />
+                        ) : (
+                          <span className="text-2xl">{selectedCategoryData.emoji || '📦'}</span>
+                        )}
+                      </span>
                       <div>
                         <h2 className="font-semibold text-gray-800">{selectedCategoryData.name}</h2>
                         <p className="text-xs text-gray-500">{filteredProducts.length} produits</p>

@@ -20,6 +20,7 @@ create table if not exists public.categories (
   name text not null unique,
   slug text not null unique,
   emoji text,
+  image_url text,
   created_at timestamptz not null default now()
 );
 

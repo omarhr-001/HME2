@@ -18,6 +18,7 @@ export type AdminCategory = {
   name: string
   slug: string
   emoji: string | null
+  image_url: string | null
   created_at: string
 }
 
