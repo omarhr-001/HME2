@@ -1,9 +1,10 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import useSWR from 'swr'
 import { useEffect, useMemo, useState } from 'react'
-import { Bell, Download, Eye, FileSpreadsheet, Pencil, Plus, Save, Search, Trash2, Upload } from 'lucide-react'
+import { Bell, Download, Eye, FileSpreadsheet, Pencil, Plus, Receipt, Save, Search, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -284,6 +285,11 @@ export function OrdersPage() {
                 <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
                   <OrderDetails order={order} onUpdate={updateStatus} onPaymentUpdate={updatePaymentStatus} />
+                  <Button variant="ghost" size="icon" asChild>
+                    <Link href={`/admin/orders/${order.id}/invoice`} aria-label="Voir la facture">
+                      <Receipt className="h-4 w-4" />
+                    </Link>
+                  </Button>
                   <Button variant="ghost" size="icon" onClick={() => updateStatus(order.id, 'delivered')} aria-label="Mark delivered">
                     <Save className="h-4 w-4" />
                   </Button>

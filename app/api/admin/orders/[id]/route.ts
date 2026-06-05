@@ -4,6 +4,42 @@ import { requireAdminRequest, jsonError } from '@/lib/admin/auth'
 const VALID_ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'] as const
 const VALID_PAYMENT_STATUSES = ['pending', 'paid', 'failed', 'refunded'] as const
 
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAdminRequest(req)
+  if ('response' in auth) return auth.response
+
+  try {
+    const { id } = await params
+
+    const { data: order, error: orderError } = await auth.context.supabase
+      .from('orders')
+      .select('*, order_items(*, products(*))')
+      .eq('id', id)
+      .single()
+
+    if (orderError || !order) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    }
+
+    const { data: profile, error: profileError } = await auth.context.supabase
+      .from('profiles')
+      .select('id, email, first_name, last_name, phone, role')
+      .eq('id', order.user_id)
+      .single()
+
+    if (profileError) {
+      console.warn('[v0] Failed to load order customer profile:', profileError)
+    }
+
+    return NextResponse.json({
+      ...order,
+      profiles: profile || null,
+    })
+  } catch (error) {
+    return jsonError(error, 'Failed to load order')
+  }
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdminRequest(req)
   if ('response' in auth) return auth.response
