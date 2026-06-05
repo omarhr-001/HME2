@@ -119,6 +119,12 @@ export default function ProductsPage() {
     }
   }, [categories])
 
+  const normalizeText = (value: string) =>
+    value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+
   const filteredProducts = useMemo(() => {
     let filtered = [...products]
 
@@ -134,10 +140,12 @@ export default function ProductsPage() {
 
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.description && p.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
+      const normalizedSearch = normalizeText(searchTerm.trim())
+      filtered = filtered.filter((p) => {
+        const name = normalizeText(p.name)
+        const description = p.description ? normalizeText(p.description) : ''
+        return name.includes(normalizedSearch) || description.includes(normalizedSearch)
+      })
     }
 
     // Filter by price range

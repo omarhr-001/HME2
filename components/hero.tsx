@@ -24,17 +24,18 @@ export function Hero() {
   return (
     <section className="relative pt-32 pb-20 px-[5%] min-h-screen flex items-center overflow-hidden">
       <div className="absolute inset-0 w-full h-full">
-        <Image
-          src="/hero-bg.jpg"
-          alt="Intérieur moderne"
-          fill
-          className="object-cover"
-          priority
-        />
+        <video
+          autoPlay
+          muted
+          loop
+          className="w-full h-full object-cover"
+        >
+          <source src="/affiche4.mp4" type="video/mp4" />
+        </video>
       </div>
 
-      <div className="absolute inset-0 bg-gradient-to-r from-gray-900/95 via-gray-900/80 to-gray-900/70" />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/40 to-gray-900/80" />
+      <div className="absolute inset-0 bg-gradient-to-r from-gray-900/30 via-gray-900/20 to-gray-900/10" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/10 to-gray-900/30" />
 
       <div
         className="absolute -top-30 -right-20 w-96 h-96 rounded-full opacity-10 pointer-events-none"
@@ -47,26 +48,8 @@ export function Hero() {
 
       <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8">
         <div className="max-w-2xl relative z-10">
-          <div className="inline-flex items-center gap-1.5 bg-green-500/15 border border-green-500/30 text-green-500 px-3.5 py-1 rounded-full text-xs font-bold tracking-wider uppercase mb-6 animate-fade-in-up" style={{ animationDelay: '0s' }}>
-            <Sparkles size={14} /> Nouvelle Collection
-          </div>
-
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-5 leading-tight animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-            Transformez votre intérieur avec nos <span className="text-green-500">meubles et électroménagers</span>
-          </h1>
-
-          <p className="text-lg text-white/65 leading-relaxed mb-9 max-w-md animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-            Explorez notre collection complète de meubles élégants et d&apos;appareils électroménagers innovants pour créer la maison de vos rêves.
-          </p>
-
           <div className="flex gap-3.5 flex-wrap animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-            <button className="btn-primary flex items-center gap-2">
-              Explorez les produits
-              <ArrowRight size={18} />
-            </button>
-            <button className="btn-secondary">
-              En savoir plus
-            </button>
+
           </div>
         </div>
 
