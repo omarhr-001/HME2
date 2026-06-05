@@ -42,7 +42,7 @@ export function Navbar() {
     <nav className={`fixed top-0 left-0 right-0 z-50 h-17 flex items-center justify-between px-4 md:px-[5%] transition-all duration-300 ${scrolled
       ? 'bg-white/100 shadow-lg'
       : 'bg-white/97 shadow-sm'
-    }`} style={{ backdropFilter: 'blur(16px)' }}>
+      }`} style={{ backdropFilter: 'blur(16px)' }}>
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2 md:gap-2.5 no-underline cursor-pointer group flex-shrink-0">
         <img src="/logo.png" alt="Hamroun Meuble & Electro" className="w-10 h-10 md:w-12 md:h-12 flex-shrink-0" />

@@ -19,7 +19,7 @@ export function useLikedProducts() {
 
   const fetcher = async () => {
     if (!user) return []
-    
+
     try {
       const response = await fetch(`/api/account/liked-products?user_id=${user.id}`)
       if (!response.ok) throw new Error('Failed to fetch')
@@ -30,7 +30,7 @@ export function useLikedProducts() {
     }
   }
 
-  const { data: likedProducts = [], isLoading } = useSWR(
+  const { data: likedProducts = [], isLoading, mutate } = useSWR(
     user ? ['liked-products', user.id] : null,
     fetcher,
     {
@@ -41,7 +41,7 @@ export function useLikedProducts() {
 
   useEffect(() => {
     if (!isLoading && user) {
-      const ids = new Set<string>(likedProducts.map((p: LikedProduct) => p.product_id?.toString()))
+      const ids = new Set<string>(likedProducts.map((p: LikedProduct) => String(p.product_id)))
       setLikedProductIds(ids)
       setIsInitialized(true)
     }
@@ -50,15 +50,16 @@ export function useLikedProducts() {
   const toggleLike = async (productId: string) => {
     if (!user) return
 
-    const isCurrentlyLiked = likedProductIds.has(productId)
+    const productIdStr = String(productId)
+    const isCurrentlyLiked = likedProductIds.has(productIdStr)
     const newState = !isCurrentlyLiked
 
     // Optimistic update
     const newIds = new Set(likedProductIds)
     if (newState) {
-      newIds.add(productId)
+      newIds.add(productIdStr)
     } else {
-      newIds.delete(productId)
+      newIds.delete(productIdStr)
     }
     setLikedProductIds(newIds)
 
@@ -68,7 +69,7 @@ export function useLikedProducts() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: user.id,
-          product_id: productId,
+          product_id: productIdStr,
           isLiked: newState,
         }),
       })
@@ -78,6 +79,9 @@ export function useLikedProducts() {
         setLikedProductIds(likedProductIds)
         throw new Error('Failed to update')
       }
+
+      // Revalidate the data after successful update
+      await mutate()
     } catch (error) {
       console.error('[v0] Error toggling like:', error)
       // Revert on error
