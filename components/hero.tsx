@@ -32,7 +32,7 @@ export function Hero() {
   const handleNext = () => scrollByAmount(240)
 
   return (
-    <section className="relative pt-32 pb-20 px-[5%] min-h-screen flex items-center overflow-hidden">
+    <section className="relative pt-24 md:pt-32 pb-16 md:pb-20 px-4 md:px-[5%] min-h-screen flex items-center overflow-hidden">
       <div className="absolute inset-0 w-full h-full">
         <video
           autoPlay
@@ -56,15 +56,15 @@ export function Hero() {
         style={{ background: 'radial-gradient(circle, rgba(220,38,38,0.08) 0%, transparent 70%)' }}
       />
 
-      <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8">
+      <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-8 px-4 md:px-0">
         <div className="max-w-2xl relative z-10">
           <div className="flex gap-3.5 flex-wrap animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
 
           </div>
         </div>
 
-        <div className="relative z-10 animate-fade-in-up lg:mr-8" style={{ animationDelay: '0.4s' }}>
-          <div className="relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl p-6 w-96 shadow-2xl">
+        <div className="relative z-10 animate-fade-in-up lg:mr-8 w-full md:w-auto" style={{ animationDelay: '0.4s' }}>
+          <div className="relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl p-4 md:p-6 w-full md:w-96 shadow-2xl">
             <div className="absolute -inset-1 bg-gradient-to-r from-red-500/25 to-rose-500/20 rounded-2xl blur-xl opacity-60" />
 
             <div className="relative">

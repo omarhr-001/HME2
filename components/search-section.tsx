@@ -62,7 +62,7 @@ export function SearchSection() {
   }
 
   return (
-    <section className="sticky top-17 z-40 bg-white px-[5%] py-4 border-b border-gray-200">
+    <section className="sticky top-17 z-40 bg-white px-4 md:px-[5%] py-3 md:py-4 border-b border-gray-200">
       <form onSubmit={handleSearch} className="relative max-w-2xl">
         <div className="flex items-center gap-3">
           <div className="flex-1 relative">
