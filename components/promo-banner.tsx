@@ -109,53 +109,57 @@ export function PromoBanner() {
     <section className="px-4 md:px-[5%] py-10 md:py-14">
       <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-green-600">
+          <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-red-600">
             <BadgePercent size={15} />
-            Offres sélectionnées
+            Offres Spéciales
           </p>
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">Découvrez nos séjours</h2>
+          <h2 className="text-4xl md:text-5xl font-black text-gray-900 leading-tight">Offres sélectionnées</h2>
         </div>
         <Link
           href="/products"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-green-700 no-underline transition hover:gap-3 hover:text-green-800"
+          className="inline-flex items-center gap-2 text-sm font-bold text-red-600 no-underline transition hover:gap-3 hover:text-red-700"
         >
           Voir toutes les offres
-          <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+          <ArrowRight size={18} className="transition-transform" />
         </Link>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
-        <article className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-white via-gray-50 to-white shadow-lg transition-shadow hover:shadow-xl">
+        <article className="group relative overflow-hidden rounded-3xl border-0 bg-gradient-to-br from-red-600 via-red-500 to-red-700 text-white shadow-2xl transition-all duration-300 hover:shadow-3xl hover:-translate-y-1">
           {mainOffer.image && (
             <Image
               src={mainOffer.image}
               alt={mainOffer.title}
               fill
               sizes="(min-width: 1024px) 58vw, 90vw"
-              className="object-cover opacity-8"
+              className="object-cover opacity-20 transition-opacity group-hover:opacity-30 duration-300"
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/85 via-white/75 to-white/60" />
+          <div className="absolute inset-0 bg-gradient-to-r from-red-600/95 via-red-500/90 to-red-700/85 backdrop-blur-sm" />
+          
+          {/* Décoration dynamique */}
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/8 blur-3xl transition-all group-hover:scale-110 duration-500" />
+          <div className="absolute -left-32 bottom-0 h-96 w-96 rounded-full bg-red-400/15 blur-3xl transition-all group-hover:scale-125 duration-500" />
 
-          <div className="relative z-10 grid min-h-64 md:min-h-80 gap-6 md:gap-8 p-6 md:p-10 lg:grid-cols-[1fr_0.85fr]">
+          <div className="relative z-10 grid min-h-72 md:min-h-80 gap-6 md:gap-8 p-6 md:p-10 lg:grid-cols-[1fr_0.85fr]">
             <div className="flex flex-col justify-between gap-8">
               <div>
-                <div className="mb-6 flex flex-wrap items-center gap-3">
+                <div className="mb-8 flex flex-wrap items-center gap-3">
                   {mainOffer.discount > 0 && (
-                    <span className="rounded-full bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 px-4 py-2 text-sm font-bold text-green-700">
+                    <span className="rounded-full bg-white/20 border-2 border-white px-5 py-2.5 text-lg font-black text-white shadow-lg backdrop-blur-sm">
                       Jusqu'à -{mainOffer.discount}%
                     </span>
                   )}
-                  <span className="flex items-center gap-2 rounded-full bg-gray-100 px-3.5 py-2 text-xs font-semibold text-gray-700">
-                    <Clock3 size={14} className="text-gray-500" />
+                  <span className="flex items-center gap-2 rounded-full bg-white/15 border border-white/30 px-4 py-2 text-xs font-bold text-white/95 backdrop-blur-sm">
+                    <Clock3 size={16} />
                     Jusqu'au {mainOffer.expiresAt}
                   </span>
                 </div>
-                <h3 className="max-w-2xl text-3xl md:text-4xl font-bold leading-tight text-gray-900">
+                <h3 className="max-w-2xl text-4xl md:text-5xl font-black leading-tight text-white drop-shadow-lg">
                   {mainOffer.title}
                 </h3>
                 {mainOffer.description && (
-                  <p className="mt-4 max-w-lg text-base leading-7 text-gray-600">
+                  <p className="mt-6 max-w-lg text-base md:text-lg leading-8 text-white/90">
                     {mainOffer.description}
                   </p>
                 )}
