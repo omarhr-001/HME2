@@ -105,7 +105,7 @@ export function Footer() {
         <div className="border-t border-gray-800 pt-8 mt-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             <div className="text-sm text-gray-400">
-              (c) 2024 Hamroun Meuble & Electro. Tous droits reserves.
+              (C) 2024 Hamroun Meuble & Electro. Tous droits reserves.
             </div>
             <div className="flex gap-6 md:justify-center text-sm text-gray-400">
               <Link href="/privacy" className="hover:text-green-500 transition">Confidentialite</Link>
