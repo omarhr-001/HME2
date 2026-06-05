@@ -40,7 +40,7 @@ export function ProductsSection() {
     : products.slice(0, 8)
 
   return (
-    <section className="px-[5%] py-16">
+    <section className="px-4 md:px-[5%] py-12 md:py-16">
       {/* Section Header */}
       <div className="flex items-center justify-between mb-7">
         <div>
@@ -91,7 +91,7 @@ export function ProductsSection() {
           <p className="text-gray-500">Aucun produit trouvé</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
           {displayedProducts.map((product) => (
             <ProductCard
               key={product.id}

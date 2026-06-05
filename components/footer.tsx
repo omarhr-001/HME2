@@ -26,8 +26,8 @@ export function Footer() {
 
   return (
     <footer className="bg-gray-900 text-white">
-      <div className="px-[5%] py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+      <div className="px-4 md:px-[5%] py-12 md:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8 mb-12">
           <div className="md:col-span-1">
             <img src="/logo.png" alt="Hamroun Meuble & Electro" className="w-16 h-16 mb-4" />
             <p className="text-sm text-gray-400 mb-4">

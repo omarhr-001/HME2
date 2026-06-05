@@ -12,13 +12,13 @@ function formatPrice(value: number) {
 
 function PromoSkeleton() {
   return (
-    <section className="px-[5%] py-14">
+    <section className="px-4 md:px-[5%] py-10 md:py-14">
       <div className="mb-7 h-8 w-56 animate-pulse rounded bg-gray-200" />
       <div className="grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
-        <div className="h-80 animate-pulse rounded-lg bg-gray-200" />
+        <div className="h-64 md:h-80 animate-pulse rounded-lg bg-gray-200" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-          <div className="h-38 animate-pulse rounded-lg bg-gray-200" />
-          <div className="h-38 animate-pulse rounded-lg bg-gray-200" />
+          <div className="h-32 md:h-38 animate-pulse rounded-lg bg-gray-200" />
+          <div className="h-32 md:h-38 animate-pulse rounded-lg bg-gray-200" />
         </div>
       </div>
     </section>
@@ -106,7 +106,7 @@ export function PromoBanner() {
   }
 
   return (
-    <section className="px-[5%] py-14">
+    <section className="px-4 md:px-[5%] py-10 md:py-14">
       <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-700">
@@ -137,7 +137,7 @@ export function PromoBanner() {
           )}
           <div className="absolute inset-0 bg-gradient-to-r from-red-950 via-red-950/88 to-red-950/45" />
 
-          <div className="relative z-10 grid min-h-80 gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_0.85fr]">
+          <div className="relative z-10 grid min-h-64 md:min-h-80 gap-6 md:gap-8 p-4 sm:p-6 md:p-8 lg:grid-cols-[1fr_0.85fr]">
             <div className="flex flex-col justify-between gap-8">
               <div>
                 <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -151,7 +151,7 @@ export function PromoBanner() {
                     Jusqu'au {mainOffer.expiresAt}
                   </span>
                 </div>
-                <h3 className="max-w-xl text-3xl font-extrabold leading-tight sm:text-4xl">
+                <h3 className="max-w-xl text-xl sm:text-2xl md:text-3xl font-extrabold leading-tight md:text-4xl">
                   {mainOffer.title}
                 </h3>
                 {mainOffer.description && (
