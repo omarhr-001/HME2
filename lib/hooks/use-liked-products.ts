@@ -75,9 +75,15 @@ export function useLikedProducts() {
       })
 
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('[v0] API error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+        })
         // Revert on error
         setLikedProductIds(likedProductIds)
-        throw new Error('Failed to update')
+        throw new Error(`Failed to update (${response.status}: ${response.statusText})`)
       }
 
       // Revalidate the data after successful update

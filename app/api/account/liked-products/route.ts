@@ -59,6 +59,9 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createServiceClient()
+    
+    // Convert product_id to integer if it's a string
+    const productIdNum = typeof product_id === 'string' ? parseInt(product_id, 10) : product_id
 
     if (isLiked) {
       // Add to liked products
@@ -66,7 +69,7 @@ export async function POST(request: NextRequest) {
         .from('liked_products')
         .insert({
           user_id,
-          product_id,
+          product_id: productIdNum,
         })
         .select()
 
@@ -77,7 +80,7 @@ export async function POST(request: NextRequest) {
         .from('liked_products')
         .delete()
         .eq('user_id', user_id)
-        .eq('product_id', product_id)
+        .eq('product_id', productIdNum)
 
       if (error) throw error
     }
@@ -105,12 +108,15 @@ export async function DELETE(request: NextRequest) {
     }
 
     const supabase = createServiceClient()
+    
+    // Convert product_id to integer if it's a string
+    const productIdNum = typeof product_id === 'string' ? parseInt(product_id, 10) : product_id
 
     const { error } = await supabase
       .from('liked_products')
       .delete()
       .eq('user_id', user_id)
-      .eq('product_id', product_id)
+      .eq('product_id', productIdNum)
 
     if (error) throw error
 
