@@ -11,6 +11,7 @@ export interface Offer {
         price: number
         originalPrice: number
         discount: number
+        image_url?: string | null
     }>
 }
 
@@ -153,7 +154,7 @@ export async function getOffersFromSupabase() {
 
         const { data: products } = await supabase
             .from('products')
-            .select('id, name, price, original_price')
+            .select('id, name, price, original_price, image_url, product_images(*)')
             .in('id', productIds)
 
         // Transform to Offer format
@@ -175,6 +176,11 @@ export async function getOffersFromSupabase() {
                         price: product.price,
                         originalPrice,
                         discount,
+                        image_url:
+                            product.product_images?.find((image: any) => image.is_main)?.image_url ||
+                            product.product_images?.sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0))[0]?.image_url ||
+                            product.image_url ||
+                            null,
                     }
                 })
                 .filter(Boolean)

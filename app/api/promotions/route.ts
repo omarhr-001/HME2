@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
 
         const { data: products, error: productsError } = await supabase
             .from('products')
-            .select('id, name, price, original_price')
+            .select('id, name, price, original_price, image_url, product_images(*)')
             .in('id', productIds)
 
         if (productsError) throw productsError
@@ -73,6 +73,11 @@ export async function GET(req: NextRequest) {
                         price: product.price,
                         originalPrice,
                         discount,
+                        image_url:
+                            product.product_images?.find((image: any) => image.is_main)?.image_url ||
+                            product.product_images?.sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0))[0]?.image_url ||
+                            product.image_url ||
+                            null,
                     }
                 })
                 .filter(Boolean)

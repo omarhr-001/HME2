@@ -38,13 +38,13 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import type { AdminDashboardData } from '@/lib/admin/types'
 import { adminFetch } from '@/lib/admin/client'
 
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+const money = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'TND', maximumFractionDigits: 0 })
 
 const chartConfig = {
-  revenue: { label: 'Revenue', color: 'hsl(var(--primary))' },
-  orders: { label: 'Orders', color: '#3b82f6' },
-  customers: { label: 'Customers', color: '#8b5cf6' },
-  quantity: { label: 'Quantity', color: '#22c55e' },
+  revenue: { label: 'Chiffre d’affaires', color: 'hsl(var(--primary))' },
+  orders: { label: 'Commandes', color: '#3b82f6' },
+  customers: { label: 'Clients', color: '#8b5cf6' },
+  quantity: { label: 'Quantité', color: '#22c55e' },
 }
 
 function formatTrend(value: number) {
@@ -60,7 +60,7 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
   if (error || !data) {
     return (
       <Card>
-        <CardContent className="p-8 text-sm text-destructive">{error?.message || 'Unable to load dashboard.'}</CardContent>
+        <CardContent className="p-8 text-sm text-destructive">{error?.message || 'Impossible de charger le tableau de bord.'}</CardContent>
       </Card>
     )
   }
@@ -70,16 +70,16 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
       {!analyticsOnly && (
         <>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard title="Total Revenue" value={money.format(data.stats.totalRevenue)} icon={CircleDollarSign} trend={`${formatTrend(data.stats.revenueGrowth)} this month`} />
-            <StatCard title="Total Orders" value={data.stats.totalOrders.toLocaleString()} icon={ShoppingCart} trend={`${formatTrend(data.stats.orderGrowth)} this month`} />
-            <StatCard title="Total Products" value={data.stats.totalProducts.toLocaleString()} icon={Package} trend={`${formatTrend(data.stats.productGrowth)} this month`} />
-            <StatCard title="Total Customers" value={data.stats.totalCustomers.toLocaleString()} icon={Users} trend={`${formatTrend(data.stats.customerGrowthRate)} this month`} />
-            <StatCard title="Pending Orders" value={data.stats.pendingOrders.toLocaleString()} icon={Activity} trend={`${data.stats.pendingOrders.toLocaleString()} pending`} />
-            <StatCard title="Processing" value={data.stats.processingOrders.toLocaleString()} icon={ShoppingCart} trend={`${data.stats.processingOrders.toLocaleString()} active`} />
-            <StatCard title="Delivered Orders" value={data.stats.deliveredOrders.toLocaleString()} icon={CheckCircle2} trend={`${Math.round(data.stats.deliveryRate)}% delivery rate`} />
-            <StatCard title="Paid Orders" value={data.stats.paidOrders.toLocaleString()} icon={CreditCard} trend={`${Math.round(data.stats.paidRate)}% paid`} />
-            <StatCard title="Avg. Order" value={money.format(data.stats.avgOrderValue)} icon={TrendingUp} trend={`${formatTrend(data.stats.avgOrderGrowth)} this month`} />
-            <StatCard title="Stock Alerts" value={(data.lowStockProducts.length + data.outOfStockProducts.length).toString()} icon={AlertTriangle} trend={`${Math.round(data.stats.stockAlertRate)}% of catalog`} />
+            <StatCard title="Chiffre d’affaires total" value={money.format(data.stats.totalRevenue)} icon={CircleDollarSign} trend={`${formatTrend(data.stats.revenueGrowth)} ce mois-ci`} />
+            <StatCard title="Commandes totales" value={data.stats.totalOrders.toLocaleString()} icon={ShoppingCart} trend={`${formatTrend(data.stats.orderGrowth)} ce mois-ci`} />
+            <StatCard title="Produits totaux" value={data.stats.totalProducts.toLocaleString()} icon={Package} trend={`${formatTrend(data.stats.productGrowth)} ce mois-ci`} />
+            <StatCard title="Clients totaux" value={data.stats.totalCustomers.toLocaleString()} icon={Users} trend={`${formatTrend(data.stats.customerGrowthRate)} ce mois-ci`} />
+            <StatCard title="Commandes en attente" value={data.stats.pendingOrders.toLocaleString()} icon={Activity} trend={`${data.stats.pendingOrders.toLocaleString()} en attente`} />
+            <StatCard title="En traitement" value={data.stats.processingOrders.toLocaleString()} icon={ShoppingCart} trend={`${data.stats.processingOrders.toLocaleString()} actives`} />
+            <StatCard title="Commandes livrées" value={data.stats.deliveredOrders.toLocaleString()} icon={CheckCircle2} trend={`${Math.round(data.stats.deliveryRate)}% de livraison`} />
+            <StatCard title="Commandes payées" value={data.stats.paidOrders.toLocaleString()} icon={CreditCard} trend={`${Math.round(data.stats.paidRate)}% payées`} />
+            <StatCard title="Panier moyen" value={money.format(data.stats.avgOrderValue)} icon={TrendingUp} trend={`${formatTrend(data.stats.avgOrderGrowth)} ce mois-ci`} />
+            <StatCard title="Alertes stock" value={(data.lowStockProducts.length + data.outOfStockProducts.length).toString()} icon={AlertTriangle} trend={`${Math.round(data.stats.stockAlertRate)}% du catalogue`} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-4">
@@ -103,12 +103,12 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
       <div className="grid gap-6 xl:grid-cols-[1.55fr_1fr]">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Revenue Overview</CardTitle>
+            <CardTitle>Vue du chiffre d’affaires</CardTitle>
             <Tabs defaultValue="daily" className="w-auto">
               <TabsList>
-                <TabsTrigger value="daily">Daily</TabsTrigger>
-                <TabsTrigger value="weekly">Weekly</TabsTrigger>
-                <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                <TabsTrigger value="daily">Jour</TabsTrigger>
+                <TabsTrigger value="weekly">Semaine</TabsTrigger>
+                <TabsTrigger value="monthly">Mois</TabsTrigger>
               </TabsList>
               <TabsContent value="daily" className="mt-4">
                 <RevenueChart data={data.revenueSeries} />
@@ -125,7 +125,7 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
 
         <Card>
           <CardHeader>
-            <CardTitle>Orders Status</CardTitle>
+            <CardTitle>Statut des commandes</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[285px] w-full">
@@ -154,7 +154,7 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Payment Status</CardTitle>
+            <CardTitle>Statut des paiements</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[250px] w-full">
@@ -181,23 +181,23 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
 
         <Card>
           <CardHeader>
-            <CardTitle>Top Customers</CardTitle>
+            <CardTitle>Meilleurs clients</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {data.topCustomers.map((customer) => (
               <div key={customer.id} className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm">
                 <div className="min-w-0">
                   <p className="truncate font-medium">{customer.name}</p>
-                  <p className="truncate text-muted-foreground">{customer.email || `${customer.orders} orders`}</p>
+                  <p className="truncate text-muted-foreground">{customer.email || `${customer.orders} commandes`}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold">{money.format(customer.total)}</p>
-                  <Badge variant="secondary">{customer.orders} orders</Badge>
+                  <Badge variant="secondary">{customer.orders} commandes</Badge>
                 </div>
               </div>
             ))}
             {data.topCustomers.length === 0 && (
-              <p className="text-sm text-muted-foreground">No customer orders yet.</p>
+              <p className="text-sm text-muted-foreground">Aucune commande client pour le moment.</p>
             )}
           </CardContent>
         </Card>
@@ -206,7 +206,7 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
       <div className="grid gap-6 xl:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Orders Analytics</CardTitle>
+            <CardTitle>Analyse des commandes</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[280px] w-full">
@@ -223,7 +223,7 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
 
         <Card>
           <CardHeader>
-            <CardTitle>Customer Growth</CardTitle>
+            <CardTitle>Évolution des clients</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[280px] w-full">
@@ -242,7 +242,7 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Best Selling Products</CardTitle>
+            <CardTitle>Produits les plus vendus</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[300px] w-full">
@@ -259,34 +259,34 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
 
         <Card>
           <CardHeader>
-            <CardTitle>Inventory Insights</CardTitle>
+            <CardTitle>Suivi du stock</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {[...data.outOfStockProducts, ...data.lowStockProducts].slice(0, 6).map((product) => (
               <div key={product.id} className="space-y-2">
                 <div className="flex items-center justify-between gap-3 text-sm">
                   <span className="truncate font-medium">{product.name}</span>
-                  <Badge variant={product.stock_quantity === 0 ? 'destructive' : 'secondary'}>{product.stock_quantity} left</Badge>
+                  <Badge variant={product.stock_quantity === 0 ? 'destructive' : 'secondary'}>{product.stock_quantity} restant(s)</Badge>
                 </div>
                 <Progress value={Math.min(product.stock_quantity * 10, 100)} />
               </div>
             ))}
             {data.lowStockProducts.length + data.outOfStockProducts.length === 0 && (
-              <p className="text-sm text-muted-foreground">Inventory looks healthy.</p>
+              <p className="text-sm text-muted-foreground">Le stock est en bon état.</p>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle>Activité récente</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {data.latestOrders.map((order) => (
               <div key={order.id} className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm">
                 <div>
                   <p className="font-medium">{order.order_number || order.id.slice(0, 8)}</p>
-                  <p className="text-muted-foreground">{order.profiles?.email || 'Customer'}</p>
+                  <p className="text-muted-foreground">{order.profiles?.email || 'Client'}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-medium">{money.format(Number(order.total_amount))}</p>
@@ -295,7 +295,7 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
               </div>
             ))}
             <Button asChild variant="outline" className="w-full">
-              <a href="/admin/orders">Open orders <ArrowUpRight className="ml-2 h-4 w-4" /></a>
+              <a href="/admin/orders">Voir les commandes <ArrowUpRight className="ml-2 h-4 w-4" /></a>
             </Button>
           </CardContent>
         </Card>
@@ -310,7 +310,7 @@ function RevenueChart({ data }: { data: Array<{ label: string; revenue: number }
       <LineChart data={data}>
         <CartesianGrid vertical={false} />
         <XAxis dataKey="label" tickLine={false} axisLine={false} />
-        <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+        <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${value} DT`} />
         <ChartTooltip content={<ChartTooltipContent />} />
         <Line dataKey="revenue" type="monotone" stroke="var(--color-revenue)" strokeWidth={3} dot={false} />
       </LineChart>

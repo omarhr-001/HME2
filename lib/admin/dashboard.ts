@@ -175,10 +175,10 @@ export async function getDashboardData(supabase: SupabaseClient): Promise<AdminD
     latestOrders: orders.slice(0, 6),
     topCustomers,
     insights: [
-      { title: 'Revenue growth', value: `${Math.round(revenueGrowth)}% this month`, tone: revenueGrowth >= 0 ? 'green' : 'rose' },
-      { title: 'Low stock', value: `${lowStockProducts.length} products need restock`, tone: 'amber' },
-      { title: 'Most sold category', value: bestCategory || 'Not enough data yet', tone: 'blue' },
-      { title: 'Peak sales day', value: peakSalesDay(orders), tone: 'green' },
+      { title: 'Croissance du chiffre d’affaires', value: `${Math.round(revenueGrowth)}% ce mois-ci`, tone: revenueGrowth >= 0 ? 'green' : 'rose' },
+      { title: 'Stock faible', value: `${lowStockProducts.length} produit(s) à réapprovisionner`, tone: 'amber' },
+      { title: 'Catégorie la plus vendue', value: bestCategory || 'Pas encore assez de données', tone: 'blue' },
+      { title: 'Jour de vente le plus fort', value: peakSalesDay(orders), tone: 'green' },
     ],
   }
 }
@@ -263,5 +263,5 @@ function peakSalesDay(orders: AdminOrder[]) {
     const day = format(new Date(order.created_at), 'EEEE')
     days.set(day, (days.get(day) || 0) + toNumber(order.total_amount))
   }
-  return Array.from(days.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] || 'No orders yet'
+  return Array.from(days.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Aucune commande'
 }

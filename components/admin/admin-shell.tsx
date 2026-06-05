@@ -29,15 +29,15 @@ import { adminFetch } from '@/lib/admin/client'
 import { cn } from '@/lib/utils'
 
 const nav = [
-  { href: '/admin', label: 'Dashboard', icon: Gauge },
-  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
-  { href: '/admin/products', label: 'Products', icon: Package },
+  { href: '/admin', label: 'Tableau de bord', icon: Gauge },
+  { href: '/admin/analytics', label: 'Analyses', icon: BarChart3 },
+  { href: '/admin/orders', label: 'Commandes', icon: ShoppingCart },
+  { href: '/admin/products', label: 'Produits', icon: Package },
   { href: '/admin/promotions', label: 'Promotions', icon: Gift },
-  { href: '/admin/customers', label: 'Customers', icon: Users },
-  { href: '/admin/categories', label: 'Categories', icon: Grid3X3 },
-  { href: '/admin/inventory', label: 'Inventory', icon: Boxes },
-  { href: '/admin/settings', label: 'Settings', icon: Settings },
+  { href: '/admin/customers', label: 'Clients', icon: Users },
+  { href: '/admin/categories', label: 'Catégories', icon: Grid3X3 },
+  { href: '/admin/inventory', label: 'Stock', icon: Boxes },
+  { href: '/admin/settings', label: 'Paramètres', icon: Settings },
 ]
 
 type AdminNotificationKey = 'newOrders' | 'lowStockAlerts' | 'customerSignups' | 'weeklyReports'
@@ -75,7 +75,7 @@ function sendAdminNotification(key: AdminNotificationKey, title: string, body: s
 function formatNotificationTime(value?: string) {
   if (!value) return ''
 
-  return new Date(value).toLocaleString('en-US', {
+  return new Date(value).toLocaleString('fr-FR', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -107,7 +107,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     lowStockIds: new Set<number>(),
   })
 
-  const activeLabel = nav.find((item) => item.href === pathname)?.label || 'Dashboard'
+  const activeLabel = nav.find((item) => item.href === pathname)?.label || 'Tableau de bord'
 
   async function logout() {
     await signOut()
@@ -183,8 +183,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         if (orders[0]) {
           notifications.push({
             id: `order-${orders[0].id}`,
-            title: 'New order',
-            description: `Order ${orders[0].order_number || String(orders[0].id).slice(0, 8)} was received.`,
+            title: 'Nouvelle commande',
+            description: `Commande ${orders[0].order_number || String(orders[0].id).slice(0, 8)} reçue.`,
             href: '/admin/orders',
             time: orders[0].created_at,
           })
@@ -194,8 +194,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           const customerName = [customers[0].first_name, customers[0].last_name].filter(Boolean).join(' ')
           notifications.push({
             id: `customer-${customers[0].id}`,
-            title: 'New customer',
-            description: customerName || customers[0].email || 'A customer account was created.',
+            title: 'Nouveau client',
+            description: customerName || customers[0].email || 'Un compte client a été créé.',
             href: '/admin/customers',
             time: customers[0].created_at,
           })
@@ -204,8 +204,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         if (lowStockIds.size > 0) {
           notifications.push({
             id: 'low-stock',
-            title: 'Low stock alert',
-            description: `${lowStockIds.size} product(s) need attention.`,
+            title: 'Alerte de stock',
+            description: `${lowStockIds.size} produit(s) à vérifier.`,
             href: '/admin/inventory',
           })
         }
@@ -214,16 +214,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         if (snapshot.initialized) {
           if (latestOrderDate && latestOrderDate > snapshot.latestOrderDate) {
-            sendAdminNotification('newOrders', 'New order received', 'A new customer order was placed.')
+            sendAdminNotification('newOrders', 'Nouvelle commande reçue', 'Un client vient de passer commande.')
           }
 
           if (latestCustomerDate && latestCustomerDate > snapshot.latestCustomerDate) {
-            sendAdminNotification('customerSignups', 'New customer signup', 'A new customer account was created.')
+            sendAdminNotification('customerSignups', 'Nouveau client inscrit', 'Un compte client vient d’être créé.')
           }
 
           const newLowStockCount = [...lowStockIds].filter((id) => !snapshot.lowStockIds.has(id)).length
           if (newLowStockCount > 0) {
-            sendAdminNotification('lowStockAlerts', 'Low stock alert', `${newLowStockCount} product(s) are low in stock.`)
+            sendAdminNotification('lowStockAlerts', 'Alerte de stock', `${newLowStockCount} produit(s) sont presque en rupture.`)
           }
         }
 
@@ -282,14 +282,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
               <Sheet open={open} onOpenChange={setOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu">
+                  <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Ouvrir le menu">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-72 p-0">
                   <SheetHeader className="sr-only">
-                    <SheetTitle>Admin navigation</SheetTitle>
-                    <SheetDescription>Mobile navigation menu for the admin dashboard.</SheetDescription>
+                    <SheetTitle>Navigation admin</SheetTitle>
+                    <SheetDescription>Menu mobile du tableau de bord administrateur.</SheetDescription>
                   </SheetHeader>
                   <Sidebar pathname={pathname} onNavigate={() => setOpen(false)} onLogout={logout} />
                 </SheetContent>
@@ -306,7 +306,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <Search className="h-4 w-4 text-muted-foreground" />
                 <input
                   className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                  placeholder="Search orders, products, customers..."
+                  placeholder="Rechercher commandes, produits, clients..."
                 />
               </div>
 
@@ -324,12 +324,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <HoverCardContent align="end" className="w-80 p-0">
                   <div className="border-b px-4 py-3">
                     <p className="text-sm font-semibold">Notifications</p>
-                    <p className="text-xs text-muted-foreground">Recent admin activity</p>
+                    <p className="text-xs text-muted-foreground">Activité récente de l’administration</p>
                   </div>
                   <div className="max-h-80 overflow-y-auto p-2">
                     {topbarNotifications.length === 0 ? (
                       <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                        No notifications right now.
+                        Aucune notification pour le moment.
                       </div>
                     ) : (
                       topbarNotifications.map((notification) => (
@@ -353,7 +353,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                     )}
                   </div>
                   <div className="border-t px-4 py-2 text-xs text-muted-foreground">
-                    Manage notification types in Settings.
+                    Gérez les types de notifications dans les paramètres.
                   </div>
                 </HoverCardContent>
               </HoverCard>
@@ -388,7 +388,7 @@ function Sidebar({
         </div>
         <div>
           <div className="text-sm font-semibold">HME Admin</div>
-          <div className="text-xs text-muted-foreground">Commerce control room</div>
+          <div className="text-xs text-muted-foreground">Espace de gestion</div>
         </div>
       </div>
 
@@ -416,7 +416,7 @@ function Sidebar({
       <div className="border-t p-3">
         <Button variant="ghost" className="w-full justify-start gap-3" onClick={onLogout}>
           <LogOut className="h-4 w-4" />
-          Logout
+          Déconnexion
         </Button>
       </div>
     </div>

@@ -45,9 +45,17 @@ import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { DEFAULT_SHIPPING_SETTINGS, type ShippingSettings } from '@/lib/shipping'
 
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const money = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'TND' })
 const statuses: OrderStatus[] = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
 const paymentStatuses: PaymentStatus[] = ['pending', 'paid', 'failed', 'refunded']
+
+const orderStatusLabels: Record<OrderStatus, string> = {
+  pending: 'En attente',
+  processing: 'En traitement',
+  shipped: 'Expédiée',
+  delivered: 'Livrée',
+  cancelled: 'Annulée',
+}
 
 const statusClass: Record<OrderStatus, string> = {
   pending: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200',
@@ -58,8 +66,15 @@ const statusClass: Record<OrderStatus, string> = {
 }
 
 const paymentMethodLabels = {
-  cash_on_delivery: 'Cash on delivery',
-  bank_transfer: 'Bank transfer',
+  cash_on_delivery: 'Paiement à la livraison',
+  bank_transfer: 'Virement bancaire',
+}
+
+const paymentStatusLabels: Record<PaymentStatus, string> = {
+  pending: 'En attente',
+  paid: 'Payé',
+  failed: 'Échoué',
+  refunded: 'Remboursé',
 }
 
 const paymentStatusClass: Record<PaymentStatus, string> = {
@@ -77,10 +92,10 @@ const defaultProductForm = {
 }
 
 const notificationOptions = [
-  { key: 'newOrders', label: 'New orders' },
-  { key: 'lowStockAlerts', label: 'Low stock alerts' },
-  { key: 'customerSignups', label: 'Customer signups' },
-  { key: 'weeklyReports', label: 'Weekly reports' },
+  { key: 'newOrders', label: 'Nouvelles commandes' },
+  { key: 'lowStockAlerts', label: 'Alertes de stock faible' },
+  { key: 'customerSignups', label: 'Nouveaux clients' },
+  { key: 'weeklyReports', label: 'Rapports hebdomadaires' },
 ] as const
 
 type NotificationKey = (typeof notificationOptions)[number]['key']
@@ -156,19 +171,19 @@ export function OrdersPage() {
 
   async function updateStatus(id: string, nextStatus: OrderStatus) {
     await adminFetch(`/api/admin/orders/${id}`, { method: 'PATCH', body: JSON.stringify({ status: nextStatus }) })
-    toast.success('Order status updated')
+    toast.success('Statut de la commande mis à jour')
     mutate()
   }
 
   async function updatePaymentStatus(id: string, nextStatus: PaymentStatus) {
     await adminFetch(`/api/admin/orders/${id}`, { method: 'PATCH', body: JSON.stringify({ payment_status: nextStatus }) })
-    toast.success('Payment status updated')
+    toast.success('Statut de paiement mis à jour')
     mutate()
   }
 
   async function deleteOrder(id: string) {
     await adminFetch(`/api/admin/orders/${id}`, { method: 'DELETE' })
-    toast.success('Order deleted')
+    toast.success('Commande supprimée')
     mutate()
   }
 
@@ -191,7 +206,7 @@ export function OrdersPage() {
             </Select>
             <div className="flex flex-wrap gap-2">
               <div>
-                <Label htmlFor="orders-date-from" className="sr-only">From date</Label>
+                <Label htmlFor="orders-date-from" className="sr-only">Date de début</Label>
                 <Input
                   id="orders-date-from"
                   type="date"
@@ -201,7 +216,7 @@ export function OrdersPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="orders-date-to" className="sr-only">To date</Label>
+                <Label htmlFor="orders-date-to" className="sr-only">Date de fin</Label>
                 <Input
                   id="orders-date-to"
                   type="date"
@@ -236,7 +251,7 @@ export function OrdersPage() {
             <TableRow>
               <TableHead>Order ID</TableHead>
               <TableHead>Customer</TableHead>
-              <TableHead>Products</TableHead>
+              <TableHead>Produits</TableHead>
               <TableHead>Shipping</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Status</TableHead>
@@ -277,12 +292,12 @@ export function OrdersPage() {
             ))}
           </TableBody>
         </Table>
-        {!isLoading && data.length === 0 && <div className="p-6"><EmptyState title="No orders found" description="Orders will appear here once customers checkout." /></div>}
+        {!isLoading && data.length === 0 && <div className="p-6"><EmptyState title="Aucune commande trouvée" description="Les commandes apparaîtront ici après le paiement des clients." /></div>}
       </Card>
 
       <div className="flex items-center justify-end gap-2">
         <Button variant="outline" disabled={page === 1} onClick={() => setPage(page - 1)}>Previous</Button>
-        <span className="text-sm text-muted-foreground">Page {page} of {pageCount}</span>
+        <span className="text-sm text-muted-foreground">Page {page} sur {pageCount}</span>
         <Button variant="outline" disabled={page === pageCount} onClick={() => setPage(page + 1)}>Next</Button>
       </div>
     </div>
@@ -300,13 +315,13 @@ export function ProductsPage() {
       method: id ? 'PATCH' : 'POST',
       body: JSON.stringify(payload),
     })
-    toast.success(id ? 'Product updated' : 'Product created')
+    toast.success(id ? 'Produit mis à jour' : 'Produit créé')
     mutate()
   }
 
   async function deleteProduct(id: number) {
     await adminFetch(`/api/admin/products/${id}`, { method: 'DELETE' })
-    toast.success('Product deleted')
+    toast.success('Produit supprimé')
     mutate()
   }
 
@@ -363,7 +378,7 @@ export function ProductsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="truncate text-base font-semibold">{product.name}</h3>
-                    <p className="text-sm text-muted-foreground">{product.categories?.name || product.category || 'Uncategorized'}</p>
+                    <p className="text-sm text-muted-foreground">{product.categories?.name || product.category || 'Sans catégorie'}</p>
                     {brandName && <p className="mt-1 text-xs font-medium text-primary">{brandName}</p>}
                   </div>
                   <p className="font-semibold">{money.format(Number(product.price))}</p>
@@ -388,7 +403,7 @@ export function CustomersPage() {
 
   async function setRoleForUser(id: string, nextRole: 'admin' | 'client') {
     await adminFetch(`/api/admin/customers/${id}`, { method: 'PATCH', body: JSON.stringify({ role: nextRole }) })
-    toast.success('Customer role updated')
+    toast.success('Rôle client mis à jour')
     mutate()
   }
 
@@ -450,13 +465,13 @@ export function CategoriesPage() {
       method: id ? 'PATCH' : 'POST',
       body: JSON.stringify(payload),
     })
-    toast.success(id ? 'Category updated' : 'Category created')
+    toast.success(id ? 'Catégorie mise à jour' : 'Catégorie créée')
     mutate()
   }
 
   async function deleteCategory(id: string) {
     await adminFetch(`/api/admin/categories/${id}`, { method: 'DELETE' })
-    toast.success('Category deleted')
+    toast.success('Catégorie supprimée')
     mutate()
   }
 
@@ -506,14 +521,14 @@ export function InventoryPage() {
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-3">
-        <MiniMetric title="In stock" value={available.length} />
-        <MiniMetric title="Low stock" value={low.length} tone="amber" />
+        <MiniMetric title="En stock" value={available.length} />
+        <MiniMetric title="Stock faible" value={low.length} tone="amber" />
         <MiniMetric title="Out of stock" value={out.length} tone="red" />
       </div>
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle>Stock Monitoring</CardTitle>
+            <CardTitle>Suivi du stock</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
               {low.length} low stock product{low.length === 1 ? '' : 's'}.
             </p>
@@ -523,7 +538,7 @@ export function InventoryPage() {
             <SelectContent>
               <SelectItem value="stock-asc">Critical first</SelectItem>
               <SelectItem value="stock-desc">Highest stock first</SelectItem>
-              <SelectItem value="name">Name A-Z</SelectItem>
+              <SelectItem value="name">Nom A-Z</SelectItem>
             </SelectContent>
           </Select>
         </CardHeader>
@@ -537,14 +552,14 @@ export function InventoryPage() {
                   </div>
                   <div>
                     <p className="font-medium">{product.name}</p>
-                  <p className="text-sm text-muted-foreground">{product.sku || product.categories?.name || 'No SKU'}</p>
+                  <p className="text-sm text-muted-foreground">{product.sku || product.categories?.name || 'Sans SKU'}</p>
                   </div>
                 </div>
                 <Badge variant={!product.in_stock || product.stock_quantity === 0 ? 'destructive' : product.stock_quantity <= 5 ? 'secondary' : 'outline'}>
                   {!product.in_stock || product.stock_quantity === 0
                     ? 'Out of stock'
                     : product.stock_quantity <= 5
-                      ? `Low stock: ${product.stock_quantity} unit${product.stock_quantity === 1 ? '' : 's'}`
+                      ? `Stock faible : ${product.stock_quantity} unité${product.stock_quantity === 1 ? '' : 's'}`
                       : `${product.stock_quantity} units`}
                 </Badge>
               </div>
@@ -599,7 +614,7 @@ export function SettingsPage() {
         data: { display_name: displayName.trim() || null },
       })
       if (error) throw error
-      toast.success('Profile updated')
+      toast.success('Profil mis à jour')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to update profile')
     } finally {
@@ -702,43 +717,43 @@ export function SettingsPage() {
   return (
     <Tabs defaultValue="profile" className="space-y-5">
       <TabsList>
-        <TabsTrigger value="profile">Profile</TabsTrigger>
-        <TabsTrigger value="security">Security</TabsTrigger>
+        <TabsTrigger value="profile">Profil</TabsTrigger>
+        <TabsTrigger value="security">Sécurité</TabsTrigger>
         <TabsTrigger value="shipping">Livraison</TabsTrigger>
         <TabsTrigger value="notifications">Notifications</TabsTrigger>
       </TabsList>
       <TabsContent value="profile">
         <Card>
-          <CardHeader><CardTitle>Admin Profile</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Profil administrateur</CardTitle></CardHeader>
           <CardContent className="grid max-w-2xl gap-4">
             <Label>Email</Label>
             <Input value={user?.email || ''} readOnly />
-            <Label>Display name</Label>
-            <Input placeholder="Admin name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+            <Label>Nom affiché</Label>
+            <Input placeholder="Nom de l’administrateur" value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
             <Button className="w-fit" onClick={saveProfile} disabled={savingProfile}>
-              <Save className="mr-2 h-4 w-4" /> {savingProfile ? 'Saving...' : 'Save profile'}
+              <Save className="mr-2 h-4 w-4" /> {savingProfile ? 'Enregistrement...' : 'Enregistrer le profil'}
             </Button>
           </CardContent>
         </Card>
       </TabsContent>
       <TabsContent value="security">
         <Card>
-          <CardHeader><CardTitle>Change Password</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Changer le mot de passe</CardTitle></CardHeader>
           <CardContent className="grid max-w-2xl gap-4">
             <Input
               type="password"
-              placeholder="New password"
+              placeholder="Nouveau mot de passe"
               value={passwordForm.password}
               onChange={(event) => setPasswordForm({ ...passwordForm, password: event.target.value })}
             />
             <Input
               type="password"
-              placeholder="Confirm password"
+              placeholder="Confirmer le mot de passe"
               value={passwordForm.confirmPassword}
               onChange={(event) => setPasswordForm({ ...passwordForm, confirmPassword: event.target.value })}
             />
             <Button className="w-fit" onClick={updatePassword} disabled={savingPassword}>
-              {savingPassword ? 'Updating...' : 'Update password'}
+              {savingPassword ? 'Mise à jour...' : 'Mettre à jour le mot de passe'}
             </Button>
           </CardContent>
         </Card>
@@ -805,17 +820,17 @@ export function SettingsPage() {
               </div>
             </div>
             <Button className="w-fit" onClick={saveShipping} disabled={savingShipping}>
-              <Save className="mr-2 h-4 w-4" /> {savingShipping ? 'Saving...' : 'Save shipping fees'}
+              <Save className="mr-2 h-4 w-4" /> {savingShipping ? 'Enregistrement...' : 'Enregistrer les frais de livraison'}
             </Button>
           </CardContent>
         </Card>
       </TabsContent>
       <TabsContent value="notifications">
         <Card>
-          <CardHeader><CardTitle>Notification Settings</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Paramètres de notification</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
-              Browser permission: <span className="font-medium text-foreground">{notificationPermission}</span>
+              Autorisation du navigateur : <span className="font-medium text-foreground">{notificationPermission}</span>
             </div>
             {notificationOptions.map((item) => (
               <div key={item.key} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
@@ -836,7 +851,7 @@ export function SettingsPage() {
                 </div>
               </div>
             ))}
-            <Button variant="destructive" onClick={signOut}>Logout</Button>
+            <Button variant="destructive" onClick={signOut}>Déconnexion</Button>
           </CardContent>
         </Card>
       </TabsContent>
@@ -849,7 +864,7 @@ function Toolbar({ search, setSearch, right }: { search: string; setSearch: (val
     <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div className="flex w-full max-w-md items-center gap-2 rounded-lg border px-3 py-2">
         <Search className="h-4 w-4 text-muted-foreground" />
-        <input className="w-full bg-transparent text-sm outline-none" placeholder="Search..." value={search} onChange={(event) => setSearch(event.target.value)} />
+        <input className="w-full bg-transparent text-sm outline-none" placeholder="Rechercher..." value={search} onChange={(event) => setSearch(event.target.value)} />
       </div>
       <div className="flex flex-wrap gap-2">{right}</div>
     </div>
@@ -916,7 +931,7 @@ function ProductDialog({
       setOpen(false)
       setImageFiles([])
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to save product')
+      toast.error(error instanceof Error ? error.message : 'Impossible d’enregistrer le produit')
     } finally {
       setSaving(false)
     }
@@ -955,9 +970,9 @@ function ProductDialog({
       setForm((current: any) => ({ ...current, brand_id: createdBrand.id }))
       setShowBrandCreator(false)
       setNewBrandName('')
-      toast.success(`Brand ${createdBrand.name} created`)
+      toast.success(`Marque ${createdBrand.name} créée`)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create brand')
+      toast.error(error instanceof Error ? error.message : 'Impossible de créer la marque')
     } finally {
       setCreatingBrand(false)
     }
@@ -969,29 +984,29 @@ function ProductDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant={product ? 'ghost' : 'default'} size={product ? 'icon' : 'default'}>
-          {product ? <Pencil className="h-4 w-4" /> : <><Plus className="mr-2 h-4 w-4" /> Add product</>}
+          {product ? <Pencil className="h-4 w-4" /> : <><Plus className="mr-2 h-4 w-4" /> Ajouter un produit</>}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>{product ? 'Edit product' : 'Add product'}</DialogTitle>
-          <DialogDescription>Manage pricing, inventory, imagery, and category placement.</DialogDescription>
+          <DialogTitle>{product ? 'Modifier le produit' : 'Ajouter un produit'}</DialogTitle>
+          <DialogDescription>Gérez le prix, le stock, les images et la catégorie.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 sm:grid-cols-2 overflow-y-auto pr-4">
-          <Field label="Name" value={form.name || ''} onChange={(value) => setForm({ ...form, name: value })} />
+          <Field label="Nom" value={form.name || ''} onChange={(value) => setForm({ ...form, name: value })} />
           <Field label="SKU" value={form.sku || ''} onChange={(value) => setForm({ ...form, sku: value })} />
-          <Field label="Price" type="number" value={form.price || ''} onChange={(value) => setForm({ ...form, price: value })} />
-          <Field label="Original price" type="number" value={form.original_price || ''} onChange={(value) => setForm({ ...form, original_price: value })} />
+          <Field label="Prix" type="number" value={form.price || ''} onChange={(value) => setForm({ ...form, price: value })} />
+          <Field label="Prix original" type="number" value={form.original_price || ''} onChange={(value) => setForm({ ...form, original_price: value })} />
           <Field label="Stock" type="number" value={form.stock_quantity || 0} onChange={(value) => setForm({ ...form, stock_quantity: value })} />
           <div className="grid gap-2">
-            <Label>Category</Label>
+            <Label>Catégorie</Label>
             <Select value={form.category_id || ''} onValueChange={(value) => setForm({ ...form, category_id: value })}>
-              <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Sélectionner une catégorie" /></SelectTrigger>
               <SelectContent>{categories.map((category) => <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="grid gap-2">
-            <Label>Brand</Label>
+            <Label>Marque</Label>
             <Select
               value={selectValue}
               onValueChange={(value) => {
@@ -1005,33 +1020,33 @@ function ProductDialog({
                 setForm((current: any) => ({ ...current, brand_id: value }))
               }}
             >
-              <SelectTrigger><SelectValue placeholder="Select brand" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Sélectionner une marque" /></SelectTrigger>
               <SelectContent>
                 {brands.map((brand) => <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>)}
-                <SelectItem value="__create_new_brand__">+ Add a new brand</SelectItem>
+                <SelectItem value="__create_new_brand__">+ Ajouter une nouvelle marque</SelectItem>
               </SelectContent>
             </Select>
             {showBrandCreator && (
               <div className="rounded-lg border border-dashed p-3">
-                <p className="text-sm font-medium text-muted-foreground">Create a new brand in Supabase</p>
+                <p className="text-sm font-medium text-muted-foreground">Créer une nouvelle marque dans Supabase</p>
                 <div className="mt-2 flex gap-2">
                   <Input
                     value={newBrandName}
                     onChange={(event) => setNewBrandName(event.target.value)}
-                    placeholder="Brand name"
+                    placeholder="Nom de la marque"
                   />
                   <Button type="button" onClick={createBrand} disabled={creatingBrand}>
-                    {creatingBrand ? 'Saving...' : 'Save brand'}
+                    {creatingBrand ? 'Enregistrement...' : 'Enregistrer la marque'}
                   </Button>
                 </div>
               </div>
             )}
           </div>
           <div className="sm:col-span-2">
-            <Field label="Main image URL" value={form.image_url || ''} onChange={updatePrimaryImageUrl} icon={<Upload className="h-4 w-4" />} />
+            <Field label="URL de l’image principale" value={form.image_url || ''} onChange={updatePrimaryImageUrl} icon={<Upload className="h-4 w-4" />} />
           </div>
           <div className="grid gap-3 sm:col-span-2">
-            <Label htmlFor={product ? `product-images-${product.id}` : 'product-images-new'}>Upload images from PC</Label>
+            <Label htmlFor={product ? `product-images-${product.id}` : 'product-images-new'}>Importer des images depuis le PC</Label>
             <Input
               id={product ? `product-images-${product.id}` : 'product-images-new'}
               type="file"
@@ -1044,10 +1059,10 @@ function ProductDialog({
                 {(form.image_urls || []).map((url: string, index: number) => (
                   <div key={url} className="flex items-center gap-3 rounded-lg border p-2">
                     <div className="relative h-14 w-14 overflow-hidden rounded-md bg-muted">
-                      <Image src={url} alt={`Product image ${index + 1}`} fill className="object-cover" sizes="56px" />
+                      <Image src={url} alt={`Image produit ${index + 1}`} fill className="object-cover" sizes="56px" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{index === 0 ? 'Main image' : `Image ${index + 1}`}</p>
+                      <p className="truncate text-sm font-medium">{index === 0 ? 'Image principale' : `Image ${index + 1}`}</p>
                       <p className="truncate text-xs text-muted-foreground">{url}</p>
                     </div>
                     <Button type="button" variant="ghost" size="icon" onClick={() => removeImageUrl(url)}>
@@ -1061,7 +1076,7 @@ function ProductDialog({
                       <Image src={preview.url} alt={preview.name} fill className="object-cover" sizes="56px" unoptimized />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">New image {index + 1}</p>
+                      <p className="truncate text-sm font-medium">Nouvelle image {index + 1}</p>
                       <p className="truncate text-xs text-muted-foreground">{preview.name}</p>
                     </div>
                   </div>
@@ -1073,10 +1088,10 @@ function ProductDialog({
             <Label>Description</Label>
             <Textarea value={form.description || ''} onChange={(event) => setForm({ ...form, description: event.target.value })} />
           </div>
-          <ToggleRow label="Active product" checked={!!form.is_active} onCheckedChange={(value) => setForm({ ...form, is_active: value })} />
-          <ToggleRow label="In stock" checked={!!form.in_stock} onCheckedChange={(value) => setForm({ ...form, in_stock: value })} />
+          <ToggleRow label="Produit actif" checked={!!form.is_active} onCheckedChange={(value) => setForm({ ...form, is_active: value })} />
+          <ToggleRow label="En stock" checked={!!form.in_stock} onCheckedChange={(value) => setForm({ ...form, in_stock: value })} />
         </div>
-        <DialogFooter><Button onClick={submit} disabled={saving}>{saving ? 'Saving...' : 'Save product'}</Button></DialogFooter>
+        <DialogFooter><Button onClick={submit} disabled={saving}>{saving ? 'Enregistrement...' : 'Enregistrer le produit'}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -1090,7 +1105,7 @@ function ProductImportDialog({ onImported }: { onImported: () => void }) {
 
   async function submit() {
     if (!file) {
-      toast.error('Select an Excel or CSV file first')
+      toast.error('Sélectionnez d’abord un fichier Excel ou CSV')
       return
     }
 
@@ -1105,10 +1120,10 @@ function ProductImportDialog({ onImported }: { onImported: () => void }) {
         formData,
       )
       setResult(response)
-      toast.success(`${response.inserted} products imported`)
+      toast.success(`${response.inserted} produit(s) importé(s)`)
       onImported()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Import failed')
+      toast.error(error instanceof Error ? error.message : 'Import impossible')
     } finally {
       setLoading(false)
     }
@@ -1124,15 +1139,15 @@ function ProductImportDialog({ onImported }: { onImported: () => void }) {
       </DialogTrigger>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Import products from Excel</DialogTitle>
+          <DialogTitle>Importer des produits depuis Excel</DialogTitle>
           <DialogDescription>
-            Upload .xlsx or .csv with columns like name, description, price, stock_quantity, category, image_url, sku, is_active.
+            Importez un fichier .xlsx ou .csv avec des colonnes comme name, description, price, stock_quantity, category, image_url, sku, is_active.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="rounded-lg border border-dashed p-5">
-            <Label htmlFor="product-import" className="mb-2 block font-medium">Product file</Label>
+            <Label htmlFor="product-import" className="mb-2 block font-medium">Fichier produit</Label>
             <Input
               id="product-import"
               type="file"
@@ -1140,17 +1155,17 @@ function ProductImportDialog({ onImported }: { onImported: () => void }) {
               onChange={(event) => setFile(event.target.files?.[0] || null)}
             />
             <p className="mt-2 text-xs text-muted-foreground">
-              French headers are supported too: nom, prix, quantite, categorie, photo, reference.
+              Les en-têtes français sont aussi acceptés : nom, prix, quantite, categorie, photo, reference.
             </p>
           </div>
 
           {result && (
             <div className="rounded-lg border bg-muted/30 p-4 text-sm">
-              <p className="font-medium">{result.inserted} products inserted, {result.skipped} rows skipped.</p>
+              <p className="font-medium">{result.inserted} produit(s) ajouté(s), {result.skipped} ligne(s) ignorée(s).</p>
               {!!result.errors?.length && (
                 <div className="mt-3 max-h-36 space-y-1 overflow-auto text-destructive">
                   {result.errors.slice(0, 8).map((item) => (
-                    <p key={`${item.row}-${item.error}`}>Row {item.row}: {item.error}</p>
+                    <p key={`${item.row}-${item.error}`}>Ligne {item.row} : {item.error}</p>
                   ))}
                 </div>
               )}
@@ -1159,9 +1174,9 @@ function ProductImportDialog({ onImported }: { onImported: () => void }) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Close</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>Fermer</Button>
           <Button onClick={submit} disabled={loading}>
-            {loading ? 'Importing...' : 'Import products'}
+            {loading ? 'Importation...' : 'Importer les produits'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1176,17 +1191,17 @@ function CategoryDialog({ category, onSave }: { category?: AdminCategory; onSave
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant={category ? 'ghost' : 'default'} size={category ? 'icon' : 'default'}>
-          {category ? <Pencil className="h-4 w-4" /> : <><Plus className="mr-2 h-4 w-4" /> Add category</>}
+          {category ? <Pencil className="h-4 w-4" /> : <><Plus className="mr-2 h-4 w-4" /> Ajouter une catégorie</>}
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <DialogHeader><DialogTitle>{category ? 'Edit category' : 'Add category'}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{category ? 'Modifier la catégorie' : 'Ajouter une catégorie'}</DialogTitle></DialogHeader>
         <div className="grid gap-4">
-          <Field label="Name" value={form.name || ''} onChange={(value) => setForm({ ...form, name: value })} />
+          <Field label="Nom" value={form.name || ''} onChange={(value) => setForm({ ...form, name: value })} />
           <Field label="Slug" value={form.slug || ''} onChange={(value) => setForm({ ...form, slug: value })} />
           <Field label="Emoji" value={form.emoji || ''} onChange={(value) => setForm({ ...form, emoji: value })} />
         </div>
-        <DialogFooter><Button onClick={async () => { await onSave(form, category?.id); setOpen(false) }}>Save category</Button></DialogFooter>
+        <DialogFooter><Button onClick={async () => { await onSave(form, category?.id); setOpen(false) }}>Enregistrer la catégorie</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -1203,44 +1218,44 @@ function OrderDetails({
 }) {
   return (
     <Dialog>
-      <DialogTrigger asChild><Button variant="ghost" size="icon" aria-label="View order"><Eye className="h-4 w-4" /></Button></DialogTrigger>
+      <DialogTrigger asChild><Button variant="ghost" size="icon" aria-label="Voir la commande"><Eye className="h-4 w-4" /></Button></DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Order {order.order_number || order.id.slice(0, 8)}</DialogTitle>
+          <DialogTitle>Commande {order.order_number || order.id.slice(0, 8)}</DialogTitle>
           <DialogDescription>{customerName(order.profiles)} • {money.format(Number(order.total_amount))}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="grid gap-3 rounded-lg border p-3 text-sm sm:grid-cols-2">
             <div>
-              <p className="text-muted-foreground">Payment method</p>
+              <p className="text-muted-foreground">Mode de paiement</p>
               <p className="font-medium">{paymentMethodLabels[order.payment_method || 'cash_on_delivery']}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Payment status</p>
+              <p className="text-muted-foreground">Statut du paiement</p>
               <PaymentStatusBadge status={order.payment_status || 'pending'} />
             </div>
             <div>
-              <p className="text-muted-foreground">Shipping fee</p>
+              <p className="text-muted-foreground">Frais de livraison</p>
               <p className="font-medium">{money.format(Number(order.shipping_fee || 0))}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Order total</p>
+              <p className="text-muted-foreground">Total commande</p>
               <p className="font-medium">{money.format(Number(order.total_amount))}</p>
             </div>
           </div>
           {(order.order_items || []).map((item) => (
             <div key={item.id} className="flex items-center justify-between rounded-lg border p-3">
-              <span>{item.products?.name || 'Product'}</span>
+              <span>{item.products?.name || 'Produit'}</span>
               <span className="text-sm text-muted-foreground">x{item.quantity} • {money.format(Number(item.price))}</span>
             </div>
           ))}
           <Select value={order.status} onValueChange={(value) => onUpdate(order.id, value as OrderStatus)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{statuses.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent>
+            <SelectContent>{statuses.map((item) => <SelectItem key={item} value={item}>{orderStatusLabels[item]}</SelectItem>)}</SelectContent>
           </Select>
           <Select value={order.payment_status || 'pending'} onValueChange={(value) => onPaymentUpdate(order.id, value as PaymentStatus)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{paymentStatuses.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent>
+            <SelectContent>{paymentStatuses.map((item) => <SelectItem key={item} value={item}>{paymentStatusLabels[item]}</SelectItem>)}</SelectContent>
           </Select>
         </div>
       </DialogContent>
@@ -1251,15 +1266,15 @@ function OrderDetails({
 function ConfirmDelete({ onConfirm }: { onConfirm: () => void }) {
   return (
     <AlertDialog>
-      <AlertDialogTrigger asChild><Button variant="ghost" size="icon" aria-label="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
+      <AlertDialogTrigger asChild><Button variant="ghost" size="icon" aria-label="Supprimer"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete this item?</AlertDialogTitle>
-          <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+          <AlertDialogTitle>Supprimer cet élément ?</AlertDialogTitle>
+          <AlertDialogDescription>Cette action est définitive.</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>Delete</AlertDialogAction>
+          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>Supprimer</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -1267,11 +1282,11 @@ function ConfirmDelete({ onConfirm }: { onConfirm: () => void }) {
 }
 
 function StatusBadge({ status }: { status: OrderStatus }) {
-  return <span className={cn('inline-flex rounded-md px-2 py-1 text-xs font-medium capitalize', statusClass[status])}>{status}</span>
+  return <span className={cn('inline-flex rounded-md px-2 py-1 text-xs font-medium', statusClass[status])}>{orderStatusLabels[status]}</span>
 }
 
 function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
-  return <span className={cn('inline-flex rounded-md px-2 py-1 text-xs font-medium capitalize', paymentStatusClass[status])}>{status}</span>
+  return <span className={cn('inline-flex rounded-md px-2 py-1 text-xs font-medium', paymentStatusClass[status])}>{paymentStatusLabels[status]}</span>
 }
 
 function Field({ label, value, onChange, type = 'text', icon }: { label: string; value: any; onChange: (value: string) => void; type?: string; icon?: React.ReactNode }) {
@@ -1307,7 +1322,7 @@ function MiniMetric({ title, value, tone = 'green' }: { title: string; value: nu
 }
 
 function PackageIcon() {
-  return <div className="rounded-lg border px-3 py-2 text-sm">No image</div>
+  return <div className="rounded-lg border px-3 py-2 text-sm">Aucune image</div>
 }
 
 function customerName(profile?: AdminProfile | null) {

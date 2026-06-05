@@ -2,7 +2,7 @@
 
 import useSWR from 'swr'
 import { useState } from 'react'
-import { Calendar, Pencil, Plus, Trash2, Search, Filter } from 'lucide-react'
+import { Pencil, Plus, Trash2, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -35,6 +35,7 @@ import { EmptyState } from '@/components/admin/admin-shell'
 import { adminFetch } from '@/lib/admin/client'
 
 const formatDate = (date: string) => new Date(date).toLocaleDateString('fr-FR')
+const statusLabel = (status: string) => status === 'active' ? 'Active' : 'Inactive'
 
 function PromotionDialog({
     promotion,
@@ -61,7 +62,7 @@ function PromotionDialog({
 
     const handleSave = async () => {
         if (!form.title || !form.end_date) {
-            toast.error('Title and end date are required')
+            toast.error('Le titre et la date de fin sont obligatoires')
             return
         }
 
@@ -78,22 +79,22 @@ function PromotionDialog({
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button variant={promotion ? 'ghost' : 'default'} size={promotion ? 'icon' : 'default'}>
-                    {promotion ? <Pencil className="h-4 w-4" /> : <><Plus className="mr-2 h-4 w-4" /> Add Promotion</>}
+                    {promotion ? <Pencil className="h-4 w-4" /> : <><Plus className="mr-2 h-4 w-4" /> Ajouter une promotion</>}
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{promotion ? 'Edit promotion' : 'Add promotion'}</DialogTitle>
-                    <DialogDescription>Create or edit a special offer</DialogDescription>
+                    <DialogTitle>{promotion ? 'Modifier la promotion' : 'Ajouter une promotion'}</DialogTitle>
+                    <DialogDescription>Créez ou modifiez une offre spéciale.</DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-4">
                     <div>
-                        <Label>Title</Label>
+                        <Label>Titre</Label>
                         <Input
                             value={form.title}
                             onChange={(e) => setForm({ ...form, title: e.target.value })}
-                            placeholder="e.g. Summer Sale"
+                            placeholder="Ex. Offres d'été"
                         />
                     </div>
 
@@ -102,13 +103,13 @@ function PromotionDialog({
                         <Textarea
                             value={form.description || ''}
                             onChange={(e) => setForm({ ...form, description: e.target.value })}
-                            placeholder="e.g. Special offers on selected products"
+                            placeholder="Ex. Offres spéciales sur une sélection de produits"
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label>Start Date</Label>
+                            <Label>Date de début</Label>
                             <Input
                                 type="date"
                                 value={form.start_date?.split('T')[0] || ''}
@@ -116,7 +117,7 @@ function PromotionDialog({
                             />
                         </div>
                         <div>
-                            <Label>End Date</Label>
+                            <Label>Date de fin</Label>
                             <Input
                                 type="date"
                                 value={form.end_date?.split('T')[0] || ''}
@@ -126,7 +127,7 @@ function PromotionDialog({
                     </div>
 
                     <div>
-                        <Label>Image URL</Label>
+                        <Label>URL de l'image</Label>
                         <Input
                             value={form.image_url || ''}
                             onChange={(e) => setForm({ ...form, image_url: e.target.value })}
@@ -135,7 +136,7 @@ function PromotionDialog({
                     </div>
 
                     <div>
-                        <Label>Select Products</Label>
+                        <Label>Sélectionner les produits</Label>
                         <div className="border rounded-lg max-h-48 overflow-y-auto p-3 space-y-2">
                             {products.map((product) => (
                                 <label key={product.id} className="flex items-center gap-2 cursor-pointer">
@@ -158,10 +159,10 @@ function PromotionDialog({
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setOpen(false)}>
-                        Cancel
+                        Annuler
                     </Button>
                     <Button onClick={handleSave} disabled={loading}>
-                        {loading ? 'Saving...' : 'Save promotion'}
+                        {loading ? 'Enregistrement...' : 'Enregistrer la promotion'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -181,11 +182,11 @@ function ConfirmDelete({ onConfirm }: { onConfirm: () => Promise<void> }) {
             </AlertDialogTrigger>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Delete promotion?</AlertDialogTitle>
-                    <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                    <AlertDialogTitle>Supprimer cette promotion ?</AlertDialogTitle>
+                    <AlertDialogDescription>Cette action est définitive.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
                     <AlertDialogAction
                         onClick={async () => {
                             setLoading(true)
@@ -198,7 +199,7 @@ function ConfirmDelete({ onConfirm }: { onConfirm: () => Promise<void> }) {
                         disabled={loading}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                        {loading ? 'Deleting...' : 'Delete'}
+                        {loading ? 'Suppression...' : 'Supprimer'}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
@@ -252,10 +253,10 @@ export function PromotionsPage() {
                     body: JSON.stringify(payload),
                 }
             )
-            toast.success(id ? 'Promotion updated' : 'Promotion created')
+            toast.success(id ? 'Promotion mise à jour' : 'Promotion créée')
             mutatePromotions()
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to save promotion')
+            toast.error(error instanceof Error ? error.message : 'Impossible d’enregistrer la promotion')
             throw error
         }
     }
@@ -263,10 +264,10 @@ export function PromotionsPage() {
     async function deletePromotion(id: string) {
         try {
             await adminFetch(`/api/admin/promotions/${id}`, { method: 'DELETE' })
-            toast.success('Promotion deleted')
+            toast.success('Promotion supprimée')
             mutatePromotions()
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to delete promotion')
+            toast.error(error instanceof Error ? error.message : 'Impossible de supprimer la promotion')
             throw error
         }
     }
@@ -277,7 +278,7 @@ export function PromotionsPage() {
                 <div className="flex-1 relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search promotions..."
+                        placeholder="Rechercher des promotions..."
                         value={search}
                         onChange={(e) => {
                             setSearch(e.target.value)
@@ -296,18 +297,18 @@ export function PromotionsPage() {
                 <CardContent>
                     {displayed.length === 0 ? (
                         <EmptyState
-                            title={search ? 'No promotions found' : 'No promotions'}
-                            description={search ? 'Try a different search' : 'Create your first special offer'}
+                            title={search ? 'Aucune promotion trouvée' : 'Aucune promotion'}
+                            description={search ? 'Essayez une autre recherche' : 'Créez votre première offre spéciale'}
                         />
                     ) : (
                         <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Title</TableHead>
+                                        <TableHead>Titre</TableHead>
                                         <TableHead>Status</TableHead>
-                                        <TableHead>Products</TableHead>
-                                        <TableHead>Expires</TableHead>
+                                        <TableHead>Produits</TableHead>
+                                        <TableHead>Expire le</TableHead>
                                         <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -322,11 +323,11 @@ export function PromotionsPage() {
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant={promotion.status === 'active' ? 'default' : 'secondary'}>
-                                                    {promotion.status}
+                                                    {statusLabel(promotion.status)}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
-                                                {promotion.promotion_products?.length || 0} product(s)
+                                                {promotion.promotion_products?.length || 0} produit(s)
                                             </TableCell>
                                             <TableCell>{formatDate(promotion.end_date)}</TableCell>
                                             <TableCell className="text-right">
