@@ -16,6 +16,30 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       : []
     if (imageUrls.length > 0) payload.image_url = imageUrls[0]
 
+    // Validate SKU uniqueness if provided and changed
+    if (payload.sku) {
+      const { data: currentData, error: curErr } = await auth.context.supabase
+        .from('products')
+        .select('sku')
+        .eq('id', id)
+        .single()
+      if (curErr) throw curErr
+
+      const currentSku = currentData?.sku
+      if (currentSku !== payload.sku) {
+        const { data: existing, error: checkError } = await auth.context.supabase
+          .from('products')
+          .select('id')
+          .eq('sku', payload.sku)
+          .neq('id', id)
+          .limit(1)
+        if (checkError) throw checkError
+        if (existing && Array.isArray(existing) && existing.length > 0) {
+          return jsonError(new Error('SKU already exists'), 'SKU already exists')
+        }
+      }
+    }
+
     const { error } = await auth.context.supabase
       .from('products')
       .update({ ...payload, updated_at: new Date().toISOString() })

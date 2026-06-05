@@ -39,6 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EmptyState } from '@/components/admin/admin-shell'
 import { adminFetch, downloadAdminFile, adminUpload } from '@/lib/admin/client'
 import type { AdminCategory, AdminOrder, AdminProduct, AdminProfile, OrderStatus, PaymentStatus } from '@/lib/admin/types'
+import { makeSkuBase } from '@/lib/utils'
 import type { Brand } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
@@ -552,7 +553,7 @@ export function InventoryPage() {
                   </div>
                   <div>
                     <p className="font-medium">{product.name}</p>
-                  <p className="text-sm text-muted-foreground">{product.sku || product.categories?.name || 'Sans SKU'}</p>
+                    <p className="text-sm text-muted-foreground">{product.sku || product.categories?.name || 'Sans SKU'}</p>
                   </div>
                 </div>
                 <Badge variant={!product.in_stock || product.stock_quantity === 0 ? 'destructive' : product.stock_quantity <= 5 ? 'secondary' : 'outline'}>
@@ -892,6 +893,9 @@ function ProductDialog({
   const [showBrandCreator, setShowBrandCreator] = useState(false)
   const [creatingBrand, setCreatingBrand] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [generateSku, setGenerateSku] = useState(true)
+  const [skuAvailable, setSkuAvailable] = useState<boolean | null>(null)
+  const [checkingSku, setCheckingSku] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -901,6 +905,54 @@ function ProductDialog({
     setNewBrandName('')
     setShowBrandCreator(false)
   }, [open, product])
+
+  // Pre-fill SKU client-side when name or category changes and generateSku is enabled
+  useEffect(() => {
+    if (!generateSku) return
+    const shouldGenerate = !form.sku || String(form.sku).trim() === ''
+    if (!shouldGenerate) return
+
+    const categoryObj = categories.find((c) => c.id === form.category_id)
+    const categoryLabel = categoryObj ? (categoryObj.slug || categoryObj.name) : form.category || ''
+    const base = makeSkuBase(categoryLabel, form.name)
+    // Use -01 as initial suggestion; server will enforce uniqueness
+    setForm((current: any) => ({ ...current, sku: `${base}-01` }))
+  }, [form.name, form.category_id, form.sku, form.category, categories, generateSku])
+
+  // Check SKU uniqueness when manual SKU is entered
+  useEffect(() => {
+    let mounted = true
+    let timer: any
+    const sku = String(form.sku || '').trim()
+    if (!sku || generateSku) {
+      setSkuAvailable(null)
+      setCheckingSku(false)
+      return
+    }
+
+    setCheckingSku(true)
+    timer = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams()
+        params.append('sku', sku)
+        if (product?.id) params.append('excludeId', String(product.id))
+        const res = await fetch(`/api/admin/products/check-sku?${params.toString()}`)
+        const json = await res.json()
+        if (!mounted) return
+        setSkuAvailable(!!json.available)
+      } catch (err) {
+        if (!mounted) return
+        setSkuAvailable(null)
+      } finally {
+        if (mounted) setCheckingSku(false)
+      }
+    }, 500)
+
+    return () => {
+      mounted = false
+      clearTimeout(timer)
+    }
+  }, [form.sku, generateSku, product?.id])
 
   useEffect(() => {
     const previews = imageFiles.map((file) => ({ name: file.name, url: URL.createObjectURL(file) }))
@@ -927,7 +979,7 @@ function ProductDialog({
         ...new Set([...(form.image_urls || []), ...uploadedUrls].map((url: string) => url.trim()).filter(Boolean)),
       ]
 
-      await onSave({ ...form, image_url: imageUrls[0] || '', image_urls: imageUrls }, product?.id)
+      await onSave({ ...form, image_url: imageUrls[0] || '', image_urls: imageUrls, generate_sku: generateSku }, product?.id)
       setOpen(false)
       setImageFiles([])
     } catch (error) {
@@ -980,6 +1032,11 @@ function ProductDialog({
 
   const selectValue = showBrandCreator ? '__create_new_brand__' : form.brand_id || ''
 
+  // dynamic placeholder for SKU: show generated base when auto-generate enabled
+  const categoryObjForPlaceholder = categories.find((c) => c.id === form.category_id)
+  const categoryLabelForPlaceholder = categoryObjForPlaceholder ? (categoryObjForPlaceholder.slug || categoryObjForPlaceholder.name) : form.category || ''
+  const skuPlaceholder = generateSku ? `${makeSkuBase(categoryLabelForPlaceholder, form.name)}-01` : 'Ex : SEJ-PYR-01'
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -994,7 +1051,17 @@ function ProductDialog({
         </DialogHeader>
         <div className="grid gap-4 sm:grid-cols-2 overflow-y-auto pr-4">
           <Field label="Nom" value={form.name || ''} onChange={(value) => setForm({ ...form, name: value })} />
-          <Field label="SKU" value={form.sku || ''} onChange={(value) => setForm({ ...form, sku: value })} />
+          <div className="space-y-2">
+            <ToggleRow label="Générer automatiquement le SKU" checked={generateSku} onCheckedChange={(v) => setGenerateSku(v)} />
+            <div>
+              <Field label="SKU" placeholder={skuPlaceholder} value={form.sku || ''} onChange={(value) => setForm({ ...form, sku: value })} />
+              {!generateSku && (
+                <p className="mt-1 text-sm">
+                  {checkingSku ? <span className="text-muted-foreground">Vérification...</span> : skuAvailable === false ? <span className="text-destructive">Ce SKU est déjà utilisé</span> : skuAvailable === true ? <span className="text-emerald-600">SKU disponible</span> : <span className="text-muted-foreground">Saisissez un SKU unique</span>}
+                </p>
+              )}
+            </div>
+          </div>
           <Field label="Prix" type="number" value={form.price || ''} onChange={(value) => setForm({ ...form, price: value })} />
           <Field label="Prix original" type="number" value={form.original_price || ''} onChange={(value) => setForm({ ...form, original_price: value })} />
           <Field label="Stock" type="number" value={form.stock_quantity || 0} onChange={(value) => setForm({ ...form, stock_quantity: value })} />
@@ -1091,7 +1158,11 @@ function ProductDialog({
           <ToggleRow label="Produit actif" checked={!!form.is_active} onCheckedChange={(value) => setForm({ ...form, is_active: value })} />
           <ToggleRow label="En stock" checked={!!form.in_stock} onCheckedChange={(value) => setForm({ ...form, in_stock: value })} />
         </div>
-        <DialogFooter><Button onClick={submit} disabled={saving}>{saving ? 'Enregistrement...' : 'Enregistrer le produit'}</Button></DialogFooter>
+        <DialogFooter>
+          <Button onClick={submit} disabled={saving || (checkingSku || (generateSku === false && skuAvailable === false))}>
+            {saving ? 'Enregistrement...' : 'Enregistrer le produit'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -1289,12 +1360,12 @@ function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
   return <span className={cn('inline-flex rounded-md px-2 py-1 text-xs font-medium', paymentStatusClass[status])}>{paymentStatusLabels[status]}</span>
 }
 
-function Field({ label, value, onChange, type = 'text', icon }: { label: string; value: any; onChange: (value: string) => void; type?: string; icon?: React.ReactNode }) {
+function Field({ label, value, onChange, type = 'text', icon, placeholder }: { label: string; value: any; onChange: (value: string) => void; type?: string; icon?: React.ReactNode; placeholder?: string }) {
   return (
     <div className="grid gap-2">
       <Label>{label}</Label>
       <div className="relative">
-        <Input type={type} value={value} onChange={(event) => onChange(event.target.value)} className={icon ? 'pl-9' : undefined} />
+        <Input placeholder={placeholder} type={type} value={value} onChange={(event) => onChange(event.target.value)} className={icon ? 'pl-9' : undefined} />
         {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{icon}</div>}
       </div>
     </div>
