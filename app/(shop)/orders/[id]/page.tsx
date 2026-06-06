@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import { trackReactPixelEvent } from '@/lib/react-facebook-pixel-events'
 import type { Order } from '@/lib/types'
 
 const authenticatedFetcher = async (url: string) => {
@@ -94,6 +95,22 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
       supabase.removeChannel(channel)
     }
   }, [id, mutate, user?.id])
+
+  useEffect(() => {
+    if (!order) return
+    const storageKey = `meta-purchase-${order.id}`
+    if (sessionStorage.getItem(storageKey)) return
+    sessionStorage.setItem(storageKey, 'true')
+    trackReactPixelEvent('Purchase', {
+      value: Number(order.total_amount),
+      currency: 'TND',
+      contents: (order.order_items || []).map((item) => ({
+        id: String(item.product_id),
+        quantity: item.quantity,
+        item_price: Number(item.price),
+      })),
+    })
+  }, [order])
 
   if (authLoading || isLoading) {
     return (

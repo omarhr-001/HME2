@@ -9,7 +9,7 @@ import { useCart } from '@/lib/hooks'
 import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/hooks/use-toast'
 import { useLikedProducts } from '@/lib/hooks/use-liked-products'
-import { trackAddToCart, trackViewContent } from '@/lib/meta-pixel'
+import { trackReactPixelEvent } from '@/lib/react-facebook-pixel-events'
 import type { Product } from '@/lib/types'
 
 interface ProductCardProps extends Product {
@@ -102,14 +102,26 @@ export function ProductCard({
 
     if (onAddToCart) {
       onAddToCart(product, quantity)
-      trackAddToCart(product, quantity)
+      trackReactPixelEvent('AddToCart', {
+        content_name: product.name,
+        content_ids: [product.id],
+        content_type: 'product',
+        value: product.price,
+        currency: 'TND',
+      })
       return
     }
 
     setIsAdding(true)
     try {
       await addToCart(id, quantity)
-      trackAddToCart(product, quantity)
+      trackReactPixelEvent('AddToCart', {
+        content_name: product.name,
+        content_ids: [product.id],
+        content_type: 'product',
+        value: product.price,
+        currency: 'TND',
+      })
       toast({
         title: 'Succès',
         description: `${name} a été ajouté au panier`,
@@ -139,13 +151,25 @@ export function ProductCard({
         tabIndex={0}
         onClick={() => {
           setIsModalOpen(true)
-          trackViewContent(product)
+          trackReactPixelEvent('ViewContent', {
+            content_name: product.name,
+            content_ids: [product.id],
+            content_type: 'product',
+            value: product.price,
+            currency: 'TND',
+          })
         }}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault()
             setIsModalOpen(true)
-            trackViewContent(product)
+            trackReactPixelEvent('ViewContent', {
+              content_name: product.name,
+              content_ids: [product.id],
+              content_type: 'product',
+              value: product.price,
+              currency: 'TND',
+            })
           }
         }}
         onMouseLeave={() => setActiveImageIndex(0)}

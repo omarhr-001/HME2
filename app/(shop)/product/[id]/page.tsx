@@ -9,7 +9,7 @@ import { Heart, ShoppingCart, Truck, Shield, RefreshCw, Check } from 'lucide-rea
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { useAddToCart } from '@/lib/hooks'
-import { trackAddToCart, trackViewContent } from '@/lib/meta-pixel'
+import { trackReactPixelEvent } from '@/lib/react-facebook-pixel-events'
 import type { Product } from '@/lib/types'
 
 interface ProductPageProps {
@@ -49,7 +49,13 @@ export default function ProductPage({ params }: ProductPageProps) {
 
   useEffect(() => {
     if (product) {
-      trackViewContent(product)
+      trackReactPixelEvent('ViewContent', {
+        content_name: product.name,
+        content_ids: [product.id],
+        content_type: 'product',
+        value: product.price,
+        currency: 'TND',
+      })
     }
   }, [product])
 
@@ -96,7 +102,13 @@ export default function ProductPage({ params }: ProductPageProps) {
         productId: product.id,
         quantity: 1,
       })
-      trackAddToCart(product, 1)
+      trackReactPixelEvent('AddToCart', {
+        content_name: product.name,
+        content_ids: [product.id],
+        content_type: 'product',
+        value: product.price,
+        currency: 'TND',
+      })
       setAddedToCart(true)
       setTimeout(() => setAddedToCart(false), 2000)
     } catch (error) {

@@ -12,6 +12,7 @@ import { Trash2, ShoppingCart } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { CartItemWithProduct } from '@/lib/types'
 import { DEFAULT_SHIPPING_SETTINGS, type ShippingSettings } from '@/lib/shipping'
+import { trackReactPixelEvent } from '@/lib/react-facebook-pixel-events'
 
 const fetcher = async (url: string) => {
   const response = await fetch(url)
@@ -194,7 +195,17 @@ export default function CartPage() {
                   </p>
                 )}
 
-                <Link href="/checkout" className="btn-primary w-full justify-center block text-center mb-3">
+                <Link
+                  href="/checkout"
+                  onClick={() => {
+                    trackReactPixelEvent('InitiateCheckout', {
+                      value: total,
+                      currency: 'TND',
+                      num_items: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+                    })
+                  }}
+                  className="btn-primary w-full justify-center block text-center mb-3"
+                >
                   Procéder au paiement
                 </Link>
                 <Link href="/" className="btn-outline w-full text-center block">
