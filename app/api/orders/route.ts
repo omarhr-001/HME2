@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/server-supabase'
 import type { CheckoutAddress } from '@/lib/types'
 import { calculateShippingFee } from '@/lib/shipping'
 import { getShippingSettings } from '@/lib/server-shipping-settings'
+import { sendMetaPurchaseEvent } from '@/lib/server-meta-capi'
 
 const VALID_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'] as const
 const VALID_PAYMENT_METHODS = ['cash_on_delivery', 'bank_transfer'] as const
@@ -82,6 +83,7 @@ export async function POST(req: NextRequest) {
         : normalizedShippingAddress
 
       const orderData = await createOrderWithApplicationFlow({
+        req,
         supabase,
         userId: user.id,
         requestedCartItemIds,
@@ -133,6 +135,7 @@ function normalizeAddress(address: CheckoutAddress) {
 }
 
 async function createOrderWithApplicationFlow({
+  req,
   supabase,
   userId,
   requestedCartItemIds,
@@ -143,6 +146,7 @@ async function createOrderWithApplicationFlow({
   notes,
   status,
 }: {
+  req: NextRequest
   supabase: ReturnType<typeof createServiceClient>
   userId: string
   requestedCartItemIds: Set<string> | null
@@ -270,6 +274,19 @@ async function createOrderWithApplicationFlow({
     .eq('user_id', userId)
 
   if (clearError) throw clearError
+
+  await sendMetaPurchaseEvent({
+    req,
+    eventId: orderData.id,
+    orderId: orderData.order_number || orderData.id,
+    total: Number(orderData.total_amount || subtotal + shippingFee),
+    address: shippingAddress,
+    items: orderItems.map((item) => ({
+      productId: String(item.product_id),
+      quantity: Number(item.quantity || 0),
+      price: Number(item.price || 0),
+    })),
+  })
 
   return orderData
 }

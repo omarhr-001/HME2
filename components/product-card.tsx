@@ -9,6 +9,7 @@ import { useCart } from '@/lib/hooks'
 import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/hooks/use-toast'
 import { useLikedProducts } from '@/lib/hooks/use-liked-products'
+import { trackAddToCart, trackViewContent } from '@/lib/meta-pixel'
 import type { Product } from '@/lib/types'
 
 interface ProductCardProps extends Product {
@@ -101,12 +102,14 @@ export function ProductCard({
 
     if (onAddToCart) {
       onAddToCart(product, quantity)
+      trackAddToCart(product, quantity)
       return
     }
 
     setIsAdding(true)
     try {
       await addToCart(id, quantity)
+      trackAddToCart(product, quantity)
       toast({
         title: 'Succès',
         description: `${name} a été ajouté au panier`,
@@ -134,11 +137,15 @@ export function ProductCard({
       <div
         role="button"
         tabIndex={0}
-        onClick={() => setIsModalOpen(true)}
+        onClick={() => {
+          setIsModalOpen(true)
+          trackViewContent(product)
+        }}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault()
             setIsModalOpen(true)
+            trackViewContent(product)
           }
         }}
         onMouseLeave={() => setActiveImageIndex(0)}

@@ -9,6 +9,7 @@ import { Heart, ShoppingCart, Truck, Shield, RefreshCw, Check } from 'lucide-rea
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { useAddToCart } from '@/lib/hooks'
+import { trackAddToCart, trackViewContent } from '@/lib/meta-pixel'
 import type { Product } from '@/lib/types'
 
 interface ProductPageProps {
@@ -45,6 +46,12 @@ export default function ProductPage({ params }: ProductPageProps) {
 
     loadProduct()
   }, [params.id])
+
+  useEffect(() => {
+    if (product) {
+      trackViewContent(product)
+    }
+  }, [product])
 
   if (loading) {
     return (
@@ -89,6 +96,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         productId: product.id,
         quantity: 1,
       })
+      trackAddToCart(product, 1)
       setAddedToCart(true)
       setTimeout(() => setAddedToCart(false), 2000)
     } catch (error) {

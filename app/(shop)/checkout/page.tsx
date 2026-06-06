@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import useSWR from 'swr'
@@ -9,6 +9,7 @@ import { useCart, useCreateOrder } from '@/lib/hooks'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Banknote, ChevronRight, Landmark } from 'lucide-react'
+import { trackInitiateCheckout, trackPurchase } from '@/lib/meta-pixel'
 import type { CartItemWithProduct, Order } from '@/lib/types'
 import { DEFAULT_SHIPPING_SETTINGS, calculateShippingFee, getShippingZoneLabel, type ShippingSettings } from '@/lib/shipping'
 
@@ -43,6 +44,7 @@ export default function CheckoutPage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [paymentMethod, setPaymentMethod] = useState<Order['payment_method']>('cash_on_delivery')
+  const trackedCheckout = useRef(false)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -114,6 +116,7 @@ export default function CheckoutPage() {
       })
 
       if (order) {
+        trackPurchase(order, cartItems, total)
         window.location.href = createWhatsAppOrderUrl(order)
         return
       }
@@ -134,6 +137,12 @@ export default function CheckoutPage() {
   const shipping = calculateShippingFee(cartTotal, formData.city, shippingSettings)
   const total = cartTotal + shipping
   const shippingZone = getShippingZoneLabel(formData.city)
+
+  useEffect(() => {
+    if (trackedCheckout.current || cartLoading || cartItems.length === 0) return
+    trackedCheckout.current = true
+    trackInitiateCheckout(cartItems, total)
+  }, [cartItems, cartLoading, total])
 
   const createWhatsAppOrderUrl = (order: Order) => {
     const orderRef = order.order_number || order.id
