@@ -1292,7 +1292,9 @@ function ProductDialog({
           <DialogTitle>{product ? 'Modifier le produit' : 'Ajouter un produit'}</DialogTitle>
           <DialogDescription>Gérez le prix, le stock, les images et la catégorie.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 sm:grid-cols-2 overflow-y-auto pr-4">
+        
+        {/* Fixed basic fields section */}
+        <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Nom" value={form.name || ''} onChange={(value) => setForm({ ...form, name: value })} />
           <div className="space-y-2">
             <ToggleRow label="Générer automatiquement le SKU" checked={generateSku} onCheckedChange={(v) => setGenerateSku(v)} />
@@ -1382,40 +1384,44 @@ function ProductDialog({
           </div>
         </div>
 
-        {/* Image Management Card */}
-        <div className="border-t pt-2 mt-2">
-          <ImageManagementCard
-            existingImages={form.image_urls || []}
-            newImages={imagePreviews}
-            imagesToRemove={imagesToRemove}
-            onMarkForRemoval={(url) => setImagesToRemove(new Set([...imagesToRemove, url]))}
-            onUnmarkForRemoval={(url) => {
-              const newSet = new Set(imagesToRemove)
-              newSet.delete(url)
-              setImagesToRemove(newSet)
-            }}
-            onAddNewImages={async (files) => setImageFiles([...imageFiles, ...files])}
-            onRemoveNewImage={(url) => {
-              setImageFiles(imageFiles.filter((_, i) => imagePreviews[i]?.url !== url))
-              setImagePreviews(imagePreviews.filter((preview) => preview.url !== url))
-            }}
-            onReorderImages={(urls) => setForm({ ...form, image_urls: urls, image_url: urls[0] || '' })}
-          />
-        </div>
+        {/* Scrollable section for images and description */}
+        <div className="flex-1 overflow-y-auto space-y-3 pr-4">
+          {/* Image Management Card */}
+          <div className="border-t pt-2">
+            <ImageManagementCard
+              existingImages={form.image_urls || []}
+              newImages={imagePreviews}
+              imagesToRemove={imagesToRemove}
+              onMarkForRemoval={(url) => setImagesToRemove(new Set([...imagesToRemove, url]))}
+              onUnmarkForRemoval={(url) => {
+                const newSet = new Set(imagesToRemove)
+                newSet.delete(url)
+                setImagesToRemove(newSet)
+              }}
+              onAddNewImages={async (files) => setImageFiles([...imageFiles, ...files])}
+              onRemoveNewImage={(url) => {
+                setImageFiles(imageFiles.filter((_, i) => imagePreviews[i]?.url !== url))
+                setImagePreviews(imagePreviews.filter((preview) => preview.url !== url))
+              }}
+              onReorderImages={(urls) => setForm({ ...form, image_urls: urls, image_url: urls[0] || '' })}
+            />
+          </div>
 
-        {/* Rich Description Editor */}
-        <div className="border-t pt-2 mt-2">
-          <RichDescriptionEditor
-            value={form.description || ''}
-            onChange={(value) => setForm({ ...form, description: value })}
-            maxLength={5000}
-          />
-        </div>
+          {/* Rich Description Editor */}
+          <div className="border-t pt-2">
+            <RichDescriptionEditor
+              value={form.description || ''}
+              onChange={(value) => setForm({ ...form, description: value })}
+              maxLength={5000}
+            />
+          </div>
 
-        <div className="border-t pt-2 mt-2 grid gap-3 sm:grid-cols-2">
-          <ToggleRow label="Actif" checked={!!form.is_active} onCheckedChange={(value) => setForm({ ...form, is_active: value })} />
-          <ToggleRow label="En stock" checked={!!form.in_stock} onCheckedChange={(value) => setForm({ ...form, in_stock: value })} />
+          <div className="border-t pt-2 grid gap-3 sm:grid-cols-2">
+            <ToggleRow label="Actif" checked={!!form.is_active} onCheckedChange={(value) => setForm({ ...form, is_active: value })} />
+            <ToggleRow label="En stock" checked={!!form.in_stock} onCheckedChange={(value) => setForm({ ...form, in_stock: value })} />
+          </div>
         </div>
+        
         <DialogFooter>
           <Button onClick={submit} disabled={saving || (checkingSku || (generateSku === false && skuAvailable === false))}>
             {saving ? 'Enregistrement...' : 'Enregistrer le produit'}
