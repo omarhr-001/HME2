@@ -1110,9 +1110,9 @@ function ProductDialog({
 
     const categoryObj = categories.find((c) => c.id === form.category_id)
     const categoryLabel = categoryObj ? (categoryObj.slug || categoryObj.name) : form.category || ''
-    const base = makeSkuBase(categoryLabel, form.name)
+
     // Use -01 as initial suggestion; server will enforce uniqueness
-    setForm((current: any) => ({ ...current, sku: `${base}-01` }))
+    setForm((current: any) => ({ ...current, sku: `` }))
   }, [form.name, form.category_id, form.sku, form.category, categories, generateSku])
 
   // Check SKU uniqueness when manual SKU is entered
@@ -1278,7 +1278,7 @@ function ProductDialog({
   // dynamic placeholder for SKU: show generated base when auto-generate enabled
   const categoryObjForPlaceholder = categories.find((c) => c.id === form.category_id)
   const categoryLabelForPlaceholder = categoryObjForPlaceholder ? (categoryObjForPlaceholder.slug || categoryObjForPlaceholder.name) : form.category || ''
-  const skuPlaceholder = generateSku ? `${makeSkuBase(categoryLabelForPlaceholder, form.name)}-01` : 'Ex : SEJ-PYR-01'
+  const skuPlaceholder = generateSku ? `` : 'Ex : SEJ-PYR-01'
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -1292,7 +1292,7 @@ function ProductDialog({
           <DialogTitle>{product ? 'Modifier le produit' : 'Ajouter un produit'}</DialogTitle>
           <DialogDescription>Gérez le prix, le stock, les images et la catégorie.</DialogDescription>
         </DialogHeader>
-        
+
         {/* Single scrollable section for all content */}
         <div className="flex-1 overflow-y-auto space-y-3 pr-4">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -1420,7 +1420,7 @@ function ProductDialog({
             <ToggleRow label="En stock" checked={!!form.in_stock} onCheckedChange={(value) => setForm({ ...form, in_stock: value })} />
           </div>
         </div>
-        
+
         <DialogFooter>
           <Button onClick={submit} disabled={saving || (checkingSku || (generateSku === false && skuAvailable === false))}>
             {saving ? 'Enregistrement...' : 'Enregistrer le produit'}
@@ -1862,9 +1862,9 @@ function OrderStatusFlow({ orders }: { orders: AdminOrder[] }) {
     shipped: orders.filter(o => o.status === 'shipped').length,
     delivered: orders.filter(o => o.status === 'delivered').length,
   }
-  
+
   const total = orders.length || 1
-  
+
   return (
     <Card>
       <CardHeader>
@@ -1900,7 +1900,7 @@ function OrderStatusFlow({ orders }: { orders: AdminOrder[] }) {
 
 export function AdvancedAnalytics() {
   const { data, isLoading, error } = useSWR<any>('/api/admin/dashboard', adminFetch)
-  
+
   if (isLoading) return <div className="space-y-6"><Skeleton className="h-96 rounded-lg" /></div>
   if (error || !data) {
     return (
@@ -1911,13 +1911,13 @@ export function AdvancedAnalytics() {
   }
 
   const money = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'TND', maximumFractionDigits: 0 })
-  
+
   // Calculate advanced metrics
   const totalCustomers = data.stats.totalCustomers || 1
   const totalRevenue = data.stats.totalRevenue || 0
   const paidOrders = data.stats.paidOrders || 0
   const totalOrders = data.stats.totalOrders || 1
-  
+
   const cac = totalCustomers > 0 ? totalRevenue / totalCustomers : 0
   const clv = totalCustomers > 0 ? totalRevenue / totalCustomers : 0
   const conversionRate = totalOrders > 0 ? ((data.stats.deliveredOrders || 0) / totalOrders) * 100 : 0
@@ -1933,7 +1933,7 @@ export function AdvancedAnalytics() {
             <Badge variant="secondary" className="mt-3">Par client</Badge>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-5">
             <p className="text-sm text-muted-foreground">Valeur de vie client</p>
@@ -1941,7 +1941,7 @@ export function AdvancedAnalytics() {
             <Badge variant="secondary" className="mt-3">Total</Badge>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-5">
             <p className="text-sm text-muted-foreground">Taux de conversion</p>
@@ -1949,7 +1949,7 @@ export function AdvancedAnalytics() {
             <Badge variant="secondary" className="mt-3">Taux de livraison</Badge>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-5">
             <p className="text-sm text-muted-foreground">Taux de client récurrent</p>
