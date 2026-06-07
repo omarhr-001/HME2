@@ -1293,99 +1293,98 @@ function ProductDialog({
           <DialogDescription>Gérez le prix, le stock, les images et la catégorie.</DialogDescription>
         </DialogHeader>
         
-        {/* Fixed basic fields section */}
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Nom" value={form.name || ''} onChange={(value) => setForm({ ...form, name: value })} />
-          <div className="space-y-2">
-            <ToggleRow label="Générer automatiquement le SKU" checked={generateSku} onCheckedChange={(v) => setGenerateSku(v)} />
-            <div>
-              <Field label="SKU" placeholder={skuPlaceholder} value={form.sku || ''} onChange={(value) => setForm({ ...form, sku: value })} />
-              {!generateSku && (
-                <p className="mt-1 text-sm">
-                  {checkingSku ? <span className="text-muted-foreground">Vérification...</span> : skuAvailable === false ? <span className="text-destructive">Ce SKU est déjà utilisé</span> : skuAvailable === true ? <span className="text-emerald-600">SKU disponible</span> : <span className="text-muted-foreground">Saisissez un SKU unique</span>}
-                </p>
+        {/* Single scrollable section for all content */}
+        <div className="flex-1 overflow-y-auto space-y-3 pr-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Nom" value={form.name || ''} onChange={(value) => setForm({ ...form, name: value })} />
+            <div className="space-y-2">
+              <ToggleRow label="Générer automatiquement le SKU" checked={generateSku} onCheckedChange={(v) => setGenerateSku(v)} />
+              <div>
+                <Field label="SKU" placeholder={skuPlaceholder} value={form.sku || ''} onChange={(value) => setForm({ ...form, sku: value })} />
+                {!generateSku && (
+                  <p className="mt-1 text-sm">
+                    {checkingSku ? <span className="text-muted-foreground">Vérification...</span> : skuAvailable === false ? <span className="text-destructive">Ce SKU est déjà utilisé</span> : skuAvailable === true ? <span className="text-emerald-600">SKU disponible</span> : <span className="text-muted-foreground">Saisissez un SKU unique</span>}
+                  </p>
+                )}
+              </div>
+            </div>
+            <Field label="Prix" type="number" value={form.price || ''} onChange={(value) => setForm({ ...form, price: value })} />
+            <Field label="Prix original" type="number" value={form.original_price || ''} onChange={(value) => setForm({ ...form, original_price: value })} />
+            <Field label="Stock" type="number" value={form.stock_quantity || 0} onChange={(value) => setForm({ ...form, stock_quantity: value })} />
+            <div className="grid gap-2">
+              <Label>Catégorie</Label>
+              <Select value={form.category_id || ''} onValueChange={(value) => setForm({ ...form, category_id: value })}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner une catégorie" /></SelectTrigger>
+                <SelectContent>{categories.map((category) => <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Marque</Label>
+              <Select
+                value={selectValue}
+                onValueChange={(value) => {
+                  if (value === '__create_new_brand__') {
+                    setShowBrandCreator(true)
+                    setForm((current: any) => ({ ...current, brand_id: null }))
+                    return
+                  }
+
+                  setShowBrandCreator(false)
+                  setForm((current: any) => ({ ...current, brand_id: value }))
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Sélectionner une marque" /></SelectTrigger>
+                <SelectContent>
+                  {brands.map((brand) => <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>)}
+                  <SelectItem value="__create_new_brand__">+ Ajouter une nouvelle marque</SelectItem>
+                </SelectContent>
+              </Select>
+              {showBrandCreator && (
+                <div className="rounded-lg border border-dashed p-3 space-y-3">
+                  <p className="text-sm font-medium text-muted-foreground">Créer une nouvelle marque dans Supabase</p>
+                  <div className="grid gap-2">
+                    <Input
+                      value={newBrandName}
+                      onChange={(event) => setNewBrandName(event.target.value)}
+                      placeholder="Nom de la marque"
+                    />
+                    <Field
+                      label="URL du logo"
+                      value={newBrandLogoUrl}
+                      onChange={(value) => setNewBrandLogoUrl(value)}
+                      placeholder="https://..."
+                    />
+                    <div className="grid gap-2">
+                      <Label>Uploader un logo</Label>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => setNewBrandLogoFile(event.target.files?.[0] || null)}
+                        />
+                        <Button type="button" onClick={uploadBrandLogo} disabled={!newBrandLogoFile || uploadingBrandLogo}>
+                          {uploadingBrandLogo ? 'Téléversement...' : 'Téléverser le logo'}
+                        </Button>
+                      </div>
+                      {newBrandLogoUrl && (
+                        <div className="flex items-center gap-3">
+                          <img src={newBrandLogoUrl} alt={newBrandName || 'Logo de marque'} className="h-14 w-14 rounded-md object-cover border" />
+                          <span className="truncate text-sm text-muted-foreground">{newBrandLogoUrl}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <Button type="button" onClick={createBrand} disabled={creatingBrand}>
+                    {creatingBrand ? 'Enregistrement...' : 'Enregistrer la marque'}
+                  </Button>
+                </div>
               )}
             </div>
+            <div className="sm:col-span-2">
+              <Field label="URL de l'image principale" value={form.image_url || ''} onChange={updatePrimaryImageUrl} icon={<Upload className="h-4 w-4" />} />
+            </div>
           </div>
-          <Field label="Prix" type="number" value={form.price || ''} onChange={(value) => setForm({ ...form, price: value })} />
-          <Field label="Prix original" type="number" value={form.original_price || ''} onChange={(value) => setForm({ ...form, original_price: value })} />
-          <Field label="Stock" type="number" value={form.stock_quantity || 0} onChange={(value) => setForm({ ...form, stock_quantity: value })} />
-          <div className="grid gap-2">
-            <Label>Catégorie</Label>
-            <Select value={form.category_id || ''} onValueChange={(value) => setForm({ ...form, category_id: value })}>
-              <SelectTrigger><SelectValue placeholder="Sélectionner une catégorie" /></SelectTrigger>
-              <SelectContent>{categories.map((category) => <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label>Marque</Label>
-            <Select
-              value={selectValue}
-              onValueChange={(value) => {
-                if (value === '__create_new_brand__') {
-                  setShowBrandCreator(true)
-                  setForm((current: any) => ({ ...current, brand_id: null }))
-                  return
-                }
 
-                setShowBrandCreator(false)
-                setForm((current: any) => ({ ...current, brand_id: value }))
-              }}
-            >
-              <SelectTrigger><SelectValue placeholder="Sélectionner une marque" /></SelectTrigger>
-              <SelectContent>
-                {brands.map((brand) => <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>)}
-                <SelectItem value="__create_new_brand__">+ Ajouter une nouvelle marque</SelectItem>
-              </SelectContent>
-            </Select>
-            {showBrandCreator && (
-              <div className="rounded-lg border border-dashed p-3 space-y-3">
-                <p className="text-sm font-medium text-muted-foreground">Créer une nouvelle marque dans Supabase</p>
-                <div className="grid gap-2">
-                  <Input
-                    value={newBrandName}
-                    onChange={(event) => setNewBrandName(event.target.value)}
-                    placeholder="Nom de la marque"
-                  />
-                  <Field
-                    label="URL du logo"
-                    value={newBrandLogoUrl}
-                    onChange={(value) => setNewBrandLogoUrl(value)}
-                    placeholder="https://..."
-                  />
-                  <div className="grid gap-2">
-                    <Label>Uploader un logo</Label>
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(event) => setNewBrandLogoFile(event.target.files?.[0] || null)}
-                      />
-                      <Button type="button" onClick={uploadBrandLogo} disabled={!newBrandLogoFile || uploadingBrandLogo}>
-                        {uploadingBrandLogo ? 'Téléversement...' : 'Téléverser le logo'}
-                      </Button>
-                    </div>
-                    {newBrandLogoUrl && (
-                      <div className="flex items-center gap-3">
-                        <img src={newBrandLogoUrl} alt={newBrandName || 'Logo de marque'} className="h-14 w-14 rounded-md object-cover border" />
-                        <span className="truncate text-sm text-muted-foreground">{newBrandLogoUrl}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <Button type="button" onClick={createBrand} disabled={creatingBrand}>
-                  {creatingBrand ? 'Enregistrement...' : 'Enregistrer la marque'}
-                </Button>
-              </div>
-            )}
-          </div>
-          <div className="sm:col-span-2">
-            <Field label="URL de l'image principale" value={form.image_url || ''} onChange={updatePrimaryImageUrl} icon={<Upload className="h-4 w-4" />} />
-          </div>
-        </div>
-
-        {/* Scrollable section for images and description */}
-        <div className="flex-1 overflow-y-auto space-y-3 pr-4">
           {/* Image Management Card */}
           <div className="border-t pt-2">
             <ImageManagementCard
