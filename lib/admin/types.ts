@@ -94,6 +94,10 @@ export type AdminDashboardData = {
     deliveryRate: number
     paidRate: number
     stockAlertRate: number
+    customerAcquisitionCost?: number
+    customerLifetimeValue?: number
+    conversionRate?: number
+    repeatCustomerRate?: number
   }
   revenueSeries: Array<{ label: string; revenue: number }>
   weeklyRevenue: Array<{ label: string; revenue: number }>
@@ -108,4 +112,6 @@ export type AdminDashboardData = {
   latestOrders: AdminOrder[]
   topCustomers: Array<{ id: string; name: string; email: string | null; total: number; orders: number }>
   insights: Array<{ title: string; value: string; tone: 'green' | 'blue' | 'amber' | 'rose' }>
+  productPerformance?: Array<{ name: string; revenue: number; profit: number; margin: number }>
+  conversionTrend?: Array<{ label: string; rate: number }>
 }

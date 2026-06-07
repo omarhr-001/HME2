@@ -1,6 +1,7 @@
 'use client'
 
 import useSWR from 'swr'
+import { useEffect, useState } from 'react'
 import {
   Area,
   AreaChart,
@@ -27,6 +28,7 @@ import {
   Sparkles,
   TrendingUp,
   Users,
+  Settings2,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -35,13 +37,23 @@ import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from '@/components/ui/dialog'
+import { Switch } from '@/components/ui/switch'
 import type { AdminDashboardData } from '@/lib/admin/types'
 import { adminFetch } from '@/lib/admin/client'
 
 const money = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'TND', maximumFractionDigits: 0 })
 
 const chartConfig = {
-  revenue: { label: 'Chiffre d’affaires', color: 'hsl(var(--primary))' },
+  revenue: { label: "Chiffre d'affaires", color: 'hsl(var(--primary))' },
   orders: { label: 'Commandes', color: '#3b82f6' },
   customers: { label: 'Clients', color: '#8b5cf6' },
   quantity: { label: 'Quantité', color: '#22c55e' },
@@ -53,8 +65,44 @@ function formatTrend(value: number) {
   return `${rounded}%`
 }
 
+const defaultDashboardSettings = {
+  showKPIs: true,
+  showInsights: true,
+  showRevenue: true,
+  showStatus: true,
+  showPayment: true,
+  showCustomers: true,
+  showOrders: true,
+  showInventory: true,
+  showBestSellers: true,
+  showStock: true,
+  showActivity: true,
+}
+
 export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boolean }) {
   const { data, isLoading, error } = useSWR<AdminDashboardData>('/api/admin/dashboard', adminFetch)
+  const [settings, setSettings] = useState(defaultDashboardSettings)
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('hme-dashboard-settings')
+      if (stored) {
+        setSettings(prev => ({ ...prev, ...JSON.parse(stored) }))
+      }
+    } catch (e) {
+      // Ignore parse errors
+    }
+  }, [])
+
+  const saveDashboardSettings = (newSettings: typeof defaultDashboardSettings) => {
+    setSettings(newSettings)
+    localStorage.setItem('hme-dashboard-settings', JSON.stringify(newSettings))
+  }
+
+  const resetDashboardSettings = () => {
+    setSettings(defaultDashboardSettings)
+    localStorage.removeItem('hme-dashboard-settings')
+  }
 
   if (isLoading) return <DashboardSkeleton />
   if (error || !data) {
@@ -69,87 +117,165 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
     <div className="space-y-6">
       {!analyticsOnly && (
         <>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard title="Chiffre d’affaires total" value={money.format(data.stats.totalRevenue)} icon={CircleDollarSign} trend={`${formatTrend(data.stats.revenueGrowth)} ce mois-ci`} />
-            <StatCard title="Commandes totales" value={data.stats.totalOrders.toLocaleString()} icon={ShoppingCart} trend={`${formatTrend(data.stats.orderGrowth)} ce mois-ci`} />
-            <StatCard title="Produits totaux" value={data.stats.totalProducts.toLocaleString()} icon={Package} trend={`${formatTrend(data.stats.productGrowth)} ce mois-ci`} />
-            <StatCard title="Clients totaux" value={data.stats.totalCustomers.toLocaleString()} icon={Users} trend={`${formatTrend(data.stats.customerGrowthRate)} ce mois-ci`} />
-            <StatCard title="Commandes en attente" value={data.stats.pendingOrders.toLocaleString()} icon={Activity} trend={`${data.stats.pendingOrders.toLocaleString()} en attente`} />
-            <StatCard title="En traitement" value={data.stats.processingOrders.toLocaleString()} icon={ShoppingCart} trend={`${data.stats.processingOrders.toLocaleString()} actives`} />
-            <StatCard title="Commandes livrées" value={data.stats.deliveredOrders.toLocaleString()} icon={CheckCircle2} trend={`${Math.round(data.stats.deliveryRate)}% de livraison`} />
-            <StatCard title="Commandes payées" value={data.stats.paidOrders.toLocaleString()} icon={CreditCard} trend={`${Math.round(data.stats.paidRate)}% payées`} />
-            <StatCard title="Panier moyen" value={money.format(data.stats.avgOrderValue)} icon={TrendingUp} trend={`${formatTrend(data.stats.avgOrderGrowth)} ce mois-ci`} />
-            <StatCard title="Alertes stock" value={(data.lowStockProducts.length + data.outOfStockProducts.length).toString()} icon={AlertTriangle} trend={`${Math.round(data.stats.stockAlertRate)}% du catalogue`} />
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Tableau de bord</h2>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Settings2 className="mr-2 h-4 w-4" />
+                  Personnaliser
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Personnaliser le tableau de bord</DialogTitle>
+                  <DialogDescription>Sélectionnez les sections à afficher sur votre tableau de bord</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Cartes KPI</span>
+                    <Switch checked={settings.showKPIs} onCheckedChange={(v) => saveDashboardSettings({ ...settings, showKPIs: v })} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Insights</span>
+                    <Switch checked={settings.showInsights} onCheckedChange={(v) => saveDashboardSettings({ ...settings, showInsights: v })} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Graphique de chiffre d'affaires</span>
+                    <Switch checked={settings.showRevenue} onCheckedChange={(v) => saveDashboardSettings({ ...settings, showRevenue: v })} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Statut des commandes</span>
+                    <Switch checked={settings.showStatus} onCheckedChange={(v) => saveDashboardSettings({ ...settings, showStatus: v })} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Statut des paiements</span>
+                    <Switch checked={settings.showPayment} onCheckedChange={(v) => saveDashboardSettings({ ...settings, showPayment: v })} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Meilleurs clients</span>
+                    <Switch checked={settings.showCustomers} onCheckedChange={(v) => saveDashboardSettings({ ...settings, showCustomers: v })} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Analyse des commandes</span>
+                    <Switch checked={settings.showOrders} onCheckedChange={(v) => saveDashboardSettings({ ...settings, showOrders: v })} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Évolution des clients</span>
+                    <Switch checked={settings.showInventory} onCheckedChange={(v) => saveDashboardSettings({ ...settings, showInventory: v })} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Produits les plus vendus</span>
+                    <Switch checked={settings.showBestSellers} onCheckedChange={(v) => saveDashboardSettings({ ...settings, showBestSellers: v })} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Suivi du stock</span>
+                    <Switch checked={settings.showStock} onCheckedChange={(v) => saveDashboardSettings({ ...settings, showStock: v })} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Activité récente</span>
+                    <Switch checked={settings.showActivity} onCheckedChange={(v) => saveDashboardSettings({ ...settings, showActivity: v })} />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={resetDashboardSettings}>Réinitialiser</Button>
+                  <Button>Terminé</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-4">
-            {data.insights.map((insight) => (
-              <Card key={insight.title} className="overflow-hidden border bg-card/80 shadow-sm backdrop-blur">
-                <CardContent className="flex items-start gap-3 p-5">
-                  <div className="rounded-lg bg-primary/10 p-2 text-primary">
-                    <Sparkles className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{insight.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{insight.value}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {settings.showKPIs && (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <StatCard title="Chiffre d'affaires total" value={money.format(data.stats.totalRevenue)} icon={CircleDollarSign} trend={`${formatTrend(data.stats.revenueGrowth)} ce mois-ci`} />
+              <StatCard title="Commandes totales" value={data.stats.totalOrders.toLocaleString()} icon={ShoppingCart} trend={`${formatTrend(data.stats.orderGrowth)} ce mois-ci`} />
+              <StatCard title="Produits totaux" value={data.stats.totalProducts.toLocaleString()} icon={Package} trend={`${formatTrend(data.stats.productGrowth)} ce mois-ci`} />
+              <StatCard title="Clients totaux" value={data.stats.totalCustomers.toLocaleString()} icon={Users} trend={`${formatTrend(data.stats.customerGrowthRate)} ce mois-ci`} />
+              <StatCard title="Commandes en attente" value={data.stats.pendingOrders.toLocaleString()} icon={Activity} trend={`${data.stats.pendingOrders.toLocaleString()} en attente`} />
+              <StatCard title="En traitement" value={data.stats.processingOrders.toLocaleString()} icon={ShoppingCart} trend={`${data.stats.processingOrders.toLocaleString()} actives`} />
+              <StatCard title="Commandes livrées" value={data.stats.deliveredOrders.toLocaleString()} icon={CheckCircle2} trend={`${Math.round(data.stats.deliveryRate)}% de livraison`} />
+              <StatCard title="Commandes payées" value={data.stats.paidOrders.toLocaleString()} icon={CreditCard} trend={`${Math.round(data.stats.paidRate)}% payées`} />
+              <StatCard title="Panier moyen" value={money.format(data.stats.avgOrderValue)} icon={TrendingUp} trend={`${formatTrend(data.stats.avgOrderGrowth)} ce mois-ci`} />
+              <StatCard title="Alertes stock" value={(data.lowStockProducts.length + data.outOfStockProducts.length).toString()} icon={AlertTriangle} trend={`${Math.round(data.stats.stockAlertRate)}% du catalogue`} />
+            </div>
+          )}
+
+          {settings.showInsights && (
+            <div className="grid gap-4 lg:grid-cols-4">
+              {data.insights.map((insight) => (
+                <Card key={insight.title} className="overflow-hidden border bg-card/80 shadow-sm backdrop-blur">
+                  <CardContent className="flex items-start gap-3 p-5">
+                    <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{insight.title}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{insight.value}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[1.55fr_1fr]">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Vue du chiffre d’affaires</CardTitle>
-            <Tabs defaultValue="daily" className="w-auto">
-              <TabsList>
-                <TabsTrigger value="daily">Jour</TabsTrigger>
-                <TabsTrigger value="weekly">Semaine</TabsTrigger>
-                <TabsTrigger value="monthly">Mois</TabsTrigger>
-              </TabsList>
-              <TabsContent value="daily" className="mt-4">
-                <RevenueChart data={data.revenueSeries} />
-              </TabsContent>
-              <TabsContent value="weekly" className="mt-4">
-                <RevenueChart data={data.weeklyRevenue} />
-              </TabsContent>
-              <TabsContent value="monthly" className="mt-4">
-                <RevenueChart data={data.monthlyRevenue} />
-              </TabsContent>
-            </Tabs>
-          </CardHeader>
-        </Card>
+      {(settings.showRevenue || settings.showStatus) && (
+        <div className="grid gap-6 xl:grid-cols-[1.55fr_1fr]">
+          {settings.showRevenue && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Vue du chiffre d'affaires</CardTitle>
+                <Tabs defaultValue="daily" className="w-auto">
+                  <TabsList>
+                    <TabsTrigger value="daily">Jour</TabsTrigger>
+                    <TabsTrigger value="weekly">Semaine</TabsTrigger>
+                    <TabsTrigger value="monthly">Mois</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="daily" className="mt-4">
+                    <RevenueChart data={data.revenueSeries} />
+                  </TabsContent>
+                  <TabsContent value="weekly" className="mt-4">
+                    <RevenueChart data={data.weeklyRevenue} />
+                  </TabsContent>
+                  <TabsContent value="monthly" className="mt-4">
+                    <RevenueChart data={data.monthlyRevenue} />
+                  </TabsContent>
+                </Tabs>
+              </CardHeader>
+            </Card>
+          )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Statut des commandes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[285px] w-full">
-              <PieChart>
-                <Pie data={data.statusDistribution} dataKey="value" nameKey="name" innerRadius={62} outerRadius={92}>
-                  {data.statusDistribution.map((entry) => (
-                    <Cell key={entry.name} fill={entry.fill} />
+          {settings.showStatus && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Statut des commandes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={chartConfig} className="h-[285px] w-full">
+                  <PieChart>
+                    <Pie data={data.statusDistribution} dataKey="value" nameKey="name" innerRadius={62} outerRadius={92}>
+                      {data.statusDistribution.map((entry) => (
+                        <Cell key={entry.name} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                  </PieChart>
+                </ChartContainer>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {data.statusDistribution.map((item) => (
+                    <div key={item.name} className="flex items-center gap-2 rounded-md border px-2 py-1">
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.fill }} />
+                      <span className="capitalize">{item.name}</span>
+                      <span className="ml-auto text-muted-foreground">{item.value}</span>
+                    </div>
                   ))}
-                </Pie>
-                <ChartTooltip content={<ChartTooltipContent />} />
-              </PieChart>
-            </ChartContainer>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              {data.statusDistribution.map((item) => (
-                <div key={item.name} className="flex items-center gap-2 rounded-md border px-2 py-1">
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.fill }} />
-                  <span className="capitalize">{item.name}</span>
-                  <span className="ml-auto text-muted-foreground">{item.value}</span>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <Card>
