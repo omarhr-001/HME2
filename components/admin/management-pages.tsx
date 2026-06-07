@@ -37,8 +37,11 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { EmptyState } from '@/components/admin/admin-shell'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ImageManagementCard } from '@/components/admin/image-management'
+import { RichDescriptionEditor } from '@/components/admin/rich-description-editor'
 import { adminFetch, downloadAdminFile, adminUpload } from '@/lib/admin/client'
+import { EmptyState } from '@/components/admin/admin-shell'
 import type { AdminCategory, AdminOrder, AdminProduct, AdminProfile, OrderStatus, PaymentStatus } from '@/lib/admin/types'
 import { makeSkuBase } from '@/lib/utils'
 import type { Brand } from '@/lib/types'
@@ -153,6 +156,7 @@ export function OrdersPage() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set())
 
   const orderQuery = useMemo(() => {
     const params = new URLSearchParams()
@@ -189,8 +193,32 @@ export function OrdersPage() {
     mutate()
   }
 
+  async function bulkUpdateStatus(nextStatus: OrderStatus) {
+    if (selectedOrders.size === 0) {
+      toast.error('Veuillez sélectionner au moins une commande')
+      return
+    }
+    await Promise.all(Array.from(selectedOrders).map(id => updateStatus(id, nextStatus)))
+    setSelectedOrders(new Set())
+  }
+
   const exportQuery = new URLSearchParams(orderQuery)
   exportQuery.set('format', 'csv')
+
+  const toggleOrder = (id: string) => {
+    const newSelected = new Set(selectedOrders)
+    if (newSelected.has(id)) newSelected.delete(id)
+    else newSelected.add(id)
+    setSelectedOrders(newSelected)
+  }
+
+  const selectAll = () => {
+    if (selectedOrders.size === paged.length) {
+      setSelectedOrders(new Set())
+    } else {
+      setSelectedOrders(new Set(paged.map(o => o.id)))
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -247,10 +275,44 @@ export function OrdersPage() {
         }
       />
 
+      {selectedOrders.size > 0 && (
+        <Card className="border-primary bg-primary/5">
+          <CardContent className="flex items-center justify-between p-4">
+            <span className="text-sm font-medium">{selectedOrders.size} commande(s) sélectionnée(s)</span>
+            <div className="flex gap-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline">Mettre à jour le statut</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Mettre à jour le statut en masse</DialogTitle>
+                    <DialogDescription>Sélectionnez le nouveau statut pour les {selectedOrders.size} commande(s)</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    {statuses.map((s) => (
+                      <Button key={s} variant="outline" className="w-full justify-start" onClick={() => { bulkUpdateStatus(s); }}>
+                        {orderStatusLabels[s]}
+                      </Button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Button size="sm" variant="outline" onClick={() => setSelectedOrders(new Set())}>Annuler</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <OrderStatusFlow orders={data} />
+
       <Card>
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <input type="checkbox" checked={selectedOrders.size === paged.length && paged.length > 0} onChange={selectAll} className="rounded" />
+              </TableHead>
               <TableHead>Order ID</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Produits</TableHead>
@@ -265,6 +327,9 @@ export function OrdersPage() {
           <TableBody>
             {paged.map((order) => (
               <TableRow key={order.id}>
+                <TableCell>
+                  <input type="checkbox" checked={selectedOrders.has(order.id)} onChange={() => toggleOrder(order.id)} className="rounded" />
+                </TableCell>
                 <TableCell className="font-medium">{order.order_number || order.id.slice(0, 8)}</TableCell>
                 <TableCell>{customerName(order.profiles)}</TableCell>
                 <TableCell>{order.order_items?.length || 0}</TableCell>
@@ -313,6 +378,9 @@ export function OrdersPage() {
 
 export function ProductsPage() {
   const [search, setSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [brandFilter, setBrandFilter] = useState('all')
+  const [stockFilter, setStockFilter] = useState('all')
   const { data: products = [], mutate } = useSWR<AdminProduct[]>(`/api/admin/products?search=${encodeURIComponent(search)}`, adminFetch)
   const { data: categories = [] } = useSWR<AdminCategory[]>('/api/admin/categories', adminFetch)
   const { data: brands = [], mutate: mutateBrands } = useSWR<Brand[]>('/api/admin/brands', adminFetch)
@@ -332,6 +400,17 @@ export function ProductsPage() {
     mutate()
   }
 
+  const filtered = useMemo(() => {
+    return products.filter(product => {
+      if (categoryFilter !== 'all' && product.category_id !== categoryFilter) return false
+      if (brandFilter !== 'all' && product.brand_id !== brandFilter) return false
+      if (stockFilter === 'low' && product.stock_quantity >= 5) return false
+      if (stockFilter === 'out' && product.stock_quantity !== 0) return false
+      if (stockFilter === 'in' && product.stock_quantity === 0) return false
+      return true
+    })
+  }, [products, categoryFilter, brandFilter, stockFilter])
+
   return (
     <div className="space-y-5">
       <Toolbar
@@ -339,6 +418,29 @@ export function ProductsPage() {
         setSearch={setSearch}
         right={
           <>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes catégories</SelectItem>
+                {categories.map((cat) => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={brandFilter} onValueChange={setBrandFilter}>
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes marques</SelectItem>
+                {brands.map((brand) => <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={stockFilter} onValueChange={setStockFilter}>
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les stocks</SelectItem>
+                <SelectItem value="in">En stock</SelectItem>
+                <SelectItem value="low">Stock faible</SelectItem>
+                <SelectItem value="out">Rupture</SelectItem>
+              </SelectContent>
+            </Select>
             <ProductImportDialog onImported={() => mutate()} />
             <BrandManagerDialog brands={brands} onUpdated={mutateBrands} />
             <ProductDialog brands={brands} categories={categories} onSave={saveProduct} onBrandCreated={mutateBrands} />
@@ -346,7 +448,7 @@ export function ProductsPage() {
         }
       />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {products.map((product) => {
+        {filtered.map((product) => {
           const images = productImages(product)
           const brandName = productBrandName(product, brands)
 
@@ -388,6 +490,7 @@ export function ProductsPage() {
                     <h3 className="truncate text-base font-semibold">{product.name}</h3>
                     <p className="text-sm text-muted-foreground">{product.categories?.name || product.category || 'Sans catégorie'}</p>
                     {brandName && <p className="mt-1 text-xs font-medium text-primary">{brandName}</p>}
+                    {product.sku && <p className="mt-1 text-xs text-muted-foreground">SKU: {product.sku}</p>}
                   </div>
                   <p className="font-semibold">{money.format(Number(product.price))}</p>
                 </div>
@@ -407,7 +510,9 @@ export function ProductsPage() {
 export function CustomersPage() {
   const [search, setSearch] = useState('')
   const [role, setRole] = useState('all')
+  const [segment, setSegment] = useState('all')
   const { data = [], mutate } = useSWR<AdminProfile[]>(`/api/admin/customers?role=${role}&search=${encodeURIComponent(search)}`, adminFetch)
+  const { data: orders = [] } = useSWR<AdminOrder[]>('/api/admin/orders', adminFetch)
 
   async function setRoleForUser(id: string, nextRole: 'admin' | 'client') {
     await adminFetch(`/api/admin/customers/${id}`, { method: 'PATCH', body: JSON.stringify({ role: nextRole }) })
@@ -415,22 +520,90 @@ export function CustomersPage() {
     mutate()
   }
 
+  const money = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'TND', maximumFractionDigits: 0 })
+
+  // Calculate customer segments
+  const customerStats = useMemo(() => {
+    return data.map(customer => {
+      const customerOrders = orders.filter(o => o.user_id === customer.id)
+      const totalSpent = customerOrders.reduce((sum, o) => sum + Number(o.total_amount), 0)
+      const orderCount = customerOrders.length
+      let segment: 'vip' | 'regular' | 'new' = 'new'
+      if (orderCount >= 5) segment = 'vip'
+      else if (orderCount >= 2) segment = 'regular'
+      return {
+        ...customer,
+        orderCount,
+        totalSpent,
+        avgOrderValue: orderCount > 0 ? totalSpent / orderCount : 0,
+        segment,
+      }
+    })
+  }, [data, orders])
+
+  const filtered = useMemo(() => {
+    return customerStats.filter(c => {
+      if (segment !== 'all' && c.segment !== segment) return false
+      return true
+    })
+  }, [customerStats, segment])
+
+  const vipCount = customerStats.filter(c => c.segment === 'vip').length
+  const regularCount = customerStats.filter(c => c.segment === 'regular').length
+  const newCount = customerStats.filter(c => c.segment === 'new').length
+
   return (
     <div className="space-y-5">
       <Toolbar
         search={search}
         setSearch={setSearch}
         right={
-          <Select value={role} onValueChange={setRole}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All roles</SelectItem>
-              <SelectItem value="client">Clients</SelectItem>
-              <SelectItem value="admin">Admins</SelectItem>
-            </SelectContent>
-          </Select>
+          <>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All roles</SelectItem>
+                <SelectItem value="client">Clients</SelectItem>
+                <SelectItem value="admin">Admins</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={segment} onValueChange={setSegment}>
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les segments</SelectItem>
+                <SelectItem value="vip">Clients VIP</SelectItem>
+                <SelectItem value="regular">Réguliers</SelectItem>
+                <SelectItem value="new">Nouveaux</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
         }
       />
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-sm text-muted-foreground">Clients VIP (5+ commandes)</p>
+            <p className="mt-2 text-3xl font-semibold">{vipCount}</p>
+            <Badge variant="default" className="mt-3">{((vipCount / (data.length || 1)) * 100).toFixed(0)}% des clients</Badge>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-sm text-muted-foreground">Clients réguliers (2-4 commandes)</p>
+            <p className="mt-2 text-3xl font-semibold">{regularCount}</p>
+            <Badge variant="secondary" className="mt-3">{((regularCount / (data.length || 1)) * 100).toFixed(0)}% des clients</Badge>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-sm text-muted-foreground">Nouveaux clients (1 commande)</p>
+            <p className="mt-2 text-3xl font-semibold">{newCount}</p>
+            <Badge variant="outline" className="mt-3">{((newCount / (data.length || 1)) * 100).toFixed(0)}% des clients</Badge>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <Table>
           <TableHeader>
@@ -438,22 +611,32 @@ export function CustomersPage() {
               <TableHead>Full name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
-              <TableHead>Role</TableHead>
+              <TableHead>Segment</TableHead>
+              <TableHead>Commandes</TableHead>
+              <TableHead>Dépenses</TableHead>
+              <TableHead>Panier moyen</TableHead>
               <TableHead>Registration</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((profile) => (
-              <TableRow key={profile.id}>
-                <TableCell className="font-medium">{customerName(profile)}</TableCell>
-                <TableCell>{profile.email || '-'}</TableCell>
-                <TableCell>{profile.phone || '-'}</TableCell>
-                <TableCell><Badge variant={profile.role === 'admin' ? 'default' : 'secondary'}>{profile.role || 'client'}</Badge></TableCell>
-                <TableCell>{new Date(profile.created_at).toLocaleDateString()}</TableCell>
+            {filtered.map((customer) => (
+              <TableRow key={customer.id}>
+                <TableCell className="font-medium">{customerName(customer)}</TableCell>
+                <TableCell>{customer.email || '-'}</TableCell>
+                <TableCell>{customer.phone || '-'}</TableCell>
+                <TableCell>
+                  <Badge variant={customer.segment === 'vip' ? 'default' : customer.segment === 'regular' ? 'secondary' : 'outline'}>
+                    {customer.segment === 'vip' ? 'VIP' : customer.segment === 'regular' ? 'Régulier' : 'Nouveau'}
+                  </Badge>
+                </TableCell>
+                <TableCell>{customer.orderCount}</TableCell>
+                <TableCell>{money.format(customer.totalSpent)}</TableCell>
+                <TableCell>{money.format(customer.avgOrderValue)}</TableCell>
+                <TableCell>{new Date(customer.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="outline" size="sm" onClick={() => setRoleForUser(profile.id, profile.role === 'admin' ? 'client' : 'admin')}>
-                    {profile.role === 'admin' ? 'Set client' : 'Promote'}
+                  <Button variant="outline" size="sm" onClick={() => setRoleForUser(customer.id, customer.role === 'admin' ? 'client' : 'admin')}>
+                    {customer.role === 'admin' ? 'Set client' : 'Promote'}
                   </Button>
                 </TableCell>
               </TableRow>
@@ -900,6 +1083,7 @@ function ProductDialog({
   const [form, setForm] = useState<any>(productFormInitialValue(product))
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<Array<{ name: string; url: string }>>([])
+  const [imagesToRemove, setImagesToRemove] = useState<Set<string>>(new Set())
   const [newBrandName, setNewBrandName] = useState('')
   const [showBrandCreator, setShowBrandCreator] = useState(false)
   const [creatingBrand, setCreatingBrand] = useState(false)
@@ -913,6 +1097,7 @@ function ProductDialog({
 
     setForm(productFormInitialValue(product))
     setImageFiles([])
+    setImagesToRemove(new Set())
     setNewBrandName('')
     setShowBrandCreator(false)
   }, [open, product])
@@ -986,15 +1171,29 @@ function ProductDialog({
         uploadedUrls = response.urls
       }
 
+      // Filter out images marked for removal from existing images
+      const remainingUrls = (form.image_urls || []).filter((url: string) => !imagesToRemove.has(url))
+
       const imageUrls = [
-        ...new Set([...(form.image_urls || []), ...uploadedUrls].map((url: string) => url.trim()).filter(Boolean)),
+        ...new Set([...remainingUrls, ...uploadedUrls].map((url: string) => url.trim()).filter(Boolean)),
       ]
 
-      await onSave({ ...form, image_url: imageUrls[0] || '', image_urls: imageUrls, generate_sku: generateSku }, product?.id)
+      // Send imagesToRemove list to server for database cleanup
+      await onSave(
+        {
+          ...form,
+          image_url: imageUrls[0] || '',
+          image_urls: imageUrls,
+          images_to_remove: Array.from(imagesToRemove),
+          generate_sku: generateSku,
+        },
+        product?.id,
+      )
       setOpen(false)
       setImageFiles([])
+      setImagesToRemove(new Set())
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Impossible d’enregistrer le produit')
+      toast.error(error instanceof Error ? error.message : "Impossible d'enregistrer le produit")
     } finally {
       setSaving(false)
     }
@@ -1093,140 +1292,135 @@ function ProductDialog({
           <DialogTitle>{product ? 'Modifier le produit' : 'Ajouter un produit'}</DialogTitle>
           <DialogDescription>Gérez le prix, le stock, les images et la catégorie.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 sm:grid-cols-2 overflow-y-auto pr-4">
-          <Field label="Nom" value={form.name || ''} onChange={(value) => setForm({ ...form, name: value })} />
-          <div className="space-y-2">
-            <ToggleRow label="Générer automatiquement le SKU" checked={generateSku} onCheckedChange={(v) => setGenerateSku(v)} />
-            <div>
-              <Field label="SKU" placeholder={skuPlaceholder} value={form.sku || ''} onChange={(value) => setForm({ ...form, sku: value })} />
-              {!generateSku && (
-                <p className="mt-1 text-sm">
-                  {checkingSku ? <span className="text-muted-foreground">Vérification...</span> : skuAvailable === false ? <span className="text-destructive">Ce SKU est déjà utilisé</span> : skuAvailable === true ? <span className="text-emerald-600">SKU disponible</span> : <span className="text-muted-foreground">Saisissez un SKU unique</span>}
-                </p>
+        
+        {/* Single scrollable section for all content */}
+        <div className="flex-1 overflow-y-auto space-y-3 pr-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Nom" value={form.name || ''} onChange={(value) => setForm({ ...form, name: value })} />
+            <div className="space-y-2">
+              <ToggleRow label="Générer automatiquement le SKU" checked={generateSku} onCheckedChange={(v) => setGenerateSku(v)} />
+              <div>
+                <Field label="SKU" placeholder={skuPlaceholder} value={form.sku || ''} onChange={(value) => setForm({ ...form, sku: value })} />
+                {!generateSku && (
+                  <p className="mt-1 text-sm">
+                    {checkingSku ? <span className="text-muted-foreground">Vérification...</span> : skuAvailable === false ? <span className="text-destructive">Ce SKU est déjà utilisé</span> : skuAvailable === true ? <span className="text-emerald-600">SKU disponible</span> : <span className="text-muted-foreground">Saisissez un SKU unique</span>}
+                  </p>
+                )}
+              </div>
+            </div>
+            <Field label="Prix" type="number" value={form.price || ''} onChange={(value) => setForm({ ...form, price: value })} />
+            <Field label="Prix original" type="number" value={form.original_price || ''} onChange={(value) => setForm({ ...form, original_price: value })} />
+            <Field label="Stock" type="number" value={form.stock_quantity || 0} onChange={(value) => setForm({ ...form, stock_quantity: value })} />
+            <div className="grid gap-2">
+              <Label>Catégorie</Label>
+              <Select value={form.category_id || ''} onValueChange={(value) => setForm({ ...form, category_id: value })}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner une catégorie" /></SelectTrigger>
+                <SelectContent>{categories.map((category) => <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Marque</Label>
+              <Select
+                value={selectValue}
+                onValueChange={(value) => {
+                  if (value === '__create_new_brand__') {
+                    setShowBrandCreator(true)
+                    setForm((current: any) => ({ ...current, brand_id: null }))
+                    return
+                  }
+
+                  setShowBrandCreator(false)
+                  setForm((current: any) => ({ ...current, brand_id: value }))
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Sélectionner une marque" /></SelectTrigger>
+                <SelectContent>
+                  {brands.map((brand) => <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>)}
+                  <SelectItem value="__create_new_brand__">+ Ajouter une nouvelle marque</SelectItem>
+                </SelectContent>
+              </Select>
+              {showBrandCreator && (
+                <div className="rounded-lg border border-dashed p-3 space-y-3">
+                  <p className="text-sm font-medium text-muted-foreground">Créer une nouvelle marque dans Supabase</p>
+                  <div className="grid gap-2">
+                    <Input
+                      value={newBrandName}
+                      onChange={(event) => setNewBrandName(event.target.value)}
+                      placeholder="Nom de la marque"
+                    />
+                    <Field
+                      label="URL du logo"
+                      value={newBrandLogoUrl}
+                      onChange={(value) => setNewBrandLogoUrl(value)}
+                      placeholder="https://..."
+                    />
+                    <div className="grid gap-2">
+                      <Label>Uploader un logo</Label>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => setNewBrandLogoFile(event.target.files?.[0] || null)}
+                        />
+                        <Button type="button" onClick={uploadBrandLogo} disabled={!newBrandLogoFile || uploadingBrandLogo}>
+                          {uploadingBrandLogo ? 'Téléversement...' : 'Téléverser le logo'}
+                        </Button>
+                      </div>
+                      {newBrandLogoUrl && (
+                        <div className="flex items-center gap-3">
+                          <img src={newBrandLogoUrl} alt={newBrandName || 'Logo de marque'} className="h-14 w-14 rounded-md object-cover border" />
+                          <span className="truncate text-sm text-muted-foreground">{newBrandLogoUrl}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <Button type="button" onClick={createBrand} disabled={creatingBrand}>
+                    {creatingBrand ? 'Enregistrement...' : 'Enregistrer la marque'}
+                  </Button>
+                </div>
               )}
             </div>
+            <div className="sm:col-span-2">
+              <Field label="URL de l'image principale" value={form.image_url || ''} onChange={updatePrimaryImageUrl} icon={<Upload className="h-4 w-4" />} />
+            </div>
           </div>
-          <Field label="Prix" type="number" value={form.price || ''} onChange={(value) => setForm({ ...form, price: value })} />
-          <Field label="Prix original" type="number" value={form.original_price || ''} onChange={(value) => setForm({ ...form, original_price: value })} />
-          <Field label="Stock" type="number" value={form.stock_quantity || 0} onChange={(value) => setForm({ ...form, stock_quantity: value })} />
-          <div className="grid gap-2">
-            <Label>Catégorie</Label>
-            <Select value={form.category_id || ''} onValueChange={(value) => setForm({ ...form, category_id: value })}>
-              <SelectTrigger><SelectValue placeholder="Sélectionner une catégorie" /></SelectTrigger>
-              <SelectContent>{categories.map((category) => <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label>Marque</Label>
-            <Select
-              value={selectValue}
-              onValueChange={(value) => {
-                if (value === '__create_new_brand__') {
-                  setShowBrandCreator(true)
-                  setForm((current: any) => ({ ...current, brand_id: null }))
-                  return
-                }
 
-                setShowBrandCreator(false)
-                setForm((current: any) => ({ ...current, brand_id: value }))
+          {/* Image Management Card */}
+          <div className="border-t pt-2">
+            <ImageManagementCard
+              existingImages={form.image_urls || []}
+              newImages={imagePreviews}
+              imagesToRemove={imagesToRemove}
+              onMarkForRemoval={(url) => setImagesToRemove(new Set([...imagesToRemove, url]))}
+              onUnmarkForRemoval={(url) => {
+                const newSet = new Set(imagesToRemove)
+                newSet.delete(url)
+                setImagesToRemove(newSet)
               }}
-            >
-              <SelectTrigger><SelectValue placeholder="Sélectionner une marque" /></SelectTrigger>
-              <SelectContent>
-                {brands.map((brand) => <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>)}
-                <SelectItem value="__create_new_brand__">+ Ajouter une nouvelle marque</SelectItem>
-              </SelectContent>
-            </Select>
-            {showBrandCreator && (
-              <div className="rounded-lg border border-dashed p-3 space-y-3">
-                <p className="text-sm font-medium text-muted-foreground">Créer une nouvelle marque dans Supabase</p>
-                <div className="grid gap-2">
-                  <Input
-                    value={newBrandName}
-                    onChange={(event) => setNewBrandName(event.target.value)}
-                    placeholder="Nom de la marque"
-                  />
-                  <Field
-                    label="URL du logo"
-                    value={newBrandLogoUrl}
-                    onChange={(value) => setNewBrandLogoUrl(value)}
-                    placeholder="https://..."
-                  />
-                  <div className="grid gap-2">
-                    <Label>Uploader un logo</Label>
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(event) => setNewBrandLogoFile(event.target.files?.[0] || null)}
-                      />
-                      <Button type="button" onClick={uploadBrandLogo} disabled={!newBrandLogoFile || uploadingBrandLogo}>
-                        {uploadingBrandLogo ? 'Téléversement...' : 'Téléverser le logo'}
-                      </Button>
-                    </div>
-                    {newBrandLogoUrl && (
-                      <div className="flex items-center gap-3">
-                        <img src={newBrandLogoUrl} alt={newBrandName || 'Logo de marque'} className="h-14 w-14 rounded-md object-cover border" />
-                        <span className="truncate text-sm text-muted-foreground">{newBrandLogoUrl}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <Button type="button" onClick={createBrand} disabled={creatingBrand}>
-                  {creatingBrand ? 'Enregistrement...' : 'Enregistrer la marque'}
-                </Button>
-              </div>
-            )}
-          </div>
-          <div className="sm:col-span-2">
-            <Field label="URL de l’image principale" value={form.image_url || ''} onChange={updatePrimaryImageUrl} icon={<Upload className="h-4 w-4" />} />
-          </div>
-          <div className="grid gap-3 sm:col-span-2">
-            <Label htmlFor={product ? `product-images-${product.id}` : 'product-images-new'}>Importer des images depuis le PC</Label>
-            <Input
-              id={product ? `product-images-${product.id}` : 'product-images-new'}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(event) => setImageFiles(Array.from(event.target.files || []))}
+              onAddNewImages={async (files) => setImageFiles([...imageFiles, ...files])}
+              onRemoveNewImage={(url) => {
+                setImageFiles(imageFiles.filter((_, i) => imagePreviews[i]?.url !== url))
+                setImagePreviews(imagePreviews.filter((preview) => preview.url !== url))
+              }}
+              onReorderImages={(urls) => setForm({ ...form, image_urls: urls, image_url: urls[0] || '' })}
             />
-            {((form.image_urls || []).length > 0 || imagePreviews.length > 0) && (
-              <div className="grid gap-3 rounded-lg border p-3 sm:grid-cols-2">
-                {(form.image_urls || []).map((url: string, index: number) => (
-                  <div key={url} className="flex items-center gap-3 rounded-lg border p-2">
-                    <div className="relative h-14 w-14 overflow-hidden rounded-md bg-muted">
-                      <Image src={url} alt={`Image produit ${index + 1}`} fill className="object-cover" sizes="56px" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{index === 0 ? 'Image principale' : `Image ${index + 1}`}</p>
-                      <p className="truncate text-xs text-muted-foreground">{url}</p>
-                    </div>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeImageUrl(url)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                {imagePreviews.map((preview, index) => (
-                  <div key={`${preview.name}-${preview.url}`} className="flex items-center gap-3 rounded-lg border border-dashed p-2">
-                    <div className="relative h-14 w-14 overflow-hidden rounded-md bg-muted">
-                      <Image src={preview.url} alt={preview.name} fill className="object-cover" sizes="56px" unoptimized />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">Nouvelle image {index + 1}</p>
-                      <p className="truncate text-xs text-muted-foreground">{preview.name}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
-          <div className="grid gap-2 sm:col-span-2">
-            <Label>Description</Label>
-            <Textarea value={form.description || ''} onChange={(event) => setForm({ ...form, description: event.target.value })} />
+
+          {/* Rich Description Editor */}
+          <div className="border-t pt-2">
+            <RichDescriptionEditor
+              value={form.description || ''}
+              onChange={(value) => setForm({ ...form, description: value })}
+              maxLength={5000}
+            />
           </div>
-          <ToggleRow label="Produit actif" checked={!!form.is_active} onCheckedChange={(value) => setForm({ ...form, is_active: value })} />
-          <ToggleRow label="En stock" checked={!!form.in_stock} onCheckedChange={(value) => setForm({ ...form, in_stock: value })} />
+
+          <div className="border-t pt-2 grid gap-3 sm:grid-cols-2">
+            <ToggleRow label="Actif" checked={!!form.is_active} onCheckedChange={(value) => setForm({ ...form, is_active: value })} />
+            <ToggleRow label="En stock" checked={!!form.in_stock} onCheckedChange={(value) => setForm({ ...form, in_stock: value })} />
+          </div>
         </div>
+        
         <DialogFooter>
           <Button onClick={submit} disabled={saving || (checkingSku || (generateSku === false && skuAvailable === false))}>
             {saving ? 'Enregistrement...' : 'Enregistrer le produit'}
@@ -1659,6 +1853,183 @@ function MiniMetric({ title, value, tone = 'green' }: { title: string; value: nu
 
 function PackageIcon() {
   return <div className="rounded-lg border px-3 py-2 text-sm">Aucune image</div>
+}
+
+function OrderStatusFlow({ orders }: { orders: AdminOrder[] }) {
+  const statusCounts = {
+    pending: orders.filter(o => o.status === 'pending').length,
+    processing: orders.filter(o => o.status === 'processing').length,
+    shipped: orders.filter(o => o.status === 'shipped').length,
+    delivered: orders.filter(o => o.status === 'delivered').length,
+  }
+  
+  const total = orders.length || 1
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Flux de statut des commandes</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            {(Object.entries(statusCounts) as [OrderStatus, number][]).map(([status, count]) => (
+              <div key={status} className="flex-1">
+                <div className="rounded-lg bg-muted p-3 text-center">
+                  <p className="text-sm font-medium capitalize">{orderStatusLabels[status]}</p>
+                  <p className="mt-1 text-2xl font-semibold">{count}</p>
+                  <p className="text-xs text-muted-foreground">{((count / total) * 100).toFixed(0)}%</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-between pt-2 text-sm text-muted-foreground">
+            <span>En attente</span>
+            <span>→</span>
+            <span>En traitement</span>
+            <span>→</span>
+            <span>Expédiée</span>
+            <span>→</span>
+            <span>Livrée</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+export function AdvancedAnalytics() {
+  const { data, isLoading, error } = useSWR<any>('/api/admin/dashboard', adminFetch)
+  
+  if (isLoading) return <div className="space-y-6"><Skeleton className="h-96 rounded-lg" /></div>
+  if (error || !data) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-sm text-destructive">{error?.message || 'Impossible de charger les analyses avancées.'}</CardContent>
+      </Card>
+    )
+  }
+
+  const money = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'TND', maximumFractionDigits: 0 })
+  
+  // Calculate advanced metrics
+  const totalCustomers = data.stats.totalCustomers || 1
+  const totalRevenue = data.stats.totalRevenue || 0
+  const paidOrders = data.stats.paidOrders || 0
+  const totalOrders = data.stats.totalOrders || 1
+  
+  const cac = totalCustomers > 0 ? totalRevenue / totalCustomers : 0
+  const clv = totalCustomers > 0 ? totalRevenue / totalCustomers : 0
+  const conversionRate = totalOrders > 0 ? ((data.stats.deliveredOrders || 0) / totalOrders) * 100 : 0
+  const repeatRate = totalCustomers > 0 && data.topCustomers ? (data.topCustomers.filter((c: any) => c.orders > 1).length / totalCustomers) * 100 : 0
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-sm text-muted-foreground">Coût d&apos;acquisition client</p>
+            <p className="mt-2 text-3xl font-semibold">{money.format(cac)}</p>
+            <Badge variant="secondary" className="mt-3">Par client</Badge>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-sm text-muted-foreground">Valeur de vie client</p>
+            <p className="mt-2 text-3xl font-semibold">{money.format(clv)}</p>
+            <Badge variant="secondary" className="mt-3">Total</Badge>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-sm text-muted-foreground">Taux de conversion</p>
+            <p className="mt-2 text-3xl font-semibold">{conversionRate.toFixed(1)}%</p>
+            <Badge variant="secondary" className="mt-3">Taux de livraison</Badge>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-sm text-muted-foreground">Taux de client récurrent</p>
+            <p className="mt-2 text-3xl font-semibold">{repeatRate.toFixed(1)}%</p>
+            <Badge variant="secondary" className="mt-3">Clients récurrents</Badge>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Analyse de performance des produits</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {data.bestSellers && data.bestSellers.slice(0, 5).map((product: any, idx: number) => (
+                <div key={idx} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="truncate font-medium">{product.name}</span>
+                    <span className="text-muted-foreground">{money.format(product.revenue)}</span>
+                  </div>
+                  <Progress value={Math.min((product.revenue / (data.bestSellers[0]?.revenue || 1)) * 100, 100)} />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{product.quantity} vendus</span>
+                    <span>Revenu: {((product.revenue / totalRevenue) * 100).toFixed(1)}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Segmentation des clients</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg bg-primary/5 p-4">
+              <p className="text-sm text-muted-foreground">Clients VIP (5+ commandes)</p>
+              <p className="mt-1 text-2xl font-semibold">{data.topCustomers?.filter((c: any) => c.orders >= 5).length || 0}</p>
+            </div>
+            <div className="rounded-lg bg-blue-500/5 p-4">
+              <p className="text-sm text-muted-foreground">Clients réguliers (2-4 commandes)</p>
+              <p className="mt-1 text-2xl font-semibold">{data.topCustomers?.filter((c: any) => c.orders >= 2 && c.orders < 5).length || 0}</p>
+            </div>
+            <div className="rounded-lg bg-muted p-4">
+              <p className="text-sm text-muted-foreground">Nouveaux clients (1 commande)</p>
+              <p className="mt-1 text-2xl font-semibold">{data.topCustomers?.filter((c: any) => c.orders === 1).length || 0}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Statistiques de paiement</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Taux de paiement</p>
+              <p className="text-3xl font-semibold">{Math.round(data.stats.paidRate || 0)}%</p>
+              <p className="text-xs text-muted-foreground">{paidOrders} commandes payées</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Commandes en attente de paiement</p>
+              <p className="text-3xl font-semibold">{data.stats.totalOrders - paidOrders}</p>
+              <p className="text-xs text-muted-foreground">{money.format((data.stats.totalRevenue * (1 - (data.stats.paidRate || 0) / 100)))}</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Revenu total payé</p>
+              <p className="text-3xl font-semibold">{money.format(totalRevenue * ((data.stats.paidRate || 0) / 100))}</p>
+              <p className="text-xs text-muted-foreground">De {totalRevenue} DT total</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }
 
 function customerName(profile?: AdminProfile | null) {
