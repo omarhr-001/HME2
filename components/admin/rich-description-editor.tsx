@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Bold, Italic, List, ListOrdered, Heading2, Table as TableIcon, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
@@ -39,14 +38,14 @@ export function RichDescriptionEditor({ value, onChange, maxLength = 5000 }: Ric
     }, 0)
   }
 
-  const insertBold = () => insertMarkdown('**', '**', 'texte en gras')
-  const insertItalic = () => insertMarkdown('*', '*', 'texte en italique')
+  const insertBold = () => insertMarkdown('**', '**', 'gras')
+  const insertItalic = () => insertMarkdown('*', '*', 'italique')
   const insertHeading = () => insertMarkdown('## ', '', 'Titre')
   const insertBulletList = () => insertMarkdown('\n- ', '', 'élément')
   const insertNumberedList = () => insertMarkdown('\n1. ', '', 'élément')
 
   const insertTable = () => {
-    const headers = Array(tableCols).fill('Colonne').map((c, i) => c + (i + 1))
+    const headers = Array(tableCols).fill('Col').map((c, i) => c + (i + 1))
     const headerRow = '| ' + headers.join(' | ') + ' |'
     const separatorRow = '|' + Array(tableCols).fill(' --- ').join('|') + '|'
     const dataRows = Array(tableRows - 1)
@@ -62,215 +61,138 @@ export function RichDescriptionEditor({ value, onChange, maxLength = 5000 }: Ric
   const charPercentage = (charCount / maxLength) * 100
   const isNearLimit = charPercentage > 80
 
-  // Simple markdown to HTML for preview
   const markdownToHtml = (md: string) => {
     let html = md
-      // Headings
-      .replace(/^### (.*?)$/gm, '<h3 style="font-size: 1.2em; font-weight: bold; margin-top: 0.8em; margin-bottom: 0.4em;">$1</h3>')
-      .replace(/^## (.*?)$/gm, '<h2 style="font-size: 1.4em; font-weight: bold; margin-top: 1em; margin-bottom: 0.5em;">$1</h2>')
-      .replace(/^# (.*?)$/gm, '<h1 style="font-size: 1.8em; font-weight: bold; margin-top: 1.2em; margin-bottom: 0.6em;">$1</h1>')
-      // Bold
-      .replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: bold;">$1</strong>')
-      // Italic
-      .replace(/\*(.*?)\*/g, '<em style="font-style: italic;">$1</em>')
-      // Line breaks
+      .replace(/^### (.*?)$/gm, '<h3 style="font-size: 1.1em; font-weight: bold; margin: 0.6em 0 0.3em;">$1</h3>')
+      .replace(/^## (.*?)$/gm, '<h2 style="font-size: 1.3em; font-weight: bold; margin: 0.8em 0 0.4em;">$1</h2>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/\n/g, '<br>')
-
     return html
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Description du produit</span>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant={showPreview ? 'default' : 'outline'}
-              onClick={() => setShowPreview(!showPreview)}
-              className="gap-2"
-            >
-              {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              {showPreview ? 'Masquer aperçu' : 'Aperçu'}
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-sm font-medium">Description</h4>
+        <Button
+          size="sm"
+          variant={showPreview ? 'default' : 'outline'}
+          onClick={() => setShowPreview(!showPreview)}
+          className="h-7 px-2 text-xs gap-1"
+        >
+          {showPreview ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+          {showPreview ? 'Masquer' : 'Aperçu'}
+        </Button>
+      </div>
+
+      {/* Formatting toolbar - compact */}
+      <div className="flex flex-wrap gap-1 rounded-lg border bg-muted p-2">
+        <Button size="sm" variant="ghost" onClick={insertBold} title="Gras" className="h-7 w-7 p-0">
+          <Bold className="h-3.5 w-3.5" />
+        </Button>
+        <Button size="sm" variant="ghost" onClick={insertItalic} title="Italique" className="h-7 w-7 p-0">
+          <Italic className="h-3.5 w-3.5" />
+        </Button>
+        <div className="w-px bg-border" />
+        <Button size="sm" variant="ghost" onClick={insertHeading} title="Titre" className="h-7 w-7 p-0">
+          <Heading2 className="h-3.5 w-3.5" />
+        </Button>
+        <div className="w-px bg-border" />
+        <Button size="sm" variant="ghost" onClick={insertBulletList} title="Liste" className="h-7 w-7 p-0">
+          <List className="h-3.5 w-3.5" />
+        </Button>
+        <Button size="sm" variant="ghost" onClick={insertNumberedList} title="Numéroté" className="h-7 w-7 p-0">
+          <ListOrdered className="h-3.5 w-3.5" />
+        </Button>
+        <div className="w-px bg-border" />
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="ghost" title="Tableau" className="h-7 w-7 p-0">
+              <TableIcon className="h-3.5 w-3.5" />
             </Button>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/50 p-3">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={insertBold}
-            title="Gras (Ctrl+B)"
-          >
-            <Bold className="h-4 w-4" />
-          </Button>
-
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={insertItalic}
-            title="Italique (Ctrl+I)"
-          >
-            <Italic className="h-4 w-4" />
-          </Button>
-
-          <div className="h-6 w-px bg-border" />
-
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={insertHeading}
-            title="Titre"
-          >
-            <Heading2 className="h-4 w-4" />
-          </Button>
-
-          <div className="h-6 w-px bg-border" />
-
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={insertBulletList}
-            title="Liste à puces"
-          >
-            <List className="h-4 w-4" />
-          </Button>
-
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={insertNumberedList}
-            title="Liste numérotée"
-          >
-            <ListOrdered className="h-4 w-4" />
-          </Button>
-
-          <div className="h-6 w-px bg-border" />
-
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                title="Insérer un tableau"
-              >
-                <TableIcon className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Insérer un tableau</DialogTitle>
-                <DialogDescription>Spécifiez le nombre de lignes et colonnes pour votre tableau</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="table-rows">Nombre de lignes</Label>
-                  <Input
-                    id="table-rows"
-                    type="number"
-                    min={1}
-                    max={10}
-                    value={tableRows}
-                    onChange={(e) => setTableRows(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="table-cols">Nombre de colonnes</Label>
-                  <Input
-                    id="table-cols"
-                    type="number"
-                    min={1}
-                    max={8}
-                    value={tableCols}
-                    onChange={(e) => setTableCols(Math.max(1, Math.min(8, parseInt(e.target.value) || 1)))}
-                  />
-                </div>
+          </DialogTrigger>
+          <DialogContent className="max-w-xs">
+            <DialogHeader>
+              <DialogTitle className="text-sm">Tableau</DialogTitle>
+              <DialogDescription className="text-xs">Dimensions</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="table-rows" className="text-xs">Lignes: {tableRows}</Label>
+                <Input
+                  id="table-rows"
+                  type="range"
+                  min="2"
+                  max="10"
+                  value={tableRows}
+                  onChange={(e) => setTableRows(parseInt(e.target.value))}
+                  className="h-1.5"
+                />
               </div>
-              <DialogFooter>
-                <Button onClick={insertTable}>Insérer le tableau</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          <div className="ml-auto text-xs text-muted-foreground">
-            Markdown supporté
-          </div>
-        </div>
-
-        {/* Editor and preview */}
-        <div className={`grid gap-4 ${showPreview ? 'md:grid-cols-2' : ''}`}>
-          {/* Editor */}
-          <div className="space-y-2">
-            <Textarea
-              id="description-textarea"
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              placeholder="Décrivez votre produit en détail. Vous pouvez utiliser la mise en forme Markdown."
-              maxLength={maxLength}
-              rows={12}
-              className="font-mono text-sm"
-            />
-            <div className="flex items-center justify-between">
-              <div className={`text-xs font-medium ${isNearLimit ? 'text-destructive' : 'text-muted-foreground'}`}>
-                {charCount}/{maxLength} caractères
-              </div>
-              <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
-                <div
-                  className={`h-full transition-all ${isNearLimit ? 'bg-destructive' : 'bg-primary'}`}
-                  style={{ width: `${Math.min(charPercentage, 100)}%` }}
+              <div>
+                <Label htmlFor="table-cols" className="text-xs">Colonnes: {tableCols}</Label>
+                <Input
+                  id="table-cols"
+                  type="range"
+                  min="2"
+                  max="10"
+                  value={tableCols}
+                  onChange={(e) => setTableCols(parseInt(e.target.value))}
+                  className="h-1.5"
                 />
               </div>
             </div>
-          </div>
+            <DialogFooter>
+              <Button size="sm" onClick={insertTable} className="px-3 text-xs h-8">Insérer</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
 
-          {/* Preview */}
-          {showPreview && (
-            <div className="space-y-2">
-              <div className="rounded-lg border bg-card p-4" style={{ minHeight: '322px' }}>
-                <div
-                  className="prose prose-sm max-w-none dark:prose-invert text-sm leading-relaxed"
-                  dangerouslySetInnerHTML={{
-                    __html: markdownToHtml(value) || '<span class="text-muted-foreground italic">L&apos;aperçu s&apos;affichera ici...</span>',
-                  }}
-                />
-              </div>
-              <div className="text-xs text-muted-foreground">Aperçu en temps réel</div>
-            </div>
-          )}
+      {/* Character count */}
+      <div className="flex items-center gap-2 text-xs">
+        <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+          <div
+            className={`h-full transition-colors ${
+              isNearLimit ? 'bg-amber-500' : 'bg-primary'
+            }`}
+            style={{ width: `${Math.min(charPercentage, 100)}%` }}
+          />
         </div>
+        <span className={`font-medium whitespace-nowrap ${isNearLimit ? 'text-amber-600' : 'text-muted-foreground'}`}>
+          {charCount}/{maxLength}
+        </span>
+      </div>
 
-        {/* Formatting help */}
-        <details className="rounded-lg border p-3 text-sm">
-          <summary className="cursor-pointer font-medium">Aide Markdown</summary>
-          <div className="mt-3 space-y-2 text-xs text-muted-foreground">
-            <div>
-              <code className="bg-muted px-1.5 py-0.5 rounded">**texte**</code> → <strong>texte en gras</strong>
-            </div>
-            <div>
-              <code className="bg-muted px-1.5 py-0.5 rounded">*texte*</code> → <em>texte en italique</em>
-            </div>
-            <div>
-              <code className="bg-muted px-1.5 py-0.5 rounded">## Titre</code> → Titre de niveau 2
-            </div>
-            <div>
-              <code className="bg-muted px-1.5 py-0.5 rounded">- item</code> → Liste à puces
-            </div>
-            <div>
-              <code className="bg-muted px-1.5 py-0.5 rounded">1. item</code> → Liste numérotée
-            </div>
+      {/* Editor and preview */}
+      <div className={`grid gap-2 ${showPreview ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        <Textarea
+          id="description-textarea"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Markdown supporté..."
+          className="min-h-32 resize-none font-mono text-xs"
+        />
+        {showPreview && (
+          <div className="rounded-lg border bg-muted p-2 overflow-auto max-h-80 text-xs prose-sm">
+            <div dangerouslySetInnerHTML={{ __html: markdownToHtml(value) }} />
           </div>
-        </details>
-      </CardContent>
-    </Card>
+        )}
+      </div>
+
+      {/* Markdown help - collapsible */}
+      <details className="text-xs">
+        <summary className="cursor-pointer font-medium text-muted-foreground hover:text-foreground">
+          Aide
+        </summary>
+        <div className="mt-2 grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+          <div><code>**gras**</code> = <strong>gras</strong></div>
+          <div><code>*italique*</code> = <em>italique</em></div>
+          <div><code>## Titre</code> = titre</div>
+          <div><code>- item</code> = liste</div>
+        </div>
+      </details>
+    </div>
   )
 }

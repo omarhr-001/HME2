@@ -1383,7 +1383,7 @@ function ProductDialog({
         </div>
 
         {/* Image Management Card */}
-        <div className="border-t pt-4">
+        <div className="border-t pt-2 mt-2">
           <ImageManagementCard
             existingImages={form.image_urls || []}
             newImages={imagePreviews}
@@ -1404,7 +1404,7 @@ function ProductDialog({
         </div>
 
         {/* Rich Description Editor */}
-        <div className="border-t pt-4 mt-4">
+        <div className="border-t pt-2 mt-2">
           <RichDescriptionEditor
             value={form.description || ''}
             onChange={(value) => setForm({ ...form, description: value })}
@@ -1412,8 +1412,8 @@ function ProductDialog({
           />
         </div>
 
-        <div className="border-t pt-4 mt-4 grid gap-4 sm:grid-cols-2">
-          <ToggleRow label="Produit actif" checked={!!form.is_active} onCheckedChange={(value) => setForm({ ...form, is_active: value })} />
+        <div className="border-t pt-2 mt-2 grid gap-3 sm:grid-cols-2">
+          <ToggleRow label="Actif" checked={!!form.is_active} onCheckedChange={(value) => setForm({ ...form, is_active: value })} />
           <ToggleRow label="En stock" checked={!!form.in_stock} onCheckedChange={(value) => setForm({ ...form, in_stock: value })} />
         </div>
         <DialogFooter>
