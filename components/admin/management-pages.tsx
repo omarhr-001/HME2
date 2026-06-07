@@ -38,8 +38,10 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
-import { EmptyState } from '@/components/admin/admin-shell'
+import { ImageManagementCard } from '@/components/admin/image-management'
+import { RichDescriptionEditor } from '@/components/admin/rich-description-editor'
 import { adminFetch, downloadAdminFile, adminUpload } from '@/lib/admin/client'
+import { EmptyState } from '@/components/admin/admin-shell'
 import type { AdminCategory, AdminOrder, AdminProduct, AdminProfile, OrderStatus, PaymentStatus } from '@/lib/admin/types'
 import { makeSkuBase } from '@/lib/utils'
 import type { Brand } from '@/lib/types'
@@ -1081,6 +1083,7 @@ function ProductDialog({
   const [form, setForm] = useState<any>(productFormInitialValue(product))
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<Array<{ name: string; url: string }>>([])
+  const [imagesToRemove, setImagesToRemove] = useState<Set<string>>(new Set())
   const [newBrandName, setNewBrandName] = useState('')
   const [showBrandCreator, setShowBrandCreator] = useState(false)
   const [creatingBrand, setCreatingBrand] = useState(false)
@@ -1094,6 +1097,7 @@ function ProductDialog({
 
     setForm(productFormInitialValue(product))
     setImageFiles([])
+    setImagesToRemove(new Set())
     setNewBrandName('')
     setShowBrandCreator(false)
   }, [open, product])
@@ -1167,15 +1171,29 @@ function ProductDialog({
         uploadedUrls = response.urls
       }
 
+      // Filter out images marked for removal from existing images
+      const remainingUrls = (form.image_urls || []).filter((url: string) => !imagesToRemove.has(url))
+
       const imageUrls = [
-        ...new Set([...(form.image_urls || []), ...uploadedUrls].map((url: string) => url.trim()).filter(Boolean)),
+        ...new Set([...remainingUrls, ...uploadedUrls].map((url: string) => url.trim()).filter(Boolean)),
       ]
 
-      await onSave({ ...form, image_url: imageUrls[0] || '', image_urls: imageUrls, generate_sku: generateSku }, product?.id)
+      // Send imagesToRemove list to server for database cleanup
+      await onSave(
+        {
+          ...form,
+          image_url: imageUrls[0] || '',
+          image_urls: imageUrls,
+          images_to_remove: Array.from(imagesToRemove),
+          generate_sku: generateSku,
+        },
+        product?.id,
+      )
       setOpen(false)
       setImageFiles([])
+      setImagesToRemove(new Set())
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Impossible d’enregistrer le produit')
+      toast.error(error instanceof Error ? error.message : "Impossible d'enregistrer le produit")
     } finally {
       setSaving(false)
     }
@@ -1360,51 +1378,41 @@ function ProductDialog({
             )}
           </div>
           <div className="sm:col-span-2">
-            <Field label="URL de l’image principale" value={form.image_url || ''} onChange={updatePrimaryImageUrl} icon={<Upload className="h-4 w-4" />} />
+            <Field label="URL de l'image principale" value={form.image_url || ''} onChange={updatePrimaryImageUrl} icon={<Upload className="h-4 w-4" />} />
           </div>
-          <div className="grid gap-3 sm:col-span-2">
-            <Label htmlFor={product ? `product-images-${product.id}` : 'product-images-new'}>Importer des images depuis le PC</Label>
-            <Input
-              id={product ? `product-images-${product.id}` : 'product-images-new'}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(event) => setImageFiles(Array.from(event.target.files || []))}
-            />
-            {((form.image_urls || []).length > 0 || imagePreviews.length > 0) && (
-              <div className="grid gap-3 rounded-lg border p-3 sm:grid-cols-2">
-                {(form.image_urls || []).map((url: string, index: number) => (
-                  <div key={url} className="flex items-center gap-3 rounded-lg border p-2">
-                    <div className="relative h-14 w-14 overflow-hidden rounded-md bg-muted">
-                      <Image src={url} alt={`Image produit ${index + 1}`} fill className="object-cover" sizes="56px" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{index === 0 ? 'Image principale' : `Image ${index + 1}`}</p>
-                      <p className="truncate text-xs text-muted-foreground">{url}</p>
-                    </div>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeImageUrl(url)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                {imagePreviews.map((preview, index) => (
-                  <div key={`${preview.name}-${preview.url}`} className="flex items-center gap-3 rounded-lg border border-dashed p-2">
-                    <div className="relative h-14 w-14 overflow-hidden rounded-md bg-muted">
-                      <Image src={preview.url} alt={preview.name} fill className="object-cover" sizes="56px" unoptimized />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">Nouvelle image {index + 1}</p>
-                      <p className="truncate text-xs text-muted-foreground">{preview.name}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="grid gap-2 sm:col-span-2">
-            <Label>Description</Label>
-            <Textarea value={form.description || ''} onChange={(event) => setForm({ ...form, description: event.target.value })} />
-          </div>
+        </div>
+
+        {/* Image Management Card */}
+        <div className="border-t pt-4">
+          <ImageManagementCard
+            existingImages={form.image_urls || []}
+            newImages={imagePreviews}
+            imagesToRemove={imagesToRemove}
+            onMarkForRemoval={(url) => setImagesToRemove(new Set([...imagesToRemove, url]))}
+            onUnmarkForRemoval={(url) => {
+              const newSet = new Set(imagesToRemove)
+              newSet.delete(url)
+              setImagesToRemove(newSet)
+            }}
+            onAddNewImages={async (files) => setImageFiles([...imageFiles, ...files])}
+            onRemoveNewImage={(url) => {
+              setImageFiles(imageFiles.filter((_, i) => imagePreviews[i]?.url !== url))
+              setImagePreviews(imagePreviews.filter((preview) => preview.url !== url))
+            }}
+            onReorderImages={(urls) => setForm({ ...form, image_urls: urls, image_url: urls[0] || '' })}
+          />
+        </div>
+
+        {/* Rich Description Editor */}
+        <div className="border-t pt-4 mt-4">
+          <RichDescriptionEditor
+            value={form.description || ''}
+            onChange={(value) => setForm({ ...form, description: value })}
+            maxLength={5000}
+          />
+        </div>
+
+        <div className="border-t pt-4 mt-4 grid gap-4 sm:grid-cols-2">
           <ToggleRow label="Produit actif" checked={!!form.is_active} onCheckedChange={(value) => setForm({ ...form, is_active: value })} />
           <ToggleRow label="En stock" checked={!!form.in_stock} onCheckedChange={(value) => setForm({ ...form, in_stock: value })} />
         </div>
