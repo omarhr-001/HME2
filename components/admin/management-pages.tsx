@@ -1031,7 +1031,14 @@ export function SettingsPage() {
               <div key={item.key} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
                 <span className="font-medium">{item.label}</span>
                 <div className="flex items-center gap-2">
-
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => testNotification(item.label)}
+                    disabled={!notificationSettings[item.key]}
+                  >
+                    <Bell className="mr-2 h-4 w-4" /> Test
+                  </Button>
                   <Switch
                     checked={notificationSettings[item.key]}
                     onCheckedChange={(checked) => setNotificationEnabled(item.key, checked)}
