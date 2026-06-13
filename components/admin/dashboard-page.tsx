@@ -223,8 +223,8 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
       {(settings.showRevenue || settings.showStatus) && (
         <div className="grid gap-6 xl:grid-cols-[1.8fr_1fr]">
           {settings.showRevenue && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+            <Card className="overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle>Vue du chiffre d'affaires</CardTitle>
                 <Tabs defaultValue="daily" className="w-auto">
                   <TabsList>
@@ -232,23 +232,27 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
                     <TabsTrigger value="weekly">Semaine</TabsTrigger>
                     <TabsTrigger value="monthly">Mois</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="daily" className="mt-4">
-                    <div className="h-[300px] w-full">
+                </Tabs>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="daily" className="w-full">
+                  <TabsContent value="daily" className="mt-0">
+                    <div className="h-[300px] w-full overflow-hidden">
                       <RevenueChart data={data.revenueSeries} />
                     </div>
                   </TabsContent>
-                  <TabsContent value="weekly" className="mt-4">
-                    <div className="h-[300px] w-full">
+                  <TabsContent value="weekly" className="mt-0">
+                    <div className="h-[300px] w-full overflow-hidden">
                       <RevenueChart data={data.weeklyRevenue} />
                     </div>
                   </TabsContent>
-                  <TabsContent value="monthly" className="mt-4">
-                    <div className="h-[300px] w-full">
+                  <TabsContent value="monthly" className="mt-0">
+                    <div className="h-[300px] w-full overflow-hidden">
                       <RevenueChart data={data.monthlyRevenue} />
                     </div>
                   </TabsContent>
                 </Tabs>
-              </CardHeader>
+              </CardContent>
             </Card>
           )}
 
