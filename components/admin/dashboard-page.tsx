@@ -221,7 +221,7 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
       )}
 
       {(settings.showRevenue || settings.showStatus) && (
-        <div className="grid gap-6 xl:grid-cols-[1.55fr_1fr]">
+        <div className="grid gap-6 xl:grid-cols-[1.8fr_1fr]">
           {settings.showRevenue && (
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
