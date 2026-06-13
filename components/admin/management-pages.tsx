@@ -40,8 +40,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ImageManagementCard } from '@/components/admin/image-management'
 import { RichDescriptionEditor } from '@/components/admin/rich-description-editor'
+import { WeeklyReportCard } from '@/components/admin/weekly-report-card'
 import { adminFetch, downloadAdminFile, adminUpload } from '@/lib/admin/client'
 import { EmptyState } from '@/components/admin/admin-shell'
+import type { WeeklyReport } from '@/lib/admin/weekly-report'
 import type { AdminCategory, AdminOrder, AdminProduct, AdminProfile, OrderStatus, PaymentStatus } from '@/lib/admin/types'
 import { makeSkuBase } from '@/lib/utils'
 import type { Brand } from '@/lib/types'
@@ -777,6 +779,8 @@ export function SettingsPage() {
   const [notificationSettings, setNotificationSettings] = useState(defaultNotificationSettings)
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default')
   const [shippingForm, setShippingForm] = useState<ShippingSettings>(DEFAULT_SHIPPING_SETTINGS)
+  const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null)
+  const [loadingReport, setLoadingReport] = useState(false)
   const { data: shippingSettings, mutate: mutateShippingSettings } = useSWR<ShippingSettings>(
     '/api/admin/shipping-settings',
     adminFetch,
@@ -883,6 +887,48 @@ export function SettingsPage() {
       body: `${label} notifications are working.`,
     })
     toast.success('Test notification sent')
+  }
+
+  async function loadWeeklyReport() {
+    setLoadingReport(true)
+    try {
+      const report = await adminFetch<WeeklyReport>('/api/admin/weekly-report')
+      setWeeklyReport(report)
+      toast.success('Weekly report loaded')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to load weekly report')
+    } finally {
+      setLoadingReport(false)
+    }
+  }
+
+  async function testWeeklyReportNotification() {
+    if (!notificationSettings.weeklyReports) {
+      toast.error('Enable weekly report notifications first')
+      return
+    }
+
+    await loadWeeklyReport()
+
+    if (!('Notification' in window)) {
+      toast.error('Browser notifications are not supported here')
+      return
+    }
+
+    if (Notification.permission !== 'granted') {
+      const permission = await Notification.requestPermission()
+      setNotificationPermission(permission)
+
+      if (permission !== 'granted') {
+        toast.error('Allow notifications in your browser first')
+        return
+      }
+    }
+
+    new Notification('HME Admin - Rapport hebdomadaire', {
+      body: 'Votre rapport hebdomadaire est prêt. Cliquez pour consulter les détails.',
+    })
+    toast.success('Weekly report test notification sent')
   }
 
   async function saveShipping() {
@@ -1021,27 +1067,53 @@ export function SettingsPage() {
         </Card>
       </TabsContent>
       <TabsContent value="notifications">
-        <Card>
-          <CardHeader><CardTitle>Paramètres de notification</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
-              Autorisation du navigateur : <span className="font-medium text-foreground">{notificationPermission}</span>
-            </div>
-            {notificationOptions.map((item) => (
-              <div key={item.key} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
-                <span className="font-medium">{item.label}</span>
-                <div className="flex items-center gap-2">
-
-                  <Switch
-                    checked={notificationSettings[item.key]}
-                    onCheckedChange={(checked) => setNotificationEnabled(item.key, checked)}
-                  />
-                </div>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader><CardTitle>Paramètres de notification</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+                Autorisation du navigateur : <span className="font-medium text-foreground">{notificationPermission}</span>
               </div>
-            ))}
-            <Button variant="destructive" onClick={signOut}>Déconnexion</Button>
-          </CardContent>
-        </Card>
+              {notificationOptions.map((item) => (
+                <div key={item.key} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
+                  <span className="font-medium">{item.label}</span>
+                  <div className="flex items-center gap-2">
+                    {item.key === 'weeklyReports' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={testWeeklyReportNotification}
+                        disabled={loadingReport}
+                      >
+                        {loadingReport ? 'Chargement...' : 'Tester'}
+                      </Button>
+                    )}
+                    {(item.key === 'newOrders' || item.key === 'lowStockAlerts' || item.key === 'customerSignups') && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => testNotification(item.label)}
+                      >
+                        Tester
+                      </Button>
+                    )}
+                    <Switch
+                      checked={notificationSettings[item.key]}
+                      onCheckedChange={(checked) => setNotificationEnabled(item.key, checked)}
+                    />
+                  </div>
+                </div>
+              ))}
+              <Button variant="destructive" onClick={signOut}>Déconnexion</Button>
+            </CardContent>
+          </Card>
+
+          {weeklyReport && (
+            <div>
+              <WeeklyReportCard report={weeklyReport} />
+            </div>
+          )}
+        </div>
       </TabsContent>
     </Tabs>
   )
