@@ -105,6 +105,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     latestOrderDate: '',
     latestCustomerDate: '',
     lowStockIds: new Set<number>(),
+    lastWeeklyReportDate: '',
   })
 
   const activeLabel = nav.find((item) => item.href === pathname)?.label || 'Tableau de bord'
@@ -159,13 +160,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
     async function pollAdminNotifications() {
       const settings = getNotificationSettings()
-      if (!settings.newOrders && !settings.lowStockAlerts && !settings.customerSignups) return
+      if (!settings.newOrders && !settings.lowStockAlerts && !settings.customerSignups && !settings.weeklyReports) return
 
       try {
-        const [orders, products, customers] = await Promise.all([
+        const [orders, products, customers, weeklyReportData] = await Promise.all([
           settings.newOrders ? adminFetch<any[]>('/api/admin/orders?status=all') : Promise.resolve([]),
           settings.lowStockAlerts ? adminFetch<any[]>('/api/admin/products') : Promise.resolve([]),
           settings.customerSignups ? adminFetch<any[]>('/api/admin/customers') : Promise.resolve([]),
+          settings.weeklyReports ? adminFetch<any>('/api/admin/weekly-report').catch(() => null) : Promise.resolve(null),
         ])
 
         if (cancelled) return
@@ -218,12 +220,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           }
 
           if (latestCustomerDate && latestCustomerDate > snapshot.latestCustomerDate) {
-            sendAdminNotification('customerSignups', 'Nouveau client inscrit', 'Un compte client vient d’être créé.')
+            sendAdminNotification('customerSignups', 'Nouveau client inscrit', "Un compte client vient d'être créé.")
           }
 
           const newLowStockCount = [...lowStockIds].filter((id) => !snapshot.lowStockIds.has(id)).length
           if (newLowStockCount > 0) {
             sendAdminNotification('lowStockAlerts', 'Alerte de stock', `${newLowStockCount} produit(s) sont presque en rupture.`)
+          }
+
+          if (weeklyReportData && !snapshot.lastWeeklyReportDate) {
+            sendAdminNotification('weeklyReports', 'Rapport hebdomadaire disponible', 'Consultez les performances de votre entreprise cette semaine.')
           }
         }
 
@@ -232,7 +238,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           latestOrderDate,
           latestCustomerDate,
           lowStockIds,
+          lastWeeklyReportDate: weeklyReportData ? new Date().toISOString() : snapshot.lastWeeklyReportDate,
         }
+
       } catch {
         // Notification polling is best-effort and should not interrupt admin work.
       }
