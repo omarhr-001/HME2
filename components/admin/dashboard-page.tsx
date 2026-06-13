@@ -37,14 +37,14 @@ import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
 } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
 import type { AdminDashboardData } from '@/lib/admin/types'
@@ -222,7 +222,7 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
 
       {(settings.showRevenue || settings.showStatus) && (
         <div className="grid gap-6 xl:grid-cols-[1.55fr_1fr]">
-          {settings.showRevenue && (
+          {/*{settings.showRevenue && (
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Vue du chiffre d'affaires</CardTitle>
@@ -244,7 +244,7 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
                 </Tabs>
               </CardHeader>
             </Card>
-          )}
+          )}*/}
 
           {settings.showStatus && (
             <Card>
