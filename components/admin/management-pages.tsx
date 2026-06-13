@@ -1067,12 +1067,38 @@ export function SettingsPage() {
         </Card>
       </TabsContent>
       <TabsContent value="notifications">
+<<<<<<< HEAD
         <div className="space-y-4">
           <Card>
             <CardHeader><CardTitle>Paramètres de notification</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
                 Autorisation du navigateur : <span className="font-medium text-foreground">{notificationPermission}</span>
+=======
+        <Card>
+          <CardHeader><CardTitle>Paramètres de notification</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+              Autorisation du navigateur : <span className="font-medium text-foreground">{notificationPermission}</span>
+            </div>
+            {notificationOptions.map((item) => (
+              <div key={item.key} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
+                <span className="font-medium">{item.label}</span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => testNotification(item.label)}
+                    disabled={!notificationSettings[item.key]}
+                  >
+                    <Bell className="mr-2 h-4 w-4" /> Test
+                  </Button>
+                  <Switch
+                    checked={notificationSettings[item.key]}
+                    onCheckedChange={(checked) => setNotificationEnabled(item.key, checked)}
+                  />
+                </div>
+>>>>>>> main
               </div>
               {notificationOptions.map((item) => (
                 <div key={item.key} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
