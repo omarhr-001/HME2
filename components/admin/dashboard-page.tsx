@@ -233,13 +233,19 @@ export function DashboardPage({ analyticsOnly = false }: { analyticsOnly?: boole
                     <TabsTrigger value="monthly">Mois</TabsTrigger>
                   </TabsList>
                   <TabsContent value="daily" className="mt-4">
-                    <RevenueChart data={data.revenueSeries} />
+                    <div className="h-[300px] w-full">
+                      <RevenueChart data={data.revenueSeries} />
+                    </div>
                   </TabsContent>
                   <TabsContent value="weekly" className="mt-4">
-                    <RevenueChart data={data.weeklyRevenue} />
+                    <div className="h-[300px] w-full">
+                      <RevenueChart data={data.weeklyRevenue} />
+                    </div>
                   </TabsContent>
                   <TabsContent value="monthly" className="mt-4">
-                    <RevenueChart data={data.monthlyRevenue} />
+                    <div className="h-[300px] w-full">
+                      <RevenueChart data={data.monthlyRevenue} />
+                    </div>
                   </TabsContent>
                 </Tabs>
               </CardHeader>
