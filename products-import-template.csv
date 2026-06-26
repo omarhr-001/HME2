@@ -1,0 +1,11 @@
+nom_produit,description,prix,prix_original,cout,quantite_stock,categorie,marque,tags,sku,photo,actif,en_stock
+Canapé Moderne Gris,Confortable canapé moderne en tissu gris avec design épuré,2500.00,2999.00,1500.00,15,Meubles/Salons,Meubles Élégants,"confort, moderne, gris",CAN-MOD-01,https://example.com/images/canape-gris.jpg,true,true
+Table Basse Scandinave,Table basse en bois clair style scandinave avec rangement,899.99,1199.99,450.00,8,Meubles/Salons,Design Nordique,"table, salon, bois",TAB-BAS-01,https://example.com/images/table-basse.jpg,true,true
+Lit Adulte Chêne,Lit adulte en chêne massif avec sommier inclus - 160x200cm,1200.00,1500.00,700.00,5,Meubles/Chambres,Meubles Premium,"lit, chambre, bois",LIT-ADU-01,https://example.com/images/lit-chene.jpg,true,true
+Chaise Moderne Noire,Chaise de salon design moderne avec pieds en métal,349.50,449.00,180.00,25,Meubles/Salons,Design Contemporain,"chaise, noir, moderne",CHA-MOD-01,https://example.com/images/chaise-noire.jpg,true,true
+Armoire Chambre Blanc,Grande armoire en MDF blanc avec miroir intégré,1599.00,1999.00,800.00,3,Meubles/Chambres,Meubles Essentiels,"armoire, chambre, blanc",ARM-CHA-01,https://example.com/images/armoire-blanc.jpg,true,true
+Meuble TV Métal Noir,Meuble télévision design avec étagères en verre et structure métal,799.99,999.99,400.00,10,Meubles/Salons,Design Urbain,"télé, rangement, noir",MTV-MET-01,https://example.com/images/meuble-tv.jpg,true,true
+Oreiller Mémoire Forme,Oreiller ergonomique avec mousse à mémoire de forme,199.99,279.99,100.00,50,Literie,"Confort Plus","oreiller, confort, blanc",ORL-MEM-01,https://example.com/images/oreiller.jpg,true,true
+Couette 4 Saisons,Couette polyvalente pour toutes les saisons - 220x240cm,599.00,799.00,300.00,20,Literie,Meubles Essentiels,"couette, confort, blanc",COU-4SA-01,https://example.com/images/couette.jpg,true,true
+Tabouret Design Rose,Petit tabouret design en velours rose avec pieds dorés,249.99,349.00,120.00,18,Meubles/Salons,Design Urbain,"tabouret, rose, design",TAB-DES-01,https://example.com/images/tabouret-rose.jpg,true,true
+Miroir Mural Doré,Grand miroir mural avec cadre en bois doré 120x80cm,459.99,599.99,250.00,7,Accessoires,"Décoration Design","miroir, doré, mural",MIR-MUR-01,https://example.com/images/miroir-dore.jpg,true,true
