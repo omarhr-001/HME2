@@ -92,7 +92,7 @@ export function Footer() {
               </li>
               <li className="flex gap-3 items-start">
                 <Mail size={16} className="mt-0.5 flex-shrink-0 text-green-500" />
-                <span>contact@hamroun.tn</span>
+                <span>jamel_hamroun@yahoo.fr</span>
               </li>
               <li className="flex gap-3 items-start">
                 <MapPin size={16} className="mt-0.5 flex-shrink-0 text-green-500" />

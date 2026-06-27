@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   verification: {
     google: 'c5fbef808ba04820', // 👈 le code que Google te donne
   },
+  icons: {
+    icon: "/public/logo.png",
+    shortcut: "/public/logo.png",
+    apple: "/public/logo.png",
+  },
 
   // ✅ Description optimisée pour Google (max 160 caractères)
   description: 'Vente de meubles et électroménagers de qualité en Tunisie. Climatiseurs, réfrigérateurs, canapés. Livraison à domicile sur Hammamet et toute la Tunisie.',

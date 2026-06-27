@@ -15,7 +15,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Introduction</h2>
               <p className="text-gray-600 mb-4">
-                Hamroun Meuble & Electro ("nous", "notre" ou "la Société") respecte la vie privée de nos utilisateurs ("utilisateur" ou "vous"). 
+                Hamroun Meuble & Electro ("nous", "notre" ou "la Société") respecte la vie privée de nos utilisateurs ("utilisateur" ou "vous").
                 Cette Politique de Confidentialité explique comment nous collectons, utilisons, divulguons et sauvegardons vos informations.
               </p>
             </section>
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">4. Sécurité des Données</h2>
               <p className="text-gray-600">
-                Nous utilisons le chiffrement SSL 256-bit pour protéger vos données. Cependant, aucune méthode de transmission sur Internet n'est 100% sécurisée. 
+                Nous utilisons le chiffrement SSL 256-bit pour protéger vos données. Cependant, aucune méthode de transmission sur Internet n'est 100% sécurisée.
                 Nous ne pouvons pas garantir la sécurité absolue de vos informations.
               </p>
             </section>
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Cookies</h2>
               <p className="text-gray-600 mb-4">
-                Notre site utilise des cookies pour améliorer votre expérience. Vous pouvez contrôler les cookies via les paramètres de votre navigateur. 
+                Notre site utilise des cookies pour améliorer votre expérience. Vous pouvez contrôler les cookies via les paramètres de votre navigateur.
                 Certains cookies sont essentiels au fonctionnement du site.
               </p>
             </section>
@@ -84,7 +84,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Contact</h2>
               <p className="text-gray-600">
-                Si vous avez des questions concernant cette politique, veuillez nous contacter à contact@hamroun.tn ou appelez +216 98 123 456.
+                Si vous avez des questions concernant cette politique, veuillez nous contacter à jamel_hamroun@yahoo.fr ou appelez +216 98 123 456.
               </p>
             </section>
           </div>

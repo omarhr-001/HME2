@@ -59,7 +59,7 @@ export default function ContactPage() {
             <div className="bg-white p-8 rounded-lg text-center hover:shadow-lg transition">
               <Mail className="w-12 h-12 mx-auto mb-4 text-green-500" />
               <h3 className="font-bold text-lg mb-2">Email</h3>
-              <p className="text-gray-600 mb-4">contact@hamroun.tn</p>
+              <p className="text-gray-600 mb-4">jamel_hamroun@yahoo.fr</p>
               <p className="text-sm text-gray-500">Réponse en 24 heures</p>
             </div>
             <div className="bg-white p-8 rounded-lg text-center hover:shadow-lg transition">

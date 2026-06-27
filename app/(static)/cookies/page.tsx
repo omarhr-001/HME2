@@ -15,7 +15,7 @@ export default function CookiesPage() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Qu'est-ce qu'un Cookie?</h2>
               <p className="text-gray-600">
-                Un cookie est un petit fichier texte stocké sur votre ordinateur ou appareil mobile lorsque vous visitez un site web. 
+                Un cookie est un petit fichier texte stocké sur votre ordinateur ou appareil mobile lorsque vous visitez un site web.
                 Les cookies contiennent des informations qui permettent au site web de vous identifier et d'améliorer votre expérience de navigation.
               </p>
             </section>
@@ -26,28 +26,28 @@ export default function CookiesPage() {
                 <div className="bg-gray-50 p-6 rounded-lg">
                   <h3 className="font-bold text-lg mb-2">Cookies Essentiels</h3>
                   <p className="text-gray-600">
-                    Ces cookies sont nécessaires au fonctionnement du site. Ils incluent l'authentification, 
+                    Ces cookies sont nécessaires au fonctionnement du site. Ils incluent l'authentification,
                     la gestion du panier d'achat et les préférences de sécurité.
                   </p>
                 </div>
                 <div className="bg-gray-50 p-6 rounded-lg">
                   <h3 className="font-bold text-lg mb-2">Cookies de Performance</h3>
                   <p className="text-gray-600">
-                    Nous utilisons ces cookies pour comprendre comment vous utilisez notre site, 
+                    Nous utilisons ces cookies pour comprendre comment vous utilisez notre site,
                     quelles pages vous visitez et d'où vous venez. Cela nous aide à améliorer notre site.
                   </p>
                 </div>
                 <div className="bg-gray-50 p-6 rounded-lg">
                   <h3 className="font-bold text-lg mb-2">Cookies Fonctionnels</h3>
                   <p className="text-gray-600">
-                    Ces cookies nous permettent de mémoriser vos préférences, 
+                    Ces cookies nous permettent de mémoriser vos préférences,
                     comme votre langue et votre devise, pour vous offrir une meilleure expérience.
                   </p>
                 </div>
                 <div className="bg-gray-50 p-6 rounded-lg">
                   <h3 className="font-bold text-lg mb-2">Cookies de Marketing</h3>
                   <p className="text-gray-600">
-                    Nous utilisons ces cookies pour suivre vos activités sur notre site et d'autres sites 
+                    Nous utilisons ces cookies pour suivre vos activités sur notre site et d'autres sites
                     pour vous montrer des publicités personnalisées et pertinentes.
                   </p>
                 </div>
@@ -75,7 +75,7 @@ export default function CookiesPage() {
                 <div className="bg-gray-50 p-6 rounded-lg">
                   <h4 className="font-bold mb-2">Dans Votre Navigateur</h4>
                   <p className="text-gray-600 text-sm">
-                    La plupart des navigateurs web vous permettent de contrôler les cookies par le biais de leurs paramètres de confidentialité. 
+                    La plupart des navigateurs web vous permettent de contrôler les cookies par le biais de leurs paramètres de confidentialité.
                     Consultez la documentation de votre navigateur (Chrome, Firefox, Safari, Edge) pour plus d'informations.
                   </p>
                 </div>
@@ -104,7 +104,7 @@ export default function CookiesPage() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Mises à Jour de Cette Politique</h2>
               <p className="text-gray-600">
-                Nous pouvons mettre à jour cette politique sur les cookies de temps en temps. 
+                Nous pouvons mettre à jour cette politique sur les cookies de temps en temps.
                 Consultez cette page régulièrement pour être au courant de toute modification.
               </p>
             </section>
@@ -112,8 +112,8 @@ export default function CookiesPage() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Nous Contacter</h2>
               <p className="text-gray-600">
-                Si vous avez des questions concernant cette politique sur les cookies, 
-                veuillez nous contacter à contact@hamroun.tn ou appeler +216 98 123 456.
+                Si vous avez des questions concernant cette politique sur les cookies,
+                veuillez nous contacter à jamel_hamroun@yahoo.fr ou appeler +216 98 123 456.
               </p>
             </section>
           </div>
