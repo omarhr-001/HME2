@@ -49,7 +49,6 @@ import { makeSkuBase } from '@/lib/utils'
 import type { Brand } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
-import { supabase } from '@/lib/supabase'
 import { DEFAULT_SHIPPING_SETTINGS, type ShippingSettings } from '@/lib/shipping'
 
 const money = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'TND' })
@@ -809,11 +808,7 @@ export function SettingsPage() {
   async function saveProfile() {
     setSavingProfile(true)
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: { display_name: displayName.trim() || null },
-      })
-      if (error) throw error
-      toast.success('Profil mis à jour')
+      throw new Error('La gestion des profils est désactivée avec les données JSON statiques.')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to update profile')
     } finally {
@@ -834,10 +829,7 @@ export function SettingsPage() {
 
     setSavingPassword(true)
     try {
-      const { error } = await supabase.auth.updateUser({ password: passwordForm.password })
-      if (error) throw error
-      setPasswordForm({ password: '', confirmPassword: '' })
-      toast.success('Password updated')
+      throw new Error('La gestion des comptes est désactivée avec les données JSON statiques.')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to update password')
     } finally {

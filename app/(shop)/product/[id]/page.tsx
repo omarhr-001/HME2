@@ -1,6 +1,6 @@
 // ✅ PAS de 'use client' — Server Component pour le SEO
 import type { Metadata } from 'next'
-import { getProductByIdFromSupabase } from '@/lib/products'
+import { getProductById } from '@/lib/products'
 import { ProductClient } from './product-client'
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
 
 // ✅ Génère le SEO unique pour chaque produit
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const product = await getProductByIdFromSupabase(params.id)
+  const product = await getProductById(params.id)
 
   if (!product) {
     return {

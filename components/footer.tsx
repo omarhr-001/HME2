@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Phone, Mail, MapPin, ArrowRight } from 'lucide-react'
-import { getCategoriesWithProductsFromSupabase, type Category } from '@/lib/products'
+import { getCategoriesWithProducts, type Category } from '@/lib/products'
 
 export function Footer() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -12,7 +12,7 @@ export function Footer() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const cats = await getCategoriesWithProductsFromSupabase()
+        const cats = await getCategoriesWithProducts()
         setCategories(cats.slice(0, 4))
       } catch (error) {
         console.error('Error fetching categories:', error)
@@ -49,10 +49,8 @@ export function Footer() {
                         <span className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-gray-700 bg-white">
                           {category.image_url ? (
                             <img src={category.image_url} alt={category.name} className="h-full w-full object-cover" />
-                          ) : category.emoji ? (
-                            <span className="text-sm">{category.emoji}</span>
                           ) : (
-                            <span className="text-sm">*</span>
+                            <span className="text-xs font-semibold">{category.name.slice(0, 1)}</span>
                           )}
                         </span>
                         <span className="group-hover:translate-x-1 transition-transform">{category.name}</span>

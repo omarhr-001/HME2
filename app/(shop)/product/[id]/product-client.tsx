@@ -31,8 +31,8 @@ export function ProductClient({ id }: Props) {
     useEffect(() => {
         const loadProduct = async () => {
             try {
-                const { getProductByIdFromSupabase } = await import('@/lib/products')
-                const data = await getProductByIdFromSupabase(id) // ✅ params.id → id
+                const { getProductById } = await import('@/lib/products')
+                const data = await getProductById(id) // ✅ params.id → id
                 if (data) {
                     setProduct(data)
                     setActiveImageIndex(0)

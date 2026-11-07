@@ -1,21 +1,25 @@
-import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/server-supabase'
-import { mapProduct } from '@/lib/products'
+import { NextRequest, NextResponse } from 'next/server'
+import { getProducts } from '@/lib/products'
+import { STATIC_WRITE_DISABLED_MESSAGE } from '@/lib/static-mode'
 
-export async function GET() {
-  try {
-    const supabase = createServiceClient()
-    const { data, error } = await supabase
-      .from('products')
-      .select('*, categories(*), brands(*), product_images(*)')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  const query = searchParams.get('search')?.trim().toLocaleLowerCase()
+  const categoryId = searchParams.get('categoryId')
+  const brandId = searchParams.get('brandId')
+  const products = await getProducts()
+  const filteredProducts = products.filter((product) => {
+    if (categoryId && product.category_id !== categoryId) return false
+    if (brandId && product.brand_id !== brandId) return false
+    if (query && !`${product.name} ${product.description ?? ''} ${product.brand?.name ?? ''}`.toLocaleLowerCase().includes(query)) return false
+    return true
+  })
 
-    if (error) throw error
+  return NextResponse.json(filteredProducts, {
+    headers: { 'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600' },
+  })
+}
 
-    return NextResponse.json((data || []).map(mapProduct))
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to load products'
-    return NextResponse.json({ error: message }, { status: 500 })
-  }
+export async function POST() {
+  return NextResponse.json({ error: STATIC_WRITE_DISABLED_MESSAGE }, { status: 503 })
 }

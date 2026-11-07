@@ -1,4 +1,4 @@
-import { SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { subDays, format } from 'date-fns'
 import type { AdminOrder, AdminProduct } from './types'
 import { toNumber } from './auth'

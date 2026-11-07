@@ -5,6 +5,14 @@ import type { WeeklyReport } from '@/lib/admin/weekly-report'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
+function TrendIcon({ value }: { value: number }) {
+  if (value === 0) return null
+  const isPositive = value > 0
+  const Icon = isPositive ? TrendingUp : TrendingDown
+  const color = isPositive ? 'text-green-600' : 'text-red-600'
+  return <Icon className={`h-4 w-4 ${color}`} />
+}
+
 export function WeeklyReportCard({ report }: { report: WeeklyReport }) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -12,14 +20,6 @@ export function WeeklyReportCard({ report }: { report: WeeklyReport }) {
       currency: 'EUR',
       maximumFractionDigits: 0,
     }).format(value)
-  }
-
-  const TrendIcon = ({ value }: { value: number }) => {
-    if (value === 0) return null
-    const isPositive = value > 0
-    const Icon = isPositive ? TrendingUp : TrendingDown
-    const color = isPositive ? 'text-green-600' : 'text-red-600'
-    return <Icon className={`h-4 w-4 ${color}`} />
   }
 
   return (

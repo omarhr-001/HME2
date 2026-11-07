@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ProductCard } from './product-card'
-import { getProductsFromSupabase, getCategoriesWithProductsFromSupabase, type Category } from '@/lib/products'
+import { getProducts, getCategoriesWithProducts, type Category } from '@/lib/products'
 import { ArrowRight } from 'lucide-react'
 import type { Product } from '@/lib/types'
 
@@ -18,8 +18,8 @@ export function ProductsSection() {
     const fetchData = async () => {
       try {
         const [productsData, categoriesData] = await Promise.all([
-          getProductsFromSupabase(),
-          getCategoriesWithProductsFromSupabase()
+getProducts(),
+        getCategoriesWithProducts()
         ])
         setProducts(productsData)
         setCategories(categoriesData)
@@ -76,10 +76,8 @@ export function ProductsSection() {
             <span className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-white">
               {cat.image_url ? (
                 <img src={cat.image_url} alt={cat.name} className="h-full w-full object-cover" />
-              ) : cat.emoji ? (
-                <span className="text-base">{cat.emoji}</span>
               ) : (
-                <span className="text-base">📦</span>
+                <span className="text-xs font-semibold text-gray-500">{cat.name.slice(0, 1)}</span>
               )}
             </span>
             {cat.name}

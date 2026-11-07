@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import { Heart, ShoppingCart } from 'lucide-react'
 import { ProductDetailsModal } from './product-details-modal'
 import { useCart } from '@/lib/hooks'
@@ -36,7 +35,6 @@ export function ProductCard({
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
-  const router = useRouter()
   const { user } = useAuth()
   const { addToCart } = useCart()
   const { toast } = useToast()
@@ -93,10 +91,9 @@ export function ProductCard({
   const handleAddToCart = async (quantity = 1) => {
     if (!user) {
       toast({
-        title: 'Connexion requise',
-        description: 'Veuillez vous connecter pour ajouter des articles au panier',
+        title: 'Catalogue en lecture seule',
+        description: 'Le panier et les comptes nécessitent un backend persistant et sont désactivés dans ce mode.',
       })
-      router.push('/auth/login')
       return
     }
 
@@ -235,10 +232,9 @@ export function ProductCard({
               e.stopPropagation()
               if (!user) {
                 toast({
-                  title: 'Connexion requise',
-                  description: 'Veuillez vous connecter pour ajouter aux favoris',
+                  title: 'Catalogue en lecture seule',
+                  description: 'Les favoris nécessitent un compte et ne sont pas activés dans ce mode.',
                 })
-                router.push('/auth/login')
                 return
               }
               const newState = !isWishlisted

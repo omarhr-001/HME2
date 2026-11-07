@@ -6,7 +6,7 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ProductCard } from '@/components/product-card'
 import { ArrowDownAZ, ArrowDownUp, BadgePercent, Search, X } from 'lucide-react'
-import { getProductsFromSupabase, getCategoriesWithProductsFromSupabase, type Category } from '@/lib/products'
+import { getProducts, getCategoriesWithProducts, type Category } from '@/lib/products'
 import type { Product, Brand } from '@/lib/types'
 
 // ✅ Export nommé (pas default) pour être importé dans page.tsx
@@ -36,8 +36,8 @@ export function ProductsClient() {
         const fetchData = async () => {
             try {
                 const [productsData, categoriesData] = await Promise.all([
-                    getProductsFromSupabase(),
-                    getCategoriesWithProductsFromSupabase()
+getProducts(),
+        getCategoriesWithProducts()
                 ])
 
                 const max = productsData.reduce((acc, product) => {
@@ -415,7 +415,7 @@ export function ProductsClient() {
                                                 {selectedCategoryData.image_url ? (
                                                     <Image src={selectedCategoryData.image_url} alt={selectedCategoryData.name} width={40} height={40} className="object-cover" />
                                                 ) : (
-                                                    <span className="text-2xl">{selectedCategoryData.emoji || '📦'}</span>
+                                                    <span className="text-lg font-semibold text-gray-500">{selectedCategoryData.name.slice(0, 1)}</span>
                                                 )}
                                             </span>
                                             <div>

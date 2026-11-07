@@ -1,13 +1,9 @@
 'use client'
 
-import { supabase } from '@/lib/supabase'
-
 export async function adminFetch<T>(input: string, init?: RequestInit): Promise<T> {
-  const { data } = await supabase.auth.getSession()
   const headers = new Headers(init?.headers)
-  headers.set('content-type', 'application/json')
-  if (data.session?.access_token) {
-    headers.set('authorization', `Bearer ${data.session.access_token}`)
+  if (init?.body && !(init.body instanceof FormData)) {
+    headers.set('content-type', 'application/json')
   }
 
   const response = await fetch(input, { ...init, headers })
@@ -19,11 +15,7 @@ export async function adminFetch<T>(input: string, init?: RequestInit): Promise<
 }
 
 export async function downloadAdminFile(input: string, filename: string) {
-  const { data } = await supabase.auth.getSession()
-  const headers = new Headers()
-  if (data.session?.access_token) headers.set('authorization', `Bearer ${data.session.access_token}`)
-
-  const response = await fetch(input, { headers })
+  const response = await fetch(input)
   if (!response.ok) throw new Error('Export failed')
 
   const blob = await response.blob()
@@ -36,22 +28,10 @@ export async function downloadAdminFile(input: string, filename: string) {
 }
 
 export async function adminUpload<T>(input: string, body: FormData): Promise<T> {
-  const { data } = await supabase.auth.getSession()
-  const headers = new Headers()
-  if (data.session?.access_token) {
-    headers.set('authorization', `Bearer ${data.session.access_token}`)
-  }
-
-  const response = await fetch(input, {
-    method: 'POST',
-    headers,
-    body,
-  })
-
+  const response = await fetch(input, { method: 'POST', body })
   if (!response.ok) {
     const payload = await response.json().catch(() => ({ error: 'Upload failed' }))
     throw new Error(payload.reason || payload.error || 'Upload failed')
   }
-
   return response.json()
 }

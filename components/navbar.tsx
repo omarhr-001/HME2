@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { useCart } from '@/lib/hooks'
-import { getCategoriesWithProductsFromSupabase } from '@/lib/products'
+import { getCategoriesWithProducts } from '@/lib/products'
 import type { Category } from '@/lib/products'
 
 export function Navbar() {
@@ -20,7 +20,7 @@ export function Navbar() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const data = await getCategoriesWithProductsFromSupabase()
+        const data = await getCategoriesWithProducts()
         setCategories(data)
       } catch (error) {
         console.error('Error loading categories:', error)
@@ -77,12 +77,10 @@ export function Navbar() {
                     <span className="inline-flex h-5 w-5 overflow-hidden rounded-full border border-gray-200 bg-gray-50">
                       <img src={category.image_url} alt={category.name} className="h-full w-full object-cover" />
                     </span>
-                  ) : category.emoji ? (
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-sm">
-                      {category.emoji}
-                    </span>
                   ) : (
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-sm">📦</span>
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold">
+                      {category.name.slice(0, 1)}
+                    </span>
                   )}
                   <span>{category.name}</span>
                 </Link>
@@ -113,10 +111,9 @@ export function Navbar() {
             <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
           </div>
         ) : !user ? (
-          <>
-            <Link href="/auth/login" className="btn-outline hidden md:inline-block">Connexion</Link>
-            <Link href="/auth/signup" className="btn-primary hidden md:inline-block">S'inscrire</Link>
-          </>
+          <span role="status" className="hidden rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 md:inline-flex">
+            Catalogue JSON · lecture seule
+          </span>
         ) : (
           <>
             <Link href="/account" className="hidden md:flex items-center gap-2 bg-none border-none cursor-pointer p-2 rounded-[10px] text-gray-600 transition-all duration-300 hover:bg-green-50 hover:text-green-700">
@@ -150,10 +147,9 @@ export function Navbar() {
             {loading ? (
               <div className="px-4 py-2 text-gray-500 text-sm">Chargement...</div>
             ) : !user ? (
-              <>
-                <Link href="/auth/login" className="btn-outline w-full mt-2">Connexion</Link>
-                <Link href="/auth/signup" className="btn-primary w-full mt-2">S'inscrire</Link>
-              </>
+              <p role="status" className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                Catalogue JSON en lecture seule. Les comptes et commandes sont désactivés.
+              </p>
             ) : (
               <>
                 <Link href="/app/account/page.tsx" className="no-underline text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 flex items-center gap-2">

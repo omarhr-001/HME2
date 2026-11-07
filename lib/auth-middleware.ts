@@ -1,94 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { STATIC_AUTH_DISABLED_MESSAGE } from './static-mode'
 
-export interface AuthenticatedUser {
-  id: string
-  email?: string
-}
+export type AuthenticatedHandler = (
+  request: NextRequest,
+  user: { id: string; email?: string },
+) => Promise<NextResponse> | NextResponse
 
-/**
- * Middleware to authenticate API requests using JWT tokens
- * Verifies token with Supabase and extracts user information
- */
 export async function withAuth(
-  req: NextRequest,
-  handler: (req: NextRequest, user: AuthenticatedUser) => Promise<NextResponse>
-) {
-  try {
-    const authHeader = req.headers.get('authorization')
-    const token = authHeader?.replace('Bearer ', '')
-
-    if (!token) {
-      console.log('[v0] No token provided')
-      return NextResponse.json(
-        { error: 'Unauthorized: No token provided' },
-        { status: 401 }
-      )
-    }
-
-    // Verify token with Supabase using the token itself
-    // We need to use the service role key if available, otherwise fall back to token verification
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-
-    if (!supabaseUrl) {
-      console.error('[v0] Missing NEXT_PUBLIC_SUPABASE_URL')
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      )
-    }
-
-    // Use service role key if available, otherwise use anon key
-    const key = serviceRoleKey || anonKey
-    if (!key) {
-      console.error('[v0] Missing Supabase credentials')
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      )
-    }
-
-    const supabase = createClient(supabaseUrl, key)
-
-    const { data, error } = await supabase.auth.getUser(token)
-
-    if (error || !data.user) {
-      console.log('[v0] Token verification failed:', error?.message)
-      return NextResponse.json(
-        { error: 'Unauthorized: Invalid token' },
-        { status: 401 }
-      )
-    }
-
-    const user: AuthenticatedUser = {
-      id: data.user.id,
-      email: data.user.email,
-    }
-
-    return await handler(req, user)
-  } catch (err) {
-    console.error('[v0] Auth middleware error:', err)
-    return NextResponse.json(
-      { error: 'Unauthorized: Invalid token' },
-      { status: 401 }
-    )
-  }
+  _request: NextRequest,
+  _handler: AuthenticatedHandler,
+): Promise<NextResponse> {
+  return NextResponse.json({ error: STATIC_AUTH_DISABLED_MESSAGE }, { status: 503 })
 }
 
-/**
- * Helper to validate that a user can access a specific resource
- */
-export function validateUserOwnership(userId: string, resourceUserId: string) {
-  if (userId !== resourceUserId) {
-    return {
-      valid: false,
-      response: NextResponse.json(
-        { error: 'Forbidden: You can only access your own data' },
-        { status: 403 }
-      ),
-    }
-  }
-  return { valid: true }
+export function validateUserOwnership(resourceUserId: string | null | undefined, userId: string) {
+  return Boolean(resourceUserId && resourceUserId === userId)
 }
