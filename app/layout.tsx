@@ -100,8 +100,8 @@ export default function RootLayout({
         <MetaPixel />
         <AuthProvider>
           {children}
-          {process.env.NODE_ENV === 'production' && <Analytics />}
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   )
