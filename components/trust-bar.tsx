@@ -1,40 +1,40 @@
-import { Truck, Shield, Clock, HeadphonesIcon } from 'lucide-react'
+import { BadgeCheck, Handshake, MapPin, MessageCircle } from 'lucide-react'
+
+const commitments = [
+  {
+    icon: Handshake,
+    title: 'Un accompagnement humain',
+    description: 'Chaque projet commence par une écoute sincère.',
+  },
+  {
+    icon: BadgeCheck,
+    title: 'Des conseils transparents',
+    description: 'Des réponses claires, à chaque étape.',
+  },
+  {
+    icon: MapPin,
+    title: 'Une recherche ciblée',
+    description: 'Vos priorités guident chaque sélection.',
+  },
+  {
+    icon: MessageCircle,
+    title: 'Un suivi attentif',
+    description: 'Nous restons présents tout au long du projet.',
+  },
+]
 
 export function TrustBar() {
-  const items = [
-    {
-      icon: <Truck size={20} />,
-      title: 'Livraison gratuite',
-      desc: 'Hammamet ou commandes > 500DT'
-    },
-    {
-      icon: <Shield size={20} />,
-      title: 'Paiement sécurisé',
-      desc: 'Protection garantie'
-    },
-    {
-      icon: <Clock size={20} />,
-      title: 'Livraison rapide',
-      desc: 'Depuis Hammamet'
-    },
-    {
-      icon: <HeadphonesIcon size={20} />,
-      title: 'Support 24/7',
-      desc: 'Toujours à votre service'
-    }
-  ]
-
   return (
-    <section className="bg-white px-4 md:px-[5%] py-4 md:py-6 border-b border-gray-200 shadow-sm">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
-        {items.map((item, idx) => (
-          <div key={idx} className="flex flex-col md:flex-row items-center md:items-center gap-2 md:gap-3.5 p-2">
-            <div className="w-10 h-10 md:w-11 md:h-11 bg-green-100 rounded-3xl flex items-center justify-center text-green-600 flex-shrink-0">
-              {item.icon}
+    <section aria-label="Nos engagements" className="border-b border-brand-ink/10 bg-brand-paper px-4 py-4 shadow-sm md:px-[5%] md:py-6">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-4">
+        {commitments.map(({ icon: Icon, title, description }) => (
+          <div key={title} className="flex flex-col items-center gap-2 p-2 text-center md:flex-row md:gap-3.5 md:text-left">
+            <div className="grid size-10 shrink-0 place-items-center rounded-3xl bg-brand-gold/15 text-brand-gold-deep md:size-11">
+              <Icon aria-hidden="true" size={20} />
             </div>
-            <div className="text-center md:text-left">
-              <h4 className="text-xs md:text-sm font-semibold text-gray-800 mb-0.5">{item.title}</h4>
-              <p className="text-xs text-gray-500 line-clamp-1">{item.desc}</p>
+            <div>
+              <h2 className="mb-0.5 text-xs font-semibold text-brand-ink md:text-sm">{title}</h2>
+              <p className="line-clamp-2 text-xs text-brand-muted">{description}</p>
             </div>
           </div>
         ))}

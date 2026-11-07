@@ -1,14 +1,13 @@
 import type { Metadata, Viewport } from 'next'
-import { Cormorant_Garamond, DM_Sans } from 'next/font/google'
+import { DM_Sans, Syne } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/lib/auth-context'
 import { MetaPixel } from '@/components/meta-pixel'
 import './globals.css'
 
-const cormorant = Cormorant_Garamond({
+const syne = Syne({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-cormorant',
+  variable: '--font-syne',
 })
 const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans' })
 const logoUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/re-elJiNAmVqNLyOBZiaOHVtQeFLf2AJm.jpg'
@@ -64,7 +63,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="fr" className={`${cormorant.variable} ${dmSans.variable}`}>
+    <html lang="fr" className={`${syne.variable} ${dmSans.variable}`}>
       <body className="bg-background font-sans text-foreground antialiased">
         <MetaPixel />
         <AuthProvider>

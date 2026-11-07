@@ -63,7 +63,7 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.7 0.18 145);
+  --primary: oklch(0.72 0.14 84);
   --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
@@ -75,7 +75,7 @@
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.7 0.18 145);
+  --ring: oklch(0.72 0.14 84);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -83,17 +83,17 @@
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.7 0.18 145);
+  --sidebar-primary: oklch(0.72 0.14 84);
   --sidebar-primary-foreground: oklch(0.145 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.7 0.18 145);
+  --sidebar-ring: oklch(0.72 0.14 84);
 }
 
 @theme inline {
   --font-sans: var(--font-dm-sans), 'DM Sans', sans-serif;
-  --font-display: var(--font-cormorant), 'Cormorant Garamond', serif;
+  --font-display: var(--font-syne), 'Cormorant Garamond', serif;
   --color-brand-ink: var(--brand-ink);
   --color-brand-gold: var(--brand-gold);
   --color-brand-gold-deep: var(--brand-gold-deep);
@@ -154,7 +154,7 @@
   }
 
   .font-display {
-    font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
+    font-family: var(--font-syne), 'Cormorant Garamond', serif;
   }
 
   h1,
@@ -163,7 +163,7 @@
   h4,
   h5,
   h6 {
-    font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
+    font-family: var(--font-syne), 'Cormorant Garamond', serif;
     font-weight: 600;
   }
 }

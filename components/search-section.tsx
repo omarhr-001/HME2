@@ -1,102 +1,82 @@
 'use client'
 
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { useMemo, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { Search } from 'lucide-react'
 
-interface ProductSuggestion {
-  id: string
-  name: string
-}
+const propertyTypes = ['Villas & maisons', 'Appartements', 'Maisons de bord de mer']
 
 function normalizeText(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
 
-export function SearchSection() {
+interface SearchSectionProps {
+  onSearchChange: (query: string) => void
+}
+
+export function SearchSection({ onSearchChange }: SearchSectionProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [products, setProducts] = useState<ProductSuggestion[]>([])
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch('/api/products', { cache: 'no-store' })
-        if (!response.ok) return
-        const data = await response.json()
-        setProducts(
-          (data || []).map((product: any) => ({
-            id: product.id,
-            name: product.name,
-          }))
-        )
-      } catch (error) {
-        console.error('Failed to load product suggestions:', error)
-      }
-    }
-
-    fetchProducts()
-  }, [])
-
   const normalizedQuery = useMemo(() => normalizeText(searchQuery.trim()), [searchQuery])
+  const suggestions = useMemo(
+    () => normalizedQuery
+      ? propertyTypes.filter((type) => normalizeText(type).includes(normalizedQuery)).slice(0, 3)
+      : [],
+    [normalizedQuery],
+  )
 
-  const suggestions = useMemo(() => {
-    if (!normalizedQuery) return []
-
-    return products
-      .filter((product) => normalizeText(product.name).includes(normalizedQuery))
-      .slice(0, 6)
-  }, [normalizedQuery, products])
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    const query = searchQuery.trim()
-    const params = new URLSearchParams()
-    if (query) params.append('search', query)
-    window.location.href = `/products?${params.toString()}`
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    onSearchChange(searchQuery.trim())
+    document.getElementById('biens')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const handleSuggestionClick = (name: string) => {
-    window.location.href = `/products?search=${encodeURIComponent(name)}`
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' && (event.nativeEvent.isComposing || event.keyCode === 229)) {
+      event.preventDefault()
+    }
+  }
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchQuery(suggestion)
+    onSearchChange(suggestion)
   }
 
   return (
-    <section className="sticky top-17 z-40 bg-white px-4 md:px-[5%] py-3 md:py-4 border-b border-gray-200">
-      <form onSubmit={handleSearch} className="relative max-w-2xl">
+    <section className="sticky top-[68px] z-40 border-b border-brand-ink/10 bg-brand-paper px-4 py-3 md:px-[5%] md:py-4">
+      <form onSubmit={handleSubmit} className="relative mx-auto max-w-4xl">
+        <label htmlFor="property-search" className="sr-only">Rechercher un univers immobilier</label>
         <div className="flex items-center gap-3">
-          <div className="flex-1 relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <div className="relative min-w-0 flex-1">
+            <Search aria-hidden="true" size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-brand-muted" />
             <input
-              type="text"
-              placeholder="Rechercher des produits..."
+              id="property-search"
+              type="search"
+              placeholder="Villas, appartements, bord de mer…"
+              autoComplete="off"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg text-sm bg-white outline-none transition-all duration-200 focus:border-green-500 focus:ring-1 focus:ring-green-500"
+              onChange={(event) => {
+                setSearchQuery(event.target.value)
+                onSearchChange(event.target.value)
+              }}
+              onKeyDown={handleKeyDown}
+              className="w-full rounded-lg border border-brand-ink/15 bg-brand-ivory py-3 pl-12 pr-4 text-sm text-brand-ink outline-none transition focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20"
             />
           </div>
-
-          <button
-            type="submit"
-            className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium text-sm hover:bg-green-700 transition-all duration-200 whitespace-nowrap"
-          >
-            <span className="hidden sm:inline">Rechercher</span>
-            <span className="sm:hidden">
-              <Search size={18} />
-            </span>
+          <button type="submit" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-brand-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-gold hover:text-brand-ink sm:px-6">
+            <span className="hidden sm:inline">Explorer</span>
+            <Search aria-hidden="true" size={18} className="sm:hidden" />
           </button>
         </div>
 
         {suggestions.length > 0 && (
-          <div className="absolute left-0 right-0 z-50 mt-2 rounded-xl border border-gray-200 bg-white shadow-lg">
-            {suggestions.map((product) => (
+          <div aria-label="Suggestions de recherche" className="absolute left-0 right-0 z-50 mt-2 overflow-hidden rounded-xl border border-brand-ink/10 bg-brand-paper shadow-lg">
+            {suggestions.map((suggestion) => (
               <button
-                key={product.id}
+                key={suggestion}
                 type="button"
-                onMouseDown={() => handleSuggestionClick(product.name)}
-                className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => handleSuggestionClick(suggestion)}
+                className="w-full px-4 py-3 text-left text-sm text-brand-ink transition hover:bg-brand-gold/10"
               >
-                {product.name}
+                {suggestion}
               </button>
             ))}
           </div>
