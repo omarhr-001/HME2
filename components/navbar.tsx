@@ -1,171 +1,92 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react'
-import { useAuth } from '@/lib/auth-context'
-import { useCart } from '@/lib/hooks'
-import { getCategoriesWithProducts } from '@/lib/products'
-import type { Category } from '@/lib/products'
+import { Menu, X, ArrowUpRight } from 'lucide-react'
+
+const logoUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/re-elJiNAmVqNLyOBZiaOHVtQeFLf2AJm.jpg'
+
+const navigation = [
+  { label: 'L’agence', href: '/#agence' },
+  { label: 'Expertises', href: '/#expertises' },
+  { label: 'Nos univers', href: '/#biens' },
+]
 
 export function Navbar() {
-  const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [isHovering, setIsHovering] = useState(false)
-  const [categories, setCategories] = useState<Category[]>([])
-  const [loadingCategories, setLoadingCategories] = useState(true)
-  const { user, loading, signOut } = useAuth()
-  const { cartItems } = useCart()
-
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await getCategoriesWithProducts()
-        setCategories(data)
-      } catch (error) {
-        console.error('Error loading categories:', error)
-      } finally {
-        setLoadingCategories(false)
-      }
-    }
-    loadCategories()
-  }, [])
-
-  const handleScroll = () => setScrolled(window.scrollY > 10)
-
-  const handleSignOut = async () => {
-    await signOut()
-    setMobileOpen(false)
-  }
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 h-17 flex items-center justify-between px-4 md:px-[5%] transition-all duration-300 ${scrolled
-      ? 'bg-white/100 shadow-lg'
-      : 'bg-white/97 shadow-sm'
-      }`} style={{ backdropFilter: 'blur(16px)' }}>
-      {/* Logo */}
-      <Link href="/" className="flex items-center gap-2 md:gap-2.5 no-underline cursor-pointer group flex-shrink-0">
-        <img src="/logo.png" alt="Hamroun Meuble & Electro" className="w-10 h-10 md:w-12 md:h-12 flex-shrink-0" />
-        <div className="flex flex-col leading-tight hidden sm:flex">
-          <span className="text-gray-900 font-bold text-sm md:text-base tracking-tight group-hover:text-green-700 transition-colors duration-300">Hamroun</span>
-          <span className="text-green-700 font-semibold text-xs tracking-wide uppercase">Meuble & Electro</span>
-        </div>
-      </Link>
-
-      {/* Desktop Links */}
-      <div className="hidden md:flex items-center gap-1 list-none relative">
-        <Link href="/" className="no-underline text-gray-600 text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-300 hover:text-green-700 hover:bg-green-50">Accueil</Link>
-
-        {/* Produits with Dropdown */}
-        <div
-          className="relative group"
-          onMouseEnter={() => setIsHovering(true)}
-          onMouseLeave={() => setIsHovering(false)}
-        >
-          <Link href="/products" className="no-underline text-gray-600 text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-300 hover:text-green-700 hover:bg-green-50 block">Produits</Link>
-
-          {/* Dropdown Menu */}
-          {isHovering && !loadingCategories && categories.length > 0 && (
-            <div className="absolute top-full left-0 mt-0 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[200px] z-40 max-h-96 overflow-y-auto">
-              {categories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={`/products?category=${encodeURIComponent(category.slug)}`}
-                  className="no-underline text-gray-600 text-sm px-4 py-2 flex items-center gap-2 hover:text-green-700 hover:bg-green-50 transition-all duration-200"
-                >
-                  {category.image_url ? (
-                    <span className="inline-flex h-5 w-5 overflow-hidden rounded-full border border-gray-200 bg-gray-50">
-                      <img src={category.image_url} alt={category.name} className="h-full w-full object-cover" />
-                    </span>
-                  ) : (
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold">
-                      {category.name.slice(0, 1)}
-                    </span>
-                  )}
-                  <span>{category.name}</span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <Link href="/about" className="no-underline text-gray-600 text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-300 hover:text-green-700 hover:bg-green-50">À propos</Link>
-        <Link href="/contact" className="no-underline text-gray-600 text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-300 hover:text-green-700 hover:bg-green-50">Contact</Link>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-2.5">
-        {user && (
-          <Link href="/cart" className="relative bg-none border-none cursor-pointer p-2 rounded-[10px] text-gray-600 transition-all duration-300 hover:bg-green-50 hover:text-green-700 flex items-center" style={{ fontSize: '20px' }}>
-            <ShoppingCart size={20} />
-            {cartItems.length > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs font-bold">
-                {cartItems.length}
-              </span>
-            )}
-          </Link>
-        )}
-
-        {loading ? (
-          <div className="hidden md:flex items-center gap-2">
-            <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
-          </div>
-        ) : !user ? (
-          <span role="status" className="hidden rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 md:inline-flex">
-            Catalogue JSON · lecture seule
+    <header className="sticky top-0 z-50 border-b border-brand-ink/10 bg-brand-ivory/95 backdrop-blur-xl">
+      <div className="mx-auto flex h-[76px] max-w-[1440px] items-center justify-between px-4 sm:px-8 lg:px-12">
+        <Link href="/" aria-label="Romdhani Immobilier, accueil" className="group flex items-center gap-3">
+          <img
+            src={logoUrl}
+            alt="Logo Romdhani Immobilier : initiale R et maison dorée"
+            className="size-12 rounded-full object-cover sm:size-14"
+          />
+          <span className="flex flex-col leading-none">
+            <span className="font-display text-lg font-semibold tracking-[0.04em] text-brand-ink transition-colors group-hover:text-brand-gold-deep sm:text-xl">
+              ROMDHANI
+            </span>
+            <span className="mt-1 text-[9px] font-semibold tracking-[0.27em] text-brand-gold-deep sm:text-[10px]">
+              IMMOBILIER
+            </span>
           </span>
-        ) : (
-          <>
-            <Link href="/account" className="hidden md:flex items-center gap-2 bg-none border-none cursor-pointer p-2 rounded-[10px] text-gray-600 transition-all duration-300 hover:bg-green-50 hover:text-green-700">
-              <User size={20} />
-            </Link>
-            <button
-              onClick={handleSignOut}
-              className="hidden md:flex items-center gap-2 bg-none border-none cursor-pointer p-2 rounded-[10px] text-gray-600 transition-all duration-300 hover:bg-red-50 hover:text-red-700"
+        </Link>
+
+        <nav aria-label="Navigation principale" className="hidden items-center gap-8 md:flex">
+          {navigation.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="text-sm font-medium text-brand-ink/75 transition-colors hover:text-brand-gold-deep"
             >
-              <LogOut size={20} />
-            </button>
-          </>
-        )}
+              {item.label}
+            </Link>
+          ))}
+          <Link
+            href="/#projet"
+            className="inline-flex items-center gap-2 border border-brand-ink/20 px-4 py-2.5 text-sm font-semibold text-brand-ink transition-all hover:border-brand-gold hover:bg-brand-gold"
+          >
+            Votre projet <ArrowUpRight aria-hidden="true" className="size-4" />
+          </Link>
+        </nav>
 
         <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden bg-none border-none cursor-pointer p-2 text-gray-600"
+          type="button"
+          aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-navigation"
+          onClick={() => setMobileOpen((open) => !open)}
+          className="grid size-11 place-items-center text-brand-ink transition-colors hover:text-brand-gold-deep md:hidden"
         >
-          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+          {mobileOpen ? <X aria-hidden="true" className="size-5" /> : <Menu aria-hidden="true" className="size-5" />}
         </button>
       </div>
 
-      {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="absolute top-17 left-0 right-0 bg-white border-t border-gray-200 p-4 md:hidden">
-          <div className="flex flex-col gap-2">
-            <Link href="/" className="no-underline text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100">Accueil</Link>
-            <Link href="/products" className="no-underline text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100">Produits</Link>
-            <Link href="/about" className="no-underline text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100">À propos</Link>
-            <Link href="/contact" className="no-underline text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100">Contact</Link>
-            {loading ? (
-              <div className="px-4 py-2 text-gray-500 text-sm">Chargement...</div>
-            ) : !user ? (
-              <p role="status" className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                Catalogue JSON en lecture seule. Les comptes et commandes sont désactivés.
-              </p>
-            ) : (
-              <>
-                <Link href="/app/account/page.tsx" className="no-underline text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 flex items-center gap-2">
-                  <User size={16} /> Mon compte
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="no-underline text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 w-full text-left flex items-center gap-2"
-                >
-                  <LogOut size={16} /> Se déconnecter
-                </button>
-              </>
-            )}
+        <nav id="mobile-navigation" aria-label="Navigation mobile" className="border-t border-brand-ink/10 bg-brand-ivory px-5 py-4 md:hidden">
+          <div className="mx-auto flex max-w-7xl flex-col gap-1">
+            {navigation.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className="px-3 py-3 text-sm font-medium text-brand-ink transition-colors hover:bg-brand-gold/10"
+              >
+                {item.label}
+              </Link>
+            ))}
+            <Link
+              href="/#projet"
+              onClick={() => setMobileOpen(false)}
+              className="mt-2 inline-flex items-center justify-center gap-2 bg-brand-ink px-4 py-3 text-sm font-semibold text-white"
+            >
+              Votre projet <ArrowUpRight aria-hidden="true" className="size-4" />
+            </Link>
           </div>
-        </div>
+        </nav>
       )}
-    </nav>
+    </header>
   )
 }
